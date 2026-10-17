@@ -8,7 +8,7 @@ export function CreateFeature({ onCreated }: { onCreated: (id: string) => void |
   const actions = useActions<typeof import('./actions')>();
   const projects = useResource<{ items: Array<{ id: string; name: string }> }>('projectChoices', {});
   const [open, setOpen] = useState(false);
-  const items = projects.data?.items ?? [];
+  const items:Array<{id:string;name:string}> = projects.data?.items ?? [];
   const created = useRef<string | undefined>(undefined);
   const [navigationError, setNavigationError] = useState('');
   const draft = useNoteDraft({ key: 'create-feature', value: { title: '', summary: '', projectId: '' }, save: async (value, context) => {

@@ -1,95 +1,23 @@
-import {useViewProps} from './surface';
 import { CreateFeature } from './feature-create';
 import { GameChanges, type GameChange } from './game-changes';
-import {withNotePrerequisites} from '@dsh-workbench/react';
+import {useAction,useNote,withNotePrerequisites} from '@dsh-workbench/react';
 
 import {NoteIcon} from '@dsh-workbench/react';
 
 import { Button, Dropdown, SearchField } from "@heroui/react";
 import { useEffect, useRef, useState, useMemo } from "react";
-import {useActions,useRuntime,useResource,useWorkbench,useNoteConfig,type WidgetProps} from './surface';
+import {useRuntime,useResource,type WidgetProps} from './surface';
+import type {z} from '@dsh-workbench/runtime';
+import type {viewSchema,prSchema,externalLinkSchema} from './schemas';
+import {candidateKey,candidateInput,candidateError,candidateReceiptMatches,candidateViewMatches,archiveNotice,candidateNotice,type GameCandidate} from './mutation-results';
 
 
-type ItemLink = {
-  number?: number;
-  url: string;
-  label: string;
-  title: string;
-  state?: string;
-  tone?: "ok" | "failed" | "pending" | "muted";
-};
-
-type EnvBranchData = {
-  branch?: string;
-  merge?: { label: string; tone: string; stale?: boolean; hidden?: boolean };
-  ci?: { label: string; tone: string; stale?: boolean; hidden?: boolean };
-  deploy?: { label: string; tone: string; stale?: boolean; hidden?: boolean };
-  prs?: ItemLink[];
-  ciLinks?: ItemLink[];
-  deploymentLinks?: ItemLink[];
-};
-
-type FeatureLink = {
-  repo: string;
-  trackingLabel?: string;
-  mappingIssue?: string;
-  repoName: string;
-  repoNameShort: string;
-  url: string;
-  branches: string[];
-  allPrs?: Array<ItemLink & { branch?: string }>;
-  envBranches: {
-    dev?: EnvBranchData;
-    pre?: EnvBranchData;
-    main?: EnvBranchData;
-  };
-};
-
-type ExecutionTarget = {
-  noteId?: string;
-  delegationId?: string;
-};
-
-type FeatureItem = {
-  id: string;
-  title: string;
-  summary: string;
-  next: string;
-  body: string;
-  createdAt?: string;
-  archived: boolean;
-  /** True when the archive comes from the delivery state, not a manual flag. */
-  autoArchived?: boolean;
-  totalPrs: number;
-  mergedPrs: number;
-  links: FeatureLink[];
-  /** Optional precise target for newer records; old records fall back to the desk. */
-  execution?: ExecutionTarget;
-  gameCandidates?: GameCandidate[];
-};
-
-type LedgerIssue = { file: string; error: string };
-
-type GameCandidate = {
-  id: string; projectId: string; productionId: string; cardId: string; featureId: string;
-  kind?: 'card' | 'story' | 'documents' | 'deck'; targetId?: string;
-  candidateHash: string; targetBaseRevision: string; validationManifest: string; commit: string;
-  status: 'candidate' | 'adopted' | 'undone'; previewVerified: boolean;
-  adoptedAt?: string; undoneAt?: string; adoptionId?: string;
-};
+type TrackerState=z.infer<typeof viewSchema>;
+type FeatureItem=TrackerState['features'][number];
+type FeatureLink=FeatureItem['links'][number];
+type ItemLink=z.infer<typeof externalLinkSchema>&Partial<Pick<z.infer<typeof prSchema>,'number'|'state'>>;
 const gameCandidateLabel = (candidate: GameCandidate) => candidate.kind === 'deck' ? `牌组 ${candidate.targetId}` : candidate.kind === 'story' ? `剧情 ${candidate.targetId}`
   : candidate.kind === 'documents' ? `资料 ${candidate.targetId}` : `卡牌 ${candidate.cardId}`;
-
-type TrackerState = {
-  serverUrl?: string;
-  status?: string;
-  totalCount?: number;
-  activeCount?: number;
-  archivedCount?: number;
-  /** Ledger records that failed to parse; while present every write is blocked. */
-  errors?: LedgerIssue[];
-  features?: FeatureItem[];
-};
 
 const COPY_ENVIRONMENTS = ["dev", "pre", "main"] as const;
 type CopyRange = (typeof COPY_ENVIRONMENTS)[number] | "all";
@@ -158,40 +86,29 @@ function BrandIcon({ icon }: { icon: WidgetProps["metadata"]["icon"] }) {
 }
 
 export function View(){
- const { data: initialData, mode, metadata }=useViewProps<TrackerState>();
+  const {mode,metadata,config,actions,useQuery,host:workbench}=useNote<typeof import('./actions')>();
   const runtime = useRuntime();
-  const config = useNoteConfig<{ projectId?: string; presentation?: string; notes?: { production?: string; preview?: string } }>();
   const [showEngineering, setShowEngineering] = useState(false);
   const changesView = config?.presentation === 'changes' && !showEngineering;
-  const actions = useActions<typeof import("./actions")>();
-  const resource = useResource<TrackerState>(mode === "compact" ? "summary" : "view", {});
-  const data = resource.data ?? initialData;
-  const workbench = useWorkbench();
-  const [refreshing, setRefreshing] = useState(false);
+  const resource=useQuery('view',{}, {enabled:mode==='expanded'});
+  const summary=useQuery('summary',{}, {enabled:mode==='compact'});
+  const displayResource=mode==='compact'?summary:resource;
+  const data=displayResource.data;
+  const refreshAction=useAction();
+  const refreshing=refreshAction.pending;
   const [navigationError, setNavigationError] = useState("");
-  const [archiveError, setArchiveError] = useState("");
-  const [archiveBusy, setArchiveBusy] = useState("");
-  // Optimistic archive state so a click is visible before the background sync
-  // finishes; a failed action removes the override again.
-  const [archiveOverrides, setArchiveOverrides] = useState<Record<string, boolean>>({});
+  const archiveAction=useAction({query:resource,action:actions.setArchiveStatus,key:input=>input.id,
+    receiptConfirmed:receipt=>receipt.receiptVerified,confirm:(view,input)=>view.features.some(feature=>feature.id===input.id&&feature.archived===input.archived)});
+  const confirmAction=useAction({query:resource,action:actions.confirmGameCandidate,key:candidateKey,
+    receiptConfirmed:(receipt,input)=>candidateReceiptMatches(receipt,input,'adopted'),confirm:(view,input,receipt)=>candidateViewMatches(view,input,receipt,'adopted')});
+  const undoAction=useAction({query:resource,action:actions.undoGameCandidate,key:candidateKey,
+    receiptConfirmed:(receipt,input)=>candidateReceiptMatches(receipt,input,'undone',input.adoptionId),confirm:(view,input,receipt)=>candidateViewMatches(view,input,receipt,'undone',input.adoptionId)});
   const [filter, setFilter] = useState<"all" | "has-links" | "pending" | "merged" | "archived">("all");
   const [search, setSearch] = useState("");
   const [openDocs, setOpenDocs] = useState<Record<string, boolean>>({});
   const [allCollapsed, setAllCollapsed] = useState(false);
   const [copyFeedback, setCopyFeedback] = useState<Record<string, { message: string; error: boolean }>>({});
-  const [candidateBusy, setCandidateBusy] = useState('');
-  const [candidateError, setCandidateError] = useState<Record<string, string>>({});
-
-  const handleRefresh = async () => {
-    setRefreshing(true);
-    try {
-      await actions.refresh({});
-    } catch (e) {
-      console.error(e);
-    } finally {
-      setRefreshing(false);
-    }
-  };
+  const handleRefresh = () => refreshAction.run(async()=>{await actions.refresh({});await (mode==='compact'?summary:resource).refresh();});
 
   const handleCopyFeature = async (feature: FeatureItem, range: CopyRange) => {
     const { text, count } = buildFeatureCopyText(feature, range);
@@ -209,7 +126,7 @@ export function View(){
 
 
 
-  const openExecutionDesk = async (feature?: FeatureItem, _link?: FeatureLink) => {
+  const openExecutionDesk = async (feature?: Pick<FeatureItem,'id'|'execution'>, _link?: FeatureLink) => {
     setNavigationError("");
     const target = feature?.execution;
     try {
@@ -236,62 +153,44 @@ export function View(){
     }
   };
 
-  // Manual archive flag wins over the optimistic override only on failure.
-  const isArchived = (f: FeatureItem) => archiveOverrides[f.id] ?? f.archived;
-
-  const handleArchiveToggle = async (feature: FeatureItem) => {
-    const archived = !isArchived(feature);
-    setArchiveError("");
-    setArchiveBusy(feature.id);
-    setArchiveOverrides((prev) => ({ ...prev, [feature.id]: archived }));
-    try {
-      await actions.setArchiveStatus({ id: feature.id, archived });
-    } catch (error) {
-      setArchiveOverrides((prev) => {
-        const next = { ...prev };
-        delete next[feature.id];
-        return next;
-      });
-      const message = error instanceof Error ? error.message : String(error);
-      setArchiveError(`「${feature.title}」${archived ? "归档" : "恢复"}失败：${message}`);
-      return;
-    } finally {
-      setArchiveBusy("");
-    }
-    // The write already succeeded; a slow or failed refresh must not undo the card.
-    try {
-      await runtime.resources.revalidate({ name: "view", input: {} });
-      setArchiveOverrides((prev) => {
-        const next = { ...prev };
-        delete next[feature.id];
-        return next;
-      });
-    } catch (error) {
-      console.error(error);
-    }
+  const handleArchiveToggle=(feature:FeatureItem)=>archiveAction.run({id:feature.id,archived:!feature.archived});
+  const archiveBlocked=(id:string)=>{const outcome=archiveAction.for(id);return Boolean(outcome?.pending||outcome?.needsVerification);};
+  const toggleDoc = (id: string) => setOpenDocs(previous=>({...previous,[id]:!previous[id]}));
+  const candidateBlocked=(candidate:GameCandidate,operation:'confirm'|'undo')=>{
+    const key=candidateKey({...candidate,candidateId:candidate.id});
+    return Boolean(candidateError(candidate)) || (operation==='confirm'?candidate.status!=='candidate'||!candidate.previewVerified:candidate.status!=='adopted')
+      || [confirmAction.for(key),undoAction.for(key)].some(outcome=>outcome?.pending||outcome?.needsVerification);
   };
-
-  const toggleDoc = (id: string) => {
-    setOpenDocs((prev) => ({ ...prev, [id]: !prev[id] }));
+  const candidateAction=async(candidate:GameCandidate,operation:'confirm'|'undo')=>{
+    if(candidateBlocked(candidate,operation))return false;
+    const checked=candidateInput(candidate);
+    if(!checked.success || (operation==='undo'&&!candidate.adoptionId))return false;
+    setOpenDocs(previous=>({...previous,[candidate.featureId]:true}));
+    const runner=operation==='confirm'?confirmAction:undoAction;
+    if(operation==='confirm')await confirmAction.run(checked.data);
+    else await undoAction.run({...checked.data,adoptionId:candidate.adoptionId!});
+    const outcome=runner.for(candidateKey(checked.data));
+    return Boolean(outcome && !outcome.needsVerification && (outcome.receiptConfirmed||outcome.stateConfirmed));
   };
-  const candidateAction = async (candidate: GameCandidate, operation: 'confirm' | 'undo') => {
-    setCandidateBusy(candidate.id);
-    setCandidateError(previous => ({ ...previous, [candidate.id]: '' }));
-    const identity = { projectId: candidate.projectId, productionId: candidate.productionId, candidateId: candidate.id, featureId: candidate.featureId,
-      candidateHash: candidate.candidateHash, targetBaseRevision: candidate.targetBaseRevision, validationManifest: candidate.validationManifest };
-    try {
-      if (operation === 'confirm') await actions.confirmGameCandidate(identity);
-      else await actions.undoGameCandidate({ ...identity, adoptionId: candidate.adoptionId! });
-      await runtime.resources.revalidate({ name: 'view', input: {} });
-    } catch (error) { setCandidateError(previous => ({ ...previous, [candidate.id]: (error as Error).message })); throw error; }
-    finally { setCandidateBusy(''); }
+  const features=resource.data?.features??[];
+  const ledgerIssues=data?.errors??[];
+  const activeFeatures=useMemo(()=>features.filter(feature=>!feature.archived),[features]);
+  const compactFeatures=(summary.data?.features??[]).filter(feature=>!feature.archived);
+  const compactActiveCount=data?.activeCount??activeFeatures.length;
+  const archivedFeatures=useMemo(()=>features.filter(feature=>feature.archived),[features]);
+  const actionNotices=[
+    ...archiveAction.outcomes.map(outcome=>({id:`archive:${outcome.key}`,message:archiveNotice(outcome,features.find(feature=>feature.id===outcome.input.id)?.title||outcome.input.id),dismiss:()=>archiveAction.dismiss(outcome.key)})),
+    ...confirmAction.outcomes.map(outcome=>({id:`confirm:${outcome.key}`,message:candidateNotice(outcome,'采用'),dismiss:()=>confirmAction.dismiss(outcome.key),target:`${outcome.input.projectId}/${outcome.input.productionId}/${outcome.input.candidateId}`})),
+    ...undoAction.outcomes.map(outcome=>({id:`undo:${outcome.key}`,message:candidateNotice(outcome,'撤销采用'),dismiss:()=>undoAction.dismiss(outcome.key),target:`${outcome.input.projectId}/${outcome.input.productionId}/${outcome.input.candidateId}`})),
+  ].filter(notice=>notice.message);
+  const notices=<>{actionNotices.map(notice=><div key={notice.id} className="alert-box archive-alert" role="status"><span>{'target' in notice?`${notice.target}：`:''}{notice.message}</span><button type="button" className="alert-dismiss" onClick={notice.dismiss} aria-label="关闭提示">×</button></div>)}</>;
+  const candidateState=(change:GameChange,candidateId:string,operation:'confirm'|'undo')=>{
+    const candidate=features.flatMap(feature=>feature.gameCandidates).find(item=>item.id===candidateId&&item.productionId===change.productionId&&item.projectId===change.projectId&&item.featureId===change.featureId);
+    const key=candidateKey({...change,candidateId});
+    const outcomes=[confirmAction.for(key),undoAction.for(key)];
+    return {blocked:!candidate||candidateBlocked(candidate,operation),pending:outcomes.some(outcome=>outcome?.pending),
+      message: candidate?candidateError(candidate)||[confirmAction.for(key)&&candidateNotice(confirmAction.for(key)!,'采用'),undoAction.for(key)&&candidateNotice(undoAction.for(key)!,'撤销采用')].filter(Boolean).join('；'):'候选信息已变化，请刷新后重新选择'};
   };
-
-  const features = data?.features ?? [];
-  const ledgerIssues = data?.errors ?? [];
-  const activeFeatures = useMemo(() => features.filter((f) => !isArchived(f)), [features, archiveOverrides]);
-  const compactActiveCount = data.activeCount ?? activeFeatures.length;
-  const archivedFeatures = useMemo(() => features.filter((f) => isArchived(f)), [features, archiveOverrides]);
 
   const displayedFeatures = useMemo(() => {
     let list = features;
@@ -319,16 +218,16 @@ export function View(){
       list = list.filter(
         (f) =>
           f.title.toLowerCase().includes(q) ||
-          f.summary.toLowerCase().includes(q) ||
+          (f.summary??'').toLowerCase().includes(q) ||
           f.id.toLowerCase().includes(q) ||
-          f.next.toLowerCase().includes(q) ||
+          (f.next??'').toLowerCase().includes(q) ||
           f.links.some((l) => l.repoName.toLowerCase().includes(q))
       );
     }
     return list;
   }, [features, activeFeatures, archivedFeatures, filter, search]);
 
-  const renderBadge = (f: FeatureItem) => {
+  const renderBadge = (f: Pick<FeatureItem,'totalPrs'|'mergedPrs'>&{links:unknown[]}) => {
     if (!f.links || f.links.length === 0) {
       return <span className="badge-overall muted">尚未关联项目</span>;
     }
@@ -383,10 +282,11 @@ export function View(){
   };
 
   // Compact Mode (for DSH Workbench Canvas)
-  if (changesView) return <GameChanges mode={mode} metadata={metadata} busy={candidateBusy} errors={candidateError}
-    ready={!resource.stale && !resource.error}
+  if (changesView) return <GameChanges mode={mode} metadata={metadata} candidateState={candidateState} notices={notices}
+    ready={!displayResource.stale && !displayResource.error}
     onDiscuss={async change => {
       const session = await actions.discussChange(change ? { productionId: change.productionId } : {});
+      if(!session||typeof session!=='object'||Array.isArray(session)||typeof session.sessionId!=='string')throw Error('未返回可打开的会话身份');
       await workbench.openSession(session.sessionId);
     }}
     onPreview={async (candidateId, commit) => {
@@ -401,7 +301,7 @@ export function View(){
     onCandidate={async (change, candidateId, operation) => {
       const candidate = features.flatMap(feature => feature.gameCandidates ?? []).find(item => item.id === candidateId && item.productionId === change.productionId && item.projectId === change.projectId && item.featureId === change.featureId);
       if (!candidate) throw Error('候选信息已变化，请刷新后重新选择');
-      await candidateAction(candidate, operation);
+      return candidateAction(candidate, operation);
     }} />;
 
   if (mode === "compact") {
@@ -435,7 +335,7 @@ export function View(){
         </header>
 
         <div className="compact-card-list">
-          {activeFeatures.slice(0, 3).map((f) => (
+          {compactFeatures.slice(0, 3).map((f) => (
             <article key={f.id} className="feature-card-compact">
               <div className="compact-feature-card-head">
                 <div className="card-header-compact">
@@ -470,10 +370,10 @@ export function View(){
           <div className="compact-footer-status">
             <SyncDiagnostics compact />
             <span
-              className={`compact-ledger-status${ledgerIssues.length > 0 ? " is-warning" : resource.error || data?.status === "error" ? " is-failed" : ""}`}
-              title={ledgerIssues.length > 0 ? `台账 ${ledgerIssues.length} 条记录无法解析，其他记录仍可操作` : resource.error || data?.status === "error" ? "状态同步暂不可用" : "功能进展自动同步"}
+              className={`compact-ledger-status${ledgerIssues.length > 0 ? " is-warning" : displayResource.error || data?.status === "error" ? " is-failed" : ""}`}
+              title={ledgerIssues.length > 0 ? `台账 ${ledgerIssues.length} 条记录无法解析，其他记录仍可操作` : displayResource.error || data?.status === "error" ? "状态同步暂不可用" : "功能进展自动同步"}
             >
-              {ledgerIssues.length > 0 ? `台账异常 · ${ledgerIssues.length}` : resource.error || data?.status === "error" ? "同步异常" : "自动同步"}
+              {ledgerIssues.length > 0 ? `台账异常 · ${ledgerIssues.length}` : displayResource.error || data?.status === "error" ? "同步异常" : "自动同步"}
             </span>
           </div>
           <div className="compact-footer-actions">
@@ -489,6 +389,7 @@ export function View(){
               独立看板 ↗
             </a>
           </div>
+          {refreshAction.error && <span role="alert">刷新未完成：{refreshAction.error.message}</span>}
           {navigationError && <span className="navigation-error" role="alert">执行台打开失败：{navigationError}</span>}
         </footer>
       </section>
@@ -562,12 +463,8 @@ export function View(){
         </div>
       )}
 
-      {archiveError && (
-        <div className="alert-box archive-alert" role="alert">
-          <span>{archiveError}</span>
-          <button type="button" className="alert-dismiss" onClick={() => setArchiveError("")} aria-label="关闭提示">×</button>
-        </div>
-      )}
+      {refreshAction.error && <p role="alert">刷新未完成：{refreshAction.error.message}</p>}
+      {notices}
 
       {/* Toolbar: Segmented Controls + Collapse */}
       <div className="toolbar-strip">
@@ -679,11 +576,11 @@ export function View(){
                     <button
                       type="button"
                       className="btn-nav"
-                      disabled={archiveBusy === f.id}
+                      disabled={archiveBlocked(f.id)}
                       onClick={() => void handleArchiveToggle(f)}
-                      title={isArchived(f) ? "恢复为进行中" : "归档该功能"}
+                      title={f.archived ? "恢复为进行中" : "归档该功能"}
                     >
-                      {archiveBusy === f.id ? "处理中…" : isArchived(f) ? "恢复" : "归档"}
+                      {archiveBlocked(f.id) ? (archiveAction.for(f.id)?.pending?"处理中…":"待核实") : f.archived ? "恢复" : "归档"}
                     </button>
                   )}
                 </div>
@@ -691,7 +588,7 @@ export function View(){
 
               {!allCollapsed && (
                 <div className="card-body-content">
-                  {!!f.gameCandidates?.length && <div className="ft-candidates" aria-label="游戏候选">{f.gameCandidates.filter(candidate => candidate.status === 'candidate').map(candidate => <div key={candidate.id} className="ft-candidate"><span>{gameCandidateLabel(candidate)} · 版本 {candidate.commit.slice(0, 8)}</span><span>{candidate.previewVerified ? '试玩检查已通过' : '等待试玩检查'}</span>{candidate.previewVerified && <button className="btn-nav" disabled={Boolean(candidateBusy)} onClick={() => void candidateAction(candidate, 'confirm').catch(() => undefined)}>加入我的游戏</button>}{candidateError[candidate.id] && <span role="alert">{candidateError[candidate.id]}</span>}</div>)}</div>}
+                  {!!f.gameCandidates?.length && <div className="ft-candidates" aria-label="游戏候选">{f.gameCandidates.filter(candidate => candidate.status === 'candidate').map(candidate => <div key={candidate.id} className="ft-candidate"><span>{gameCandidateLabel(candidate)} · 版本 {candidate.commit?.slice(0, 8)??'未记录'}</span><span>{candidate.previewVerified ? '试玩检查已通过' : '等待试玩检查'}</span>{candidate.previewVerified && <button className="btn-nav" disabled={candidateBlocked(candidate,'confirm')} onClick={() => void candidateAction(candidate, 'confirm')}>加入我的游戏</button>}{candidateError(candidate) && <span role="alert">{candidateError(candidate)}</span>}</div>)}</div>}
                   {hasLinks ? (
                     <div className="table-scroll">
                       <table className="matrix-table">
@@ -777,7 +674,7 @@ export function View(){
                   )}
 
                   {(hasDoc || Boolean(f.gameCandidates?.length)) && isDocOpen && (
-                    <div className="doc-panel">{f.body}{f.gameCandidates?.filter(candidate => candidate.status !== 'candidate').map(candidate => <div key={candidate.id} className="ft-adoption-record"><span>{gameCandidateLabel(candidate)} · {candidate.status === 'adopted' ? `已采用于 ${candidate.adoptedAt ?? ''}` : `已撤销于 ${candidate.undoneAt ?? ''}`} · 候选 {candidate.commit.slice(0, 8)}</span>{candidate.status === 'adopted' && <button className="btn-nav" disabled={Boolean(candidateBusy)} onClick={() => void candidateAction(candidate, 'undo').catch(() => undefined)}>撤销采用</button>}{candidateError[candidate.id] && <span role="alert">{candidateError[candidate.id]}</span>}</div>)}</div>
+                    <div className="doc-panel">{f.body}{f.gameCandidates?.filter(candidate => candidate.status !== 'candidate').map(candidate => <div key={candidate.id} className="ft-adoption-record"><span>{gameCandidateLabel(candidate)} · {candidate.status === 'adopted' ? `已采用于 ${candidate.adoptedAt ?? ''}` : `已撤销于 ${candidate.undoneAt ?? ''}`} · 候选 {candidate.commit?.slice(0, 8)??'未记录'}</span>{candidate.status === 'adopted' && <button className="btn-nav" disabled={candidateBlocked(candidate,'undo')} onClick={() => void candidateAction(candidate, 'undo')}>撤销采用</button>}{candidateError(candidate) && <span role="alert">{candidateError(candidate)}</span>}</div>)}</div>
                   )}
                 </div>
               )}

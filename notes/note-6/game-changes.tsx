@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import {useState,type ReactNode} from 'react';
 import { Button, ListBox, Select, ScrollShadow, SearchField } from '@heroui/react';
 import {NoteDialog,NoteIcon} from '@dsh-workbench/react';
 import {ReferenceCollection} from './reference-collection';
@@ -19,15 +19,16 @@ const labels: Record<GameChange['stage'], string> = {
 };
 type Props = {
   mode: 'compact' | 'expanded'; metadata: WidgetProps['metadata'];
-  busy?: string; errors: Record<string, string>; ready: boolean;
+  candidateState(change:GameChange,candidateId:string,operation:'confirm'|'undo'):{blocked:boolean;pending:boolean;message:string};
+  notices:ReactNode; ready:boolean;
   onEngineering(featureId?: string): void;
   onDiscuss(change?: GameChange): Promise<void>;
   onPreview(candidateId: string, commit: string): Promise<void>;
   onProduction(change: GameChange): Promise<void>;
-  onCandidate(change: GameChange, candidateId: string, operation: 'confirm' | 'undo'): Promise<void>;
+  onCandidate(change: GameChange, candidateId: string, operation: 'confirm' | 'undo'): Promise<boolean>;
 };
 
-export function GameChanges({ mode, metadata, busy, errors, ready, onEngineering, onDiscuss, onPreview, onProduction, onCandidate }: Props) {
+export function GameChanges({ mode, metadata, candidateState, notices, ready, onEngineering, onDiscuss, onPreview, onProduction, onCandidate }: Props) {
   const referenceActions = useActions<typeof import('./actions')>();
   const references = useResource<{ items: Array<{ key: string; title: string; anchor?: string; kind: string; revision: string; freshness: string }>; limit: number }>('pinnedReferences', {}, { enabled: mode === 'expanded' });
   const [pinning, setPinning] = useState(false), [pinError, setPinError] = useState('');
@@ -45,9 +46,10 @@ export function GameChanges({ mode, metadata, busy, errors, ready, onEngineering
   const [confirmation, setConfirmation] = useState<{ change: GameChange; candidateId: string; operation: 'confirm' | 'undo' }>();
   const result = useResource<Page>('changes', { query, ...(filter !== 'all' ? { filter } : {}), limit: mode === 'compact' ? 3 : 30, ...(cursor ? { cursor } : {}) });
   const diff = useResource<Diff>('candidateDiff', { productionId: confirmation?.change.productionId || '', candidateId: confirmation?.candidateId || '' }, { enabled: Boolean(confirmation) });
-  const items = result.data?.items ?? [];
-  const selected = confirmation && items.find(item => item.id === confirmation.change.id);
+  const items:GameChange[] = result.data?.items ?? [];
+  const selected = confirmation && items.find(item => item.id === confirmation.change.id && item.projectId === confirmation.change.projectId && item.productionId === confirmation.change.productionId && item.featureId === confirmation.change.featureId);
   const selectedCandidate = selected?.candidates.find(item => item.id === confirmation?.candidateId);
+  const selectedAction=confirmation?candidateState(confirmation.change,confirmation.candidateId,confirmation.operation):undefined;
   const selectionCurrent = !!selected && selected.revision === confirmation?.change.revision && !!selectedCandidate
     && (confirmation?.operation === 'undo' ? selectedCandidate.status === 'adopted'
       : selected.stage === 'review' && selectedCandidate.current && selectedCandidate.previewVerified && selectedCandidate.status === 'candidate');
@@ -56,7 +58,7 @@ export function GameChanges({ mode, metadata, busy, errors, ready, onEngineering
     try { await operation(); } catch (error) { setNotice(error instanceof Error ? error.message : String(error)); }
   }
   async function navigate(operation: () => Promise<unknown>) {
-    if (navigating || busy) return;
+    if (navigating) return;
     setNavigating(true);
     try { await act(operation); } finally { setNavigating(false); }
   }
@@ -64,7 +66,7 @@ export function GameChanges({ mode, metadata, busy, errors, ready, onEngineering
     <style>{styles}{compactStyles}</style>
     <header className="gc-heading"><NoteIcon icon={metadata.icon} size={20} /><strong>改动</strong>
       <span>{result.data ? `${result.data.total} 项` : '尚未读取'}</span>
-      <Button size="sm" variant="secondary" isDisabled={navigating || !!busy} onPress={() => void navigate(() => onDiscuss())}>提出想法</Button>
+      <Button size="sm" variant="secondary" isDisabled={navigating} onPress={() => void navigate(() => onDiscuss())}>提出想法</Button>
       {mode === 'expanded' && <Button size="sm" variant="tertiary" onPress={() => void act(() => result.revalidate())} aria-label="刷新改动">刷新</Button>}
     </header>
     {mode === 'expanded' && <div className="gc-tools">
@@ -77,6 +79,7 @@ export function GameChanges({ mode, metadata, busy, errors, ready, onEngineering
       </Select>
       <Button variant="tertiary" onPress={() => onEngineering()}>工程记录</Button>
     </div>}
+    {notices}
     {(result.error || notice) && <p className="gc-error" role="alert">{result.error?.message || notice}</p>}
     {result.stale && result.data && <span className="gc-muted">正在核对最新状态</span>}
     {result.loading && <p role="status">正在读取改动…</p>}
@@ -90,18 +93,18 @@ export function GameChanges({ mode, metadata, busy, errors, ready, onEngineering
             <div><strong>{candidate.targetId}</strong><span className="gc-meta">候选 {candidate.commit.slice(0, 8)} · {candidate.status === 'adopted' ? '已加入' : candidate.status === 'undone' ? '已撤销' : candidate.previewVerified ? '试玩检查已通过' : '待试玩检查'}</span></div>
             <CandidateDifference productionId={change.productionId} candidateId={candidate.id} />
             <Button size="sm" variant="tertiary" isDisabled={pinning || result.stale || !!result.error} onPress={() => void referenceAction(() => referenceActions.pinChangeReference({ productionId: change.productionId, revision: change.revision, candidateId: candidate.id, commit: candidate.commit }))}>固定候选</Button>
-            <Button size="sm" variant="secondary" isDisabled={navigating || !!busy} onPress={() => void navigate(() => onPreview(candidate.id, candidate.commit))}>试玩这个版本</Button>
-            {change.stage === 'review' && candidate.status === 'candidate' && candidate.current && candidate.previewVerified && <Button size="sm" isDisabled={!!busy || !ready || result.stale || !!result.error} onPress={() => setConfirmation({ change, candidateId: candidate.id, operation: 'confirm' })}>加入游戏</Button>}
-            {candidate.status === 'adopted' && <Button size="sm" variant="secondary" isDisabled={!!busy || !ready || result.stale || !!result.error} onPress={() => setConfirmation({ change, candidateId: candidate.id, operation: 'undo' })}>撤销采用</Button>}
-            {errors[candidate.id] && <p className="gc-error" role="alert">{errors[candidate.id]}</p>}
+            <Button size="sm" variant="secondary" isDisabled={navigating} onPress={() => void navigate(() => onPreview(candidate.id, candidate.commit))}>试玩这个版本</Button>
+            {change.stage === 'review' && candidate.status === 'candidate' && candidate.current && candidate.previewVerified && <Button size="sm" isDisabled={candidateState(change,candidate.id,'confirm').blocked || !ready || result.stale || !!result.error} onPress={() => setConfirmation({ change, candidateId: candidate.id, operation: 'confirm' })}>加入游戏</Button>}
+            {candidate.status === 'adopted' && <Button size="sm" variant="secondary" isDisabled={candidateState(change,candidate.id,'undo').blocked || !ready || result.stale || !!result.error} onPress={() => setConfirmation({ change, candidateId: candidate.id, operation: 'undo' })}>撤销采用</Button>}
+            {candidateState(change,candidate.id,candidate.status==='adopted'?'undo':'confirm').message && <p className="gc-error" role="alert">{candidateState(change,candidate.id,candidate.status==='adopted'?'undo':'confirm').message}</p>}
           </div>)}</div>
-          <div className="gc-actions"><Button size="sm" variant="tertiary" isDisabled={pinning || result.stale || !!result.error} onPress={() => void referenceAction(() => referenceActions.pinChangeReference({ productionId: change.productionId, revision: change.revision }))}>固定改动</Button><Button size="sm" variant="secondary" isDisabled={navigating || !!busy} onPress={() => void navigate(() => onDiscuss(change))}>继续讨论</Button><Button size="sm" variant="tertiary" isDisabled={navigating || !!busy} onPress={() => void navigate(() => onProduction(change))}>查看制作过程</Button>{change.featureId && <Button size="sm" variant="tertiary" onPress={() => onEngineering(change.featureId)}>功能与采用记录</Button>}</div>
+          <div className="gc-actions"><Button size="sm" variant="tertiary" isDisabled={pinning || result.stale || !!result.error} onPress={() => void referenceAction(() => referenceActions.pinChangeReference({ productionId: change.productionId, revision: change.revision }))}>固定改动</Button><Button size="sm" variant="secondary" isDisabled={navigating} onPress={() => void navigate(() => onDiscuss(change))}>继续讨论</Button><Button size="sm" variant="tertiary" isDisabled={navigating} onPress={() => void navigate(() => onProduction(change))}>查看制作过程</Button>{change.featureId && <Button size="sm" variant="tertiary" onPress={() => onEngineering(change.featureId)}>功能与采用记录</Button>}</div>
         </div></details>}
       </article>)}
     </ScrollShadow>
     {mode === 'expanded' && <footer className="gc-pagination"><Button size="sm" variant="tertiary" isDisabled={!previous.length} onPress={() => { setCursor(previous.at(-1)); setPrevious(previous.slice(0, -1)); }}>上一页</Button><span>第 {previous.length + 1} 页</span><Button size="sm" variant="tertiary" isDisabled={!result.data?.nextCursor || result.stale} onPress={() => { setPrevious([...previous, cursor]); setCursor(result.data?.nextCursor); }}>下一页</Button></footer>}
     <footer className="gc-reference-tools">
-    {mode === 'expanded' && <ReferenceCollection items={(references.data?.items ?? []).map(item => ({ key: item.key,
+    {mode === 'expanded' && <ReferenceCollection items={(references.data?.items ?? []).map((item:{key:string;title:string;anchor?:string;kind:string;revision:string;freshness:string}) => ({ key: item.key,
       label: `${item.title}${item.anchor ? ` / ${item.anchor}` : ''}`, warning: item.freshness !== 'current',
       status: `${item.revision.slice(0, 12)} · ${item.freshness === 'current' ? item.kind === 'battleComparison' ? '历史报告一致，不代表当前项目' : '版本一致' : item.freshness === 'stale' ? '版本已变化，需移除后重新固定' : '无法读取或定位'}`,
     }))} limit={references.data?.limit ?? 8} pending={references.loading || references.stale} busy={pinning} error={pinError || references.error?.message}
@@ -109,7 +112,7 @@ export function GameChanges({ mode, metadata, busy, errors, ready, onEngineering
       <span>使用下方“固定改动”或“固定候选”，不会发送消息或采用候选。</span>
     </ReferenceCollection>}
     </footer>
-    <NoteDialog open={!!confirmation} label={confirmation?.operation === 'undo' ? '撤销采用' : '确认加入游戏'} onOpenChange={open => { if (!open && !busy) setConfirmation(undefined); }}>
+    <NoteDialog open={!!confirmation} label={confirmation?.operation === 'undo' ? '撤销采用' : '确认加入游戏'} onOpenChange={open => { if (!open && !selectedAction?.pending) setConfirmation(undefined); }}>
       <div className="gc-confirm"><h2>{confirmation?.operation === 'undo' ? '撤销这次采用？' : '加入游戏？'}</h2>
         <p>{confirmation?.change.title}</p><p>候选 {selectedCandidate?.commit.slice(0, 8)} · {selectedCandidate?.targetId}</p>
         <p>{confirmation?.operation === 'undo' ? '将检查采用后的修改；存在冲突时保留当前内容并说明原因。' : '仅将这个候选及其依赖加入正式游戏。试玩检查不代表已经完成人工体验。'}</p>
@@ -117,13 +120,14 @@ export function GameChanges({ mode, metadata, busy, errors, ready, onEngineering
         {diff.error && <p role="alert">{diff.error.message}</p>}
         {diff.data && <DifferenceFiles diff={diff.data} />}
         {!selectionCurrent && <p className="gc-error">记录已变化，请关闭并核对当前候选。</p>}
-        {confirmation && errors[confirmation.candidateId] && <p className="gc-error" role="alert">{errors[confirmation.candidateId]}</p>}
-        <div className="gc-actions"><Button variant="secondary" isDisabled={!!busy} onPress={() => setConfirmation(undefined)}>取消</Button><Button isDisabled={!!busy || !ready || !selectionCurrent || result.stale || !!result.error || confirmation?.operation === 'confirm' && (!diff.data?.baseCurrent || diff.stale || !!diff.error)} onPress={() => void act(async () => {
+        {selectedAction?.message && <p className="gc-error" role="alert">{selectedAction.message}</p>}
+        <div className="gc-actions"><Button variant="secondary" isDisabled={selectedAction?.pending} onPress={() => setConfirmation(undefined)}>取消</Button><Button isDisabled={selectedAction?.blocked || !ready || !selectionCurrent || result.stale || !!result.error || confirmation?.operation === 'confirm' && (!diff.data?.baseCurrent || diff.stale || !!diff.error)} onPress={() => void act(async () => {
           if (!confirmation || !selectionCurrent) return;
-          await onCandidate(confirmation.change, confirmation.candidateId, confirmation.operation);
+          const settled=await onCandidate(confirmation.change, confirmation.candidateId, confirmation.operation);
+          if(!settled)return;
           setConfirmation(undefined);
-          await result.revalidate();
-        })}>{busy ? '正在处理…' : confirmation?.operation === 'undo' ? '确认撤销' : '确认加入'}</Button></div>
+          try{await result.revalidate();}catch(cause){setNotice(`游戏状态已核对，改动列表待刷新：${cause instanceof Error?cause.message:String(cause)}`);}
+        })}>{selectedAction?.pending ? '正在处理…' : confirmation?.operation === 'undo' ? '确认撤销' : '确认加入'}</Button></div>
       </div>
     </NoteDialog>
   </section>;

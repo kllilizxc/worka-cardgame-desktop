@@ -290,13 +290,45 @@ export declare const queries: {
         notes: z.ZodOptional<z.ZodRecord<z.ZodString, z.ZodString>>;
     }, z.core.$loose>, {}>>>;
 };
-/** Change the feature archive flag in the authoritative tracker. */
+/** The tracker receipt and the subsequent event publication are separate facts. */
 export declare const setArchiveStatus: import("@dsh-workbench/runtime").NoteOperation<z.ZodObject<{
     id: z.ZodString;
     archived: z.ZodBoolean;
 }, z.core.$strip>, z.ZodObject<{
     accepted: z.ZodBoolean;
-    eventId: z.ZodOptional<z.ZodString>;
+    receipt: z.ZodNullable<z.ZodObject<{
+        id: z.ZodString;
+        archived: z.ZodBoolean;
+        title: z.ZodOptional<z.ZodString>;
+        revision: z.ZodString;
+    }, z.core.$strip>>;
+    receiptVerified: z.ZodBoolean;
+    event: z.ZodDiscriminatedUnion<[z.ZodObject<{
+        status: z.ZodLiteral<"not-required">;
+    }, z.core.$strip>, z.ZodObject<{
+        status: z.ZodLiteral<"not-published">;
+        reason: z.ZodString;
+    }, z.core.$strip>, z.ZodObject<{
+        status: z.ZodLiteral<"published">;
+        eventId: z.ZodString;
+    }, z.core.$strip>, z.ZodObject<{
+        status: z.ZodEnum<{
+            failed: "failed";
+            unconfirmed: "unconfirmed";
+        }>;
+        error: z.ZodObject<{
+            message: z.ZodString;
+            code: z.ZodOptional<z.ZodLiteral<"command-outcome">>;
+            executionId: z.ZodOptional<z.ZodString>;
+            status: z.ZodOptional<z.ZodEnum<{
+                ambiguous: "ambiguous";
+                cancelled: "cancelled";
+                completed: "completed";
+                failed: "failed";
+            }>>;
+            detailExpired: z.ZodOptional<z.ZodBoolean>;
+        }, z.core.$strip>;
+    }, z.core.$strip>], "status">;
 }, z.core.$strip>, import("@dsh-workbench/runtime").NoteActionContext<import("@dsh-workbench/runtime").NoteModel<z.ZodObject<{
     title: z.ZodOptional<z.ZodString>;
     summary: z.ZodOptional<z.ZodString>;
@@ -464,7 +496,19 @@ export declare const refresh: import("@dsh-workbench/runtime").NoteOperation<z.Z
     presentation: z.ZodOptional<z.ZodString>;
     notes: z.ZodOptional<z.ZodRecord<z.ZodString, z.ZodString>>;
 }, z.core.$loose>, {}>>>;
-export declare const receiveDeliveryFailure: import("@dsh-workbench/runtime").NoteOperation<z.ZodRecord<z.ZodString, z.ZodJSONSchema>, z.ZodJSONSchema, import("@dsh-workbench/runtime").NoteActionContext<import("@dsh-workbench/runtime").NoteModel<z.ZodObject<{
+export declare const receiveDeliveryFailure: import("@dsh-workbench/runtime").NoteOperation<z.ZodRecord<z.ZodString, z.ZodJSONSchema>, z.ZodUnion<readonly [z.ZodObject<{
+    ok: z.ZodBoolean;
+    failure: z.ZodObject<{
+        summary: z.ZodString;
+        repairable: z.ZodString;
+    }, z.core.$strip>;
+}, z.core.$strip>, z.ZodObject<{
+    ok: z.ZodBoolean;
+    connectionId: z.ZodString;
+    deliveryId: z.ZodString;
+    fingerprint: z.ZodString;
+    notificationKey: z.ZodString;
+}, z.core.$strip>]>, import("@dsh-workbench/runtime").NoteActionContext<import("@dsh-workbench/runtime").NoteModel<z.ZodObject<{
     title: z.ZodOptional<z.ZodString>;
     summary: z.ZodOptional<z.ZodString>;
     changeSelection: z.ZodOptional<z.ZodNullable<z.ZodString>>;

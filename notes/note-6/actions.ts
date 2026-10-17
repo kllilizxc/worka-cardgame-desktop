@@ -1,7 +1,7 @@
 import {resolveExecutionTarget,receiveDeliveryFailure as receiveFailure} from './migration-compat';
 import {cardgameQueries} from './cardgame-operations';
 export {pinChangeReference,removePinnedReference,discussChange} from './cardgame-operations';
-import {z} from '@dsh-workbench/runtime';
+import {z,isCommandOutcomeError} from '@dsh-workbench/runtime';
 import {note} from './model';
 import {projectTracker} from './projection';
 export {note} from './model';
@@ -55,14 +55,34 @@ export const queries = {
 };
 
 
-/** Change the feature archive flag in the authoritative tracker. */
-export const setArchiveStatus = note.action({"description":"更新功能的归档标记并发布归档事件。","visibility":"private",input:z.object({id:z.string(),archived:z.boolean()}),output:z.object({accepted:z.boolean(),eventId:z.string().optional()})}, async (ctx, input) => {
-  const receipt = await ctx.host.extensions.request('official-feature-tracker','archive',input) as { id?: string; archived?: boolean; title?: string; revision?: string };
-  if (!input.archived) return {accepted:true};
-  if (receipt.id !== input.id || receipt.archived !== true || !receipt.revision) throw new Error('归档已保存，但无法核对功能记录修订号');
-  const event = await events.archived.publish(ctx, {featureId:input.id,title:receipt.title??input.id,revision:receipt.revision},
-    {key:`${input.id}:${receipt.revision}:archived`});
-  return {accepted:true,eventId:event.id};
+const archiveReceiptSchema = z.object({id:z.string(),archived:z.boolean(),title:z.string().optional(),revision:z.string()});
+const archiveEventErrorSchema = z.object({message:z.string(),code:z.literal('command-outcome').optional(),executionId:z.string().optional(),
+  status:z.enum(['failed','ambiguous','cancelled','completed']).optional(),detailExpired:z.boolean().optional()});
+const archiveResultSchema = z.object({accepted:z.boolean(),receipt:archiveReceiptSchema.nullable(),receiptVerified:z.boolean(),event:z.discriminatedUnion('status',[
+  z.object({status:z.literal('not-required')}),z.object({status:z.literal('not-published'),reason:z.string()}),z.object({status:z.literal('published'),eventId:z.string()}),
+  z.object({status:z.enum(['failed','unconfirmed']),error:archiveEventErrorSchema}),
+])});
+
+/** The tracker receipt and the subsequent event publication are separate facts. */
+export const setArchiveStatus = note.action({"description":"更新功能的归档标记并发布归档事件。","visibility":"private",input:z.object({id:z.string(),archived:z.boolean()}),output:archiveResultSchema}, async (ctx, input) => {
+  const receipt = await ctx.host.extensions.request('official-feature-tracker','archive',input);
+  const checked = archiveReceiptSchema.safeParse(receipt);
+  if (!checked.success || checked.data.id !== input.id || checked.data.archived !== input.archived || !checked.data.revision) {
+    return {accepted:false,receipt:checked.success?checked.data:null,receiptVerified:false,event:{status:'not-published' as const,reason:'归档请求已受理，但无法核对功能记录修订号'}};
+  }
+  const committed = checked.data;
+  if (!input.archived) return {accepted:true as const,receipt:committed,receiptVerified:true,event:{status:'not-required' as const}};
+  try {
+    const event = await events.archived.publish(ctx, {featureId:input.id,title:committed.title??input.id,revision:committed.revision},
+      {key:`${input.id}:${committed.revision}:archived`});
+    return {accepted:true as const,receipt:committed,receiptVerified:true,event:{status:'published' as const,eventId:event.id}};
+  } catch (error) {
+    const unconfirmed = isCommandOutcomeError(error) && (error.status === 'ambiguous' || error.status === 'completed' || error.detailExpired);
+    return {accepted:true as const,receipt:committed,receiptVerified:true,event:{status:unconfirmed?'unconfirmed' as const:'failed' as const,error:{
+      message:error instanceof Error ? error.message : String(error),
+      ...(isCommandOutcomeError(error) ? {code:'command-outcome' as const,executionId:error.executionId,status:error.status,detailExpired:error.detailExpired} : {}),
+    }}};
+  }
 });
 
 /** The file commit emits a resource event; no duplicate state mirror is written. */
@@ -86,6 +106,6 @@ export const refresh = note.action({"description":"请求刷新功能台账的�
   return ctx.host.extensions.request('official-feature-tracker','refresh',{});
 });
 
-export const receiveDeliveryFailure=note.action({description:'按失败交付身份幂等保存修复回执。',visibility:'public',input:z.record(z.string(),z.json()),output:z.json()},async(ctx,input)=>receiveFailure(input,ctx));
+export const receiveDeliveryFailure=note.action({description:'按失败交付身份幂等保存修复回执。',visibility:'public',input:z.record(z.string(),z.json()),output:z.union([z.object({ok:z.boolean(),failure:z.object({summary:z.string(),repairable:z.string()})}),z.object({ok:z.boolean(),connectionId:z.string(),deliveryId:z.string(),fingerprint:z.string(),notificationKey:z.string()})])},async(ctx,input)=>receiveFailure(input,ctx));
 
 export const setViewState=note.action({description:'保存本便笺的界面选择，核对当前修订。',visibility:'private',requiresConfig:false,input:z.object({patch:z.record(z.string(),z.json()),expectedRevision:z.string()}),output:z.object({revision:z.string()})},async(ctx,input)=>{const saved=await ctx.state.update(draft=>{Object.assign(draft,input.patch);},{expectedRevision:input.expectedRevision});return {revision:saved.revision};});

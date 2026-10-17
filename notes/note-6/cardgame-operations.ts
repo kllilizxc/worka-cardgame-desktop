@@ -15,6 +15,7 @@ export const removePinnedReference=note.action({description:'移除指定固定�
 export const discussChange=note.action({description:'保留所选改动并准备本便笺原生会话，等待用户输入。',visibility:'private',input:z.object({productionId:z.string().optional()}),output:z.json()},async(ctx,input)=>{
  await project(ctx);const id=input.productionId?.trim();if(id)await read(ctx,'production',{productionId:id});
  await ctx.state.update(draft=>{draft.changeSelection=id??null;});
+ if(!ctx.host.agent.prepare)throw Error('宿主不支持准备原生会话');
  return ctx.host.agent.prepare({noteId:ctx.note.id});
 });
 export const cardgameQueries={
