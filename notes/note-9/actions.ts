@@ -474,3 +474,10 @@ export const queries={"pinnedReferenceTarget":note.query({...{"description":"核
 "media":note.query({...{"description":"media","visibility":"public"},input:z.intersection(z.record(z.string(),z.json()),z.looseObject({"projectId":z.string().optional()})).nullable(),output:z.json()},async(ctx,input)=>jsonResult(await operationQueries["media"](input??{} as any,ctx)))};
 
 export const setViewState=note.action({description:'保存本便笺的界面选择，核对当前修订。',visibility:'private',requiresConfig:false,input:z.object({patch:z.record(z.string(),z.json()),expectedRevision:z.string()}),output:z.object({revision:z.string()})},async(ctx,input)=>{const saved=await ctx.state.update(draft=>{Object.assign(draft,input.patch);},{expectedRevision:input.expectedRevision});return {revision:saved.revision};});
+
+/** Explicit owner selection binds this desktop; imported config never grants filesystem access. */
+export const configureProject = note.action({
+  description: '选择本机 CardGame 项目目录，并连接此桌面的卡牌、资源、剧情、制作与预览便笺。',
+  visibility: 'private', requiresConfig: false,
+  input: z.object({ root: z.string().trim().min(1) }), output: z.json(),
+}, async (ctx, input) => ctx.host.extensions.request('cardgame-content', 'configureProject', input));

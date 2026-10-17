@@ -16,4 +16,4 @@ copy media or an unbounded history into note state.
 
 插画默认由 Codex 内置 imagegen 生成；若 CLI 不可用，制作单保留可复制任务与手工回填入口。工作流保存于现有制作单，资源复用 CardGame 版本库。主题包括青玉与宣纸，预览、模板版本和游戏动态数值分开保存。支持单位、法器、符箓、场地、丹药和技能；后两类进入战斗槽位与技能栏。
 
-中文 PNG 导出依赖宿主 CJK 字体。可在私有 `cardgame-projects.json` 的项目中配置 `cardFaceFont: {file: "本机字体绝对路径", family: "字体族名称"}`，或使用系统已安装的 Noto Serif CJK SC。字体文件和本机配置不随公共仓库发布。
+中文 PNG 导出依赖宿主已安装的 CJK 字体，例如 Noto Serif CJK SC。字体文件不随桌面包发布；缺少兼容字体时不能保证中文正确显示。项目连接统一从内容库的“项目目录”入口完成，无需编辑宿主配置文件。

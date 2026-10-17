@@ -1,6 +1,6 @@
 import { z } from '@dsh-workbench/runtime';
 export declare const configSchema: z.ZodObject<{
-    projectId: z.ZodString;
+    projectId: z.ZodOptional<z.ZodString>;
     projectRoot: z.ZodOptional<z.ZodString>;
     mode: z.ZodOptional<z.ZodEnum<{
         assets: "assets";
@@ -139,7 +139,7 @@ export declare const note: import("@dsh-workbench/runtime").NoteModel<z.ZodObjec
         }, z.core.$loose>>>;
     }, z.core.$loose>>;
 }, z.core.$loose>, z.ZodObject<{
-    projectId: z.ZodString;
+    projectId: z.ZodOptional<z.ZodString>;
     projectRoot: z.ZodOptional<z.ZodString>;
     mode: z.ZodOptional<z.ZodEnum<{
         assets: "assets";

@@ -1,0 +1,24 @@
+{
+  "name": "@kllilizxc/cardgame-desktop-backend",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "main": "./dist/plugin.js",
+  "files": [
+    "dist",
+    "plugins/cardgame-content",
+    "templates/cardgame-production/card-face.ts",
+    "LICENSE"
+  ],
+  "engines": {
+    "node": ">=24"
+  },
+  "peerDependencies": {
+    "@realiz3r/worka": "^0.3.15",
+    "sharp": "0.35.4",
+    "music-metadata": "11.15.0"
+  },
+  "scripts": {
+    "build": "bun scripts/build.ts"
+  }
+}

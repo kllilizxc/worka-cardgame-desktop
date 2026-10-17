@@ -1,4 +1,5 @@
 import {z} from '@dsh-workbench/runtime';
+import { events as todoEvents } from './contracts';
 
 import type { NoteActionContext, NoteQueryContext, JsonValue } from "@dsh-workbench/runtime";
 import { note } from "./note-model";
@@ -258,10 +259,10 @@ function todoContext(context?: Record<string, unknown>): Record<string, unknown>
   const projectId = await project(input, ctx);
   const prepared = await command("delegateTodo", { ...input, projectId }, ctx);
   if (!prepared?.pending || !prepared?.payload) return prepared;
-  const event = await ctx.events.publish("cardgame.todo.delegationRequested", {
+  const event = await todoEvents.cardGameDelegationRequested.publish(ctx, {
     projectId, todoId: input.itemId, requestId: prepared.requestId, payload: prepared.payload,
     requirementRevision: prepared.item.requirementRevision,
-  } as JsonValue, { key: prepared.requestId, exclusive: true });
+  }, { key: prepared.requestId, exclusive: true });
   return { ...prepared, eventId: event.id, duplicate: event.duplicate };
 }
 
@@ -287,7 +288,7 @@ function todoContext(context?: Record<string, unknown>): Record<string, unknown>
     brief: input.brief?.trim() || input.title?.trim() || `来自 Todo：${todoId}`,
     businessKey: `todo:${projectId}:${todoId}`,
   };
-  const event = await ctx.events.publish("cardgame.todo.productionRequested", payload as unknown as JsonValue,
+  const event = await todoEvents.cardGameProductionRequested.publish(ctx, payload as Parameters<typeof todoEvents.cardGameProductionRequested.publish>[1],
     { key: requestId, exclusive: true });
   return { status: "queued", todoId, requestId, eventId: event.id, duplicate: event.duplicate };
 }

@@ -1,0 +1,1 @@
+import{e}from"./entry-9abbszv8.js";import{de,ke}from"./entry-1dfht3rb.js";import{fe}from"./entry-db3fq68n.js";import"./entry-d51xxnkx.js";function o(){return e(fe,{model:ke(de())})}export{o as default};

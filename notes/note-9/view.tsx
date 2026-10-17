@@ -10,7 +10,7 @@ import { StoryWorkspace } from './story-workspace';
 import { BalanceWorkspace } from './balance-workspace';
 import {useNoteDraft,NoteIcon} from '@dsh-workbench/react';
 import {useActions,useNoteConfig,useResource,useRuntime,useWorkbench,type WidgetProps} from './surface';
-import { Button, ScrollShadow, SearchField, Spinner } from "@heroui/react";
+import { Button, ScrollShadow, SearchField, Spinner, TextField, Label, Input } from "@heroui/react";
 import Markdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { MarkdownPre } from "./mermaid";
@@ -58,7 +58,7 @@ export default function View(){
   return <div className="cg-context-shell">
     <style>{`.cg-context-shell{height:100dvh;display:flex;flex-direction:column;min-width:0;background:var(--wb-paper)}.cg-context-body{flex:1;min-height:0;overflow:auto}.cg-context-body>.cg-library{height:100%;min-height:0;display:flex;flex-direction:column}.cg-context-body .cg-workspace,.cg-context-body .cl-workspace{height:auto;min-height:0;flex:1}.cg-context-body .reader-layout{height:auto;min-height:0;flex:1}.cg-context-footer{display:flex;justify-content:flex-end;padding:4px 14px;flex-shrink:0}@media(max-width:680px){.cg-context-footer{justify-content:flex-start}}`}</style>
     <div className="cg-context-body"><LibraryView {...props} /></div>
-    <footer className="cg-context-footer"><PinnedReferences config={config} state={props.data ?? {}} /></footer>
+    <footer className="cg-context-footer" style={{alignItems:"flex-start",gap:12}}><details style={{marginRight:"auto",maxWidth:560}}><summary>项目目录</summary><SetupView mode="expanded" metadata={props.metadata} initialRoot={config.projectRoot} /></details><PinnedReferences config={config} state={props.data ?? {}} /></footer>
   </div>;
 }
 
@@ -188,12 +188,29 @@ function KnowledgeCompact({ config, metadata }: { config: CardGameConfig; metada
   </section>;
 }
 
-function SetupView({ mode, metadata }: { mode: "compact" | "expanded"; metadata: WidgetProps["metadata"] }) {
+function SetupView({ mode, metadata, initialRoot = "" }: { mode: "compact" | "expanded"; metadata: WidgetProps["metadata"]; initialRoot?: string }) {
+  const actions = useActions<typeof import('./actions')>();
+  const [root, setRoot] = useState(initialRoot);
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState('');
   return <section className={`cg-library cg-setup ${mode}`}>
     <style>{STYLES}</style>
     <span className="cg-brand-icon"><NoteIcon icon={metadata.icon} size={18} /></span>
-    <strong>CardGame 内容库</strong>
-    <p>请先为此便笺配置 projectId。</p>
+    <strong>连接 CardGame 项目</strong>
+    {mode === 'compact' ? <p>展开后选择一次项目目录，连接此桌面的全部游戏便笺。</p> : <>
+      <p>选择本机 CardGame 源码目录。此桌面将读取项目内容。切换目录会先停止旧项目任务和预览；正式源码变更仍需在功能进展中确认采用。</p>
+      <form style={{display:'grid',gap:12,width:'100%',maxWidth:560,minWidth:0}} onSubmit={event => {
+        event.preventDefault(); setBusy(true); setError('');
+        void actions.configureProject({root}).catch((cause: unknown) => setError(cause instanceof Error ? cause.message : String(cause))).finally(() => setBusy(false));
+      }}>
+        <TextField fullWidth isRequired value={root} onChange={setRoot} isDisabled={busy}>
+          <Label>CardGame 项目目录</Label>
+          <Input placeholder="本机项目的绝对路径" />
+        </TextField>
+        <Button type="submit" isDisabled={busy || !root.trim()}>{busy ? '正在连接…' : '连接此桌面'}</Button>
+        {error && <p role="alert" style={{color:'var(--wb-danger)',overflowWrap:'anywhere'}}>{error}</p>}
+      </form>
+    </>}
   </section>;
 }
 

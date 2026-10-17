@@ -35,6 +35,28 @@ export const importItemResultSchema = z.object({
 });
 
 export const events = {
+  cardGameDelegationRequested: note.event({
+    name: 'cardgame.todo.delegationRequested',
+    visibility: 'public',
+    description: '用户明确交办 CardGame 待办后，通知连线处理已持久化的同一请求。',
+    payload: z.object({
+      projectId: z.string().min(1), todoId: z.string().min(1), requestId: z.string().min(1),
+      payload: z.record(z.string(), z.json()), requirementRevision: z.number(),
+    }),
+    objectRef: '/todoId',
+  }),
+  cardGameProductionRequested: note.event({
+    name: 'cardgame.todo.productionRequested',
+    visibility: 'public',
+    description: '用户明确选择 CardGame 资源事项后，通知连线建立同一制作单草稿。',
+    payload: z.looseObject({
+      projectId: z.string().min(1), todoId: z.string().min(1), brief: z.string(), businessKey: z.string().min(1),
+      title: z.string().optional(), targetAsset: z.record(z.string(), z.json()).optional(),
+      pinnedRefs: z.array(z.union([z.record(z.string(), z.json()), z.string()])).optional(),
+      batch: z.json().optional(), context: z.record(z.string(), z.json()).optional(), requestId: z.string().optional(),
+    }),
+    objectRef: '/todoId',
+  }),
   changed: note.event({
     name: 'items.changed',
     visibility: 'public',

@@ -442,6 +442,12 @@ export declare const feedback: import("@dsh-workbench/runtime").NoteOperation<z.
     }>>;
 }, z.core.$loose>, {}>>>;
 declare const createTodoInputSchema: z.ZodObject<{
+    status: z.ZodOptional<z.ZodEnum<{
+        blocking: "blocking";
+        done: "done";
+        in_progress: "in_progress";
+        todo: "todo";
+    }>>;
     title: z.ZodString;
     description: z.ZodOptional<z.ZodString>;
     priority: z.ZodOptional<z.ZodEnum<{
@@ -461,12 +467,6 @@ declare const createTodoInputSchema: z.ZodObject<{
         taskKey: z.ZodOptional<z.ZodString>;
         importedAt: z.ZodOptional<z.ZodString>;
     }, z.core.$loose>>;
-    status: z.ZodOptional<z.ZodEnum<{
-        blocking: "blocking";
-        done: "done";
-        in_progress: "in_progress";
-        todo: "todo";
-    }>>;
 }, z.core.$strip>;
 export declare function createTodoItem(input: z.infer<typeof createTodoInputSchema>, identity: {
     id: string;

@@ -1,5 +1,5 @@
 {
-  "schemaVersion": 3,
+  "schemaVersion": 4,
   "name": "默认桌面",
   "notes": [
     {
@@ -13,6 +13,10 @@
         "y": 130,
         "width": 320,
         "height": 210
+      },
+      "initialConfig": {
+        "mode": "cards",
+        "cardgameRole": "cards"
       }
     },
     {
@@ -35,6 +39,9 @@
         "version": 1,
         "delegations": {},
         "title": "执行台"
+      },
+      "initialConfig": {
+        "cardgameRole": "execution"
       }
     },
     {
@@ -58,6 +65,9 @@
         "candidates": [],
         "previews": [],
         "attached": []
+      },
+      "initialConfig": {
+        "cardgameRole": "preview"
       }
     },
     {
@@ -71,6 +81,12 @@
         "y": 390,
         "width": 320,
         "height": 210
+      },
+      "initialConfig": {
+        "catalogRef": {
+          "kind": "production"
+        },
+        "cardgameRole": "production"
       }
     },
     {
@@ -106,7 +122,11 @@
         "zIndex": 5,
         "groupId": "execution"
       },
-      "initialState": {}
+      "initialState": {},
+      "initialConfig": {
+        "presentation": "changes",
+        "cardgameRole": "tracker"
+      }
     },
     {
       "key": "note-7",
@@ -136,7 +156,9 @@
             "title": "记忆",
             "path": "worka:memory"
           }
-        ]
+        ],
+        "mode": "knowledge",
+        "cardgameRole": "knowledge"
       }
     },
     {
@@ -150,6 +172,11 @@
         "y": 650,
         "width": 320,
         "height": 210
+      },
+      "initialConfig": {
+        "mode": "assets",
+        "assetScope": "art",
+        "cardgameRole": "assets"
       }
     },
     {
@@ -163,6 +190,11 @@
         "y": 650,
         "width": 320,
         "height": 210
+      },
+      "initialConfig": {
+        "mode": "assets",
+        "assetScope": "audio",
+        "cardgameRole": "audio"
       }
     },
     {
@@ -176,6 +208,11 @@
         "y": 910,
         "width": 320,
         "height": 210
+      },
+      "initialConfig": {
+        "mode": "knowledge",
+        "presentation": "story",
+        "cardgameRole": "story"
       }
     },
     {
@@ -194,6 +231,12 @@
       },
       "initialState": {
         "items": []
+      },
+      "initialConfig": {
+        "catalogRef": {
+          "kind": "todo"
+        },
+        "cardgameRole": "todo"
       }
     },
     {
@@ -207,6 +250,11 @@
         "y": 910,
         "width": 320,
         "height": 210
+      },
+      "initialConfig": {
+        "mode": "cards",
+        "presentation": "balance",
+        "cardgameRole": "balance"
       }
     }
   ],
@@ -672,6 +720,11 @@
           "4018ca18-a624-454e-a1b2-6c43b25d11e3": "note-2"
         }
       }
+    }
+  ],
+  "extensions": [
+    {
+      "path": "extensions/cardgame"
     }
   ]
 }

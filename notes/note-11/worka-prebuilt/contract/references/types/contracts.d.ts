@@ -123,6 +123,25 @@ export declare const importItemResultSchema: z.ZodObject<{
     error: z.ZodOptional<z.ZodString>;
 }, z.core.$strip>;
 export declare const events: {
+    cardGameDelegationRequested: Readonly<import("@dsh-workbench/runtime").NoteEvent<z.ZodObject<{
+        projectId: z.ZodString;
+        todoId: z.ZodString;
+        requestId: z.ZodString;
+        payload: z.ZodRecord<z.ZodString, z.ZodJSONSchema>;
+        requirementRevision: z.ZodNumber;
+    }, z.core.$strip>>>;
+    cardGameProductionRequested: Readonly<import("@dsh-workbench/runtime").NoteEvent<z.ZodObject<{
+        projectId: z.ZodString;
+        todoId: z.ZodString;
+        brief: z.ZodString;
+        businessKey: z.ZodString;
+        title: z.ZodOptional<z.ZodString>;
+        targetAsset: z.ZodOptional<z.ZodRecord<z.ZodString, z.ZodJSONSchema>>;
+        pinnedRefs: z.ZodOptional<z.ZodArray<z.ZodUnion<readonly [z.ZodRecord<z.ZodString, z.ZodJSONSchema>, z.ZodString]>>>;
+        batch: z.ZodOptional<z.ZodJSONSchema>;
+        context: z.ZodOptional<z.ZodRecord<z.ZodString, z.ZodJSONSchema>>;
+        requestId: z.ZodOptional<z.ZodString>;
+    }, z.core.$loose>>>;
     changed: Readonly<import("@dsh-workbench/runtime").NoteEvent<z.ZodObject<{
         itemId: z.ZodString;
         title: z.ZodString;

@@ -1,2 +1,0 @@
-import{Ba as X,Ca as Y,ea as q,fa as J,ga as K,ha as z,ia as L,ka as N,ma as W}from"./entry-2nwef42g.js";var $=class extends Y{static{q(this,"CynefinTokenBuilder")}constructor(){super(["cynefin-beta"])}},b={parser:{TokenBuilder:q(()=>new $,"TokenBuilder"),ValueConverter:q(()=>new X,"ValueConverter")}};function p(Z=L){let w=z(K(Z),N),I=z(J({shared:w}),W,b);return w.ServiceRegistry.register(I),{shared:w,Cynefin:I}}q(p,"createCynefinServices");
-export{b as o,p};

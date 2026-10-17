@@ -79,8 +79,8 @@ export const note = defineNote({
       name: '关键能力与稳定身份',
       async run(ctx): Promise<boolean> {
         const row = await ctx.state.read();
-        // Exercise the actual public query as well as its stable identity/status projection.
-        const { queries } = await import('./actions');
+        // Check the local-state query's stable identity/status projection and revision.
+        const { queries } = await import('./local-todo-operations');
         const result = await queries.items(ctx, {});
         return result.revision === row.revision && ('items' in result ? result.items : []).every((item, index) =>
           item.id === row.value.items[index]?.id && normalizeStatus(item) !== undefined);
