@@ -1,10 +1,10 @@
-// backend/plugin.ts
+// plugin.ts
 import { isNoteController } from "@realiz3r/worka/host";
 import { basename as basename2, dirname as dirname7, resolve as resolve7 } from "node:path";
 import { fileURLToPath } from "node:url";
 
-// backend/project-binding.ts
-import { createHash } from "node:crypto";
+// project-binding.ts
+import { createHash, randomUUID } from "node:crypto";
 import { lstat, readFile, realpath } from "node:fs/promises";
 import { isAbsolute, join, relative, sep } from "node:path";
 var CARDGAME_ROLES = ["cards", "execution", "preview", "production", "tracker", "knowledge", "assets", "audio", "story", "todo", "balance"];
@@ -41,6 +41,7 @@ async function validateProjectRoot(value) {
 function createProjectBindingManager(options) {
   const { host, media } = options;
   const bindings = host.app.records({ owner: providerName, collection: "desktop-bindings", storagePrefix: "cardgame-content:desktop-bindings:" });
+  const epochMigrations = new Map;
   const children = new Map;
   const active = new Set;
   const setups = new Map;
@@ -50,7 +51,7 @@ function createProjectBindingManager(options) {
   const quarantined = new Set;
   const projectWork = new Map;
   const suspendSubscriptions = new Map;
-  const generation = (binding) => createHash("sha256").update(binding.root).digest("hex").slice(0, 24);
+  const storageKey = (binding) => createHash("sha256").update(binding.root).digest("hex").slice(0, 24);
   async function withChild(binding, operation) {
     if (quarantined.has(binding.desktopId))
       throw Error("CardGame 旧项目服务未能完整关闭，请重启宿主后重试");
@@ -65,7 +66,7 @@ function createProjectBindingManager(options) {
     projectWork.set(binding.desktopId, work);
     try {
       const current = await bindingByProject(binding.projectId);
-      if (!current || current.root !== binding.root)
+      if (!current || current.root !== binding.root || current.generation !== binding.generation)
         throw Error("CardGame 项目目录已变化，请刷新后重试");
       return await operation(await child(binding));
     } finally {
@@ -106,7 +107,7 @@ function createProjectBindingManager(options) {
     return { note, config, desktopId: note.desktopId, role: config.cardgameRole };
   }
   function checkedBinding(value, projectId) {
-    if (!record(value) || value.schemaVersion !== 1 || typeof value.desktopId !== "string" || !value.desktopId || value.projectId !== projectId || desktopProjectId(value.desktopId) !== projectId || typeof value.root !== "string" || !isAbsolute(value.root) || !record(value.notes) || !value.notes.cards || !value.notes.preview || Object.entries(value.notes).some(([role, id]) => !roles.has(role) || typeof id !== "string" || !id) || new Set(Object.values(value.notes)).size !== Object.values(value.notes).length)
+    if (!record(value) || value.schemaVersion !== 1 || typeof value.desktopId !== "string" || !value.desktopId || value.projectId !== projectId || desktopProjectId(value.desktopId) !== projectId || value.generation !== undefined && (typeof value.generation !== "string" || !value.generation.trim()) || typeof value.root !== "string" || !isAbsolute(value.root) || !record(value.notes) || !value.notes.cards || !value.notes.preview || Object.entries(value.notes).some(([role, id]) => !roles.has(role) || typeof id !== "string" || !id) || new Set(Object.values(value.notes)).size !== Object.values(value.notes).length)
       throw Error("CardGame 项目绑定无效，请重新核对桌面配置");
     return value;
   }
@@ -114,7 +115,41 @@ function createProjectBindingManager(options) {
     if (!/^cardgame-[a-f0-9]{32}$/.test(projectId))
       throw Error("CardGame 项目身份无效");
     const saved = await bindings.read(projectId);
-    return saved ? checkedBinding(saved.value, projectId) : undefined;
+    if (!saved)
+      return;
+    const binding = checkedBinding(saved.value, projectId);
+    if (binding.generation)
+      return binding;
+    let migration = epochMigrations.get(projectId);
+    if (!migration) {
+      migration = (async () => {
+        const latest = await bindings.read(projectId);
+        if (!latest)
+          throw Error("项目绑定已移除");
+        const current = checkedBinding(latest.value, projectId);
+        if (current.generation)
+          return current;
+        const generation = randomUUID();
+        const migrated = { ...current, generation, legacyGeneration: generation };
+        try {
+          await bindings.write(projectId, migrated, { expectedRevision: latest.revision });
+          return migrated;
+        } catch (error) {
+          const concurrent = await bindings.read(projectId);
+          if (concurrent) {
+            const checked = checkedBinding(concurrent.value, projectId);
+            if (checked.generation)
+              return checked;
+          }
+          throw error;
+        }
+      })();
+      epochMigrations.set(projectId, migration);
+      migration.finally(() => epochMigrations.delete(projectId)).catch(() => {
+        return;
+      });
+    }
+    return migration;
   }
   async function scoped(noteId, input) {
     const scope = await trustedNote(noteId), projectId = desktopProjectId(scope.desktopId);
@@ -123,6 +158,8 @@ function createProjectBindingManager(options) {
     const binding = await bindingByProject(projectId);
     if (binding && (binding.desktopId !== scope.desktopId || binding.notes[scope.role] !== scope.note.id))
       throw Error("CardGame 角色绑定已变化，请重新配置当前桌面");
+    if (input?.projectGeneration !== undefined && input.projectGeneration !== binding?.generation)
+      throw Error("CardGame 项目绑定已变化，旧编辑或回执不能写入当前项目");
     return { ...scope, binding, projectId };
   }
   async function previewNote(projectId) {
@@ -156,11 +193,11 @@ function createProjectBindingManager(options) {
           issue(name, input) {
             if (name !== providerName || input.projectId !== binding.projectId)
               throw Error("CardGame 媒体项目身份不符");
-            return media.issue(providerName, { ...input, projectGeneration: generation(binding) });
+            return media.issue(providerName, { ...input, projectGeneration: binding.generation });
           }
         };
         const childHost = Object.create(host);
-        Object.defineProperty(childHost, "dataRoot", { value: join(host.dataRoot, "cardgame-desktops", binding.projectId, generation(binding)) });
+        Object.defineProperty(childHost, "dataRoot", { value: join(host.dataRoot, "cardgame-desktops", binding.projectId, storageKey(binding)) });
         const provider = await options.createProvider(childHost, proxy, options.packageRoot, options.bunPath, [{ id: binding.projectId, root }], previewNote);
         return { provider, get resolveMedia() {
           return resolveMedia;
@@ -180,7 +217,7 @@ function createProjectBindingManager(options) {
     const binding = await bindingByProject(input.projectId);
     if (!binding)
       throw Error("CardGame 项目尚未配置");
-    if (input.projectGeneration !== generation(binding))
+    if (input.projectGeneration !== binding.generation)
       throw Error("CardGame 媒体引用属于旧项目目录，请刷新后重试");
     return withChild(binding, async (entry) => {
       if (!entry.resolveMedia)
@@ -229,7 +266,9 @@ function createProjectBindingManager(options) {
       if (caller.kind === "agent" && (!caller.approve || !await caller.approve(`允许 CardGame 桌面读取并绑定项目目录 ${String(input.root)}？`, "cardgame.configureProject")))
         throw Error("项目目录需要原生确认；请由用户在内容库选择目录");
       const root = await validateRoot(input.root);
-      const binding = { schemaVersion: 1, desktopId: scope.desktopId, projectId, root, notes };
+      const generation = existing?.root === root && existing.generation ? existing.generation : randomUUID();
+      const legacyGeneration = existing?.root === root ? existing.generation ? existing.legacyGeneration : generation : undefined;
+      const binding = { schemaVersion: 1, desktopId: scope.desktopId, projectId, root, notes, generation, ...legacyGeneration ? { legacyGeneration } : {} };
       const changing = existing && existing.root !== root;
       const written = [];
       transitions.add(scope.desktopId);
@@ -316,13 +355,14 @@ function createProjectBindingManager(options) {
           throw Error("CardGame 查询无效");
         const scope = await scoped(context.scope.noteId, value);
         if (value.op === "projectBinding")
-          return scope.binding ? { configured: true, projectId: scope.projectId, projectRoot: scope.binding.root, notes: { ...scope.binding.notes } } : { configured: false, projectId: scope.projectId, setupRequired: true };
+          return scope.binding ? { configured: true, projectId: scope.projectId, projectGeneration: scope.binding.generation, projectRoot: scope.binding.root, notes: { ...scope.binding.notes } } : { configured: false, projectId: scope.projectId, setupRequired: true };
         if (!scope.binding)
           throw Error("CardGame 项目尚未配置，请先从当前桌面选择项目目录");
         return withChild(scope.binding, async ({ provider }) => {
           if (!provider.resources?.query)
             throw Error("CardGame 查询服务不可用");
-          return provider.resources.query.load({ ...value, projectId: scope.projectId }, context);
+          const result = await provider.resources.query.load({ ...value, projectId: scope.projectId, projectGeneration: scope.binding.generation, allowLegacyReconciliation: scope.binding.legacyGeneration === scope.binding.generation }, context);
+          return record(result) ? { ...result, projectGeneration: scope.binding.generation } : result;
         });
       });
     },
@@ -343,7 +383,7 @@ function createProjectBindingManager(options) {
           if (current.desktopId !== scope.desktopId)
             throw Error("便笺已移出当前桌面");
           if (current.binding && value.op !== "projectBinding") {
-            const next = await withChild(current.binding, ({ provider }) => Promise.resolve(provider.resources?.query?.subscribe?.({ ...value, projectId: current.projectId }, invalidate, context)));
+            const next = await withChild(current.binding, ({ provider }) => Promise.resolve(provider.resources?.query?.subscribe?.({ ...value, projectId: current.projectId, projectGeneration: current.binding.generation, allowLegacyReconciliation: current.binding.legacyGeneration === current.binding.generation }, invalidate, context)));
             if (disposed || closing)
               await next?.();
             else
@@ -407,10 +447,12 @@ function createProjectBindingManager(options) {
     invoke: (method, input, caller) => tracked(async () => {
       if (method === "configureProject")
         return configure(input, caller);
+      if (["bindProduction", "productionResult", "receiveResult", "recordCandidates", "recordAdoption"].includes(method) && typeof input.projectGeneration !== "string")
+        throw Error("旧回执缺少项目代次；请在当前制作单重新核对原轮次并重试，不要重建桌面");
       const scope = await scoped(caller.noteId, input);
       if (!scope.binding)
         throw Error("CardGame 项目尚未配置，请先从当前桌面选择项目目录");
-      return withChild(scope.binding, ({ provider }) => provider.invoke(method, { ...input, projectId: scope.projectId }, caller));
+      return withChild(scope.binding, ({ provider }) => provider.invoke(method, { ...input, projectId: scope.projectId, projectGeneration: scope.binding.generation, allowLegacyReconciliation: scope.binding.legacyGeneration === scope.binding.generation }, caller));
     }),
     async beginClose() {
       closing = true;
@@ -440,7 +482,127 @@ function createProjectBindingManager(options) {
   };
 }
 
-// backend/plugins/cardgame-content/src/context.ts
+// plugins/cardgame-content/src/production-events.ts
+import { createHash as createHash2 } from "node:crypto";
+import { readFile as readFile2, realpath as realpath2, stat } from "node:fs/promises";
+import { isAbsolute as isAbsolute2, relative as relative2, sep as sep2 } from "node:path";
+var object = (value) => value && typeof value === "object" && !Array.isArray(value) ? value : {};
+var required = (value, label) => {
+  if (typeof value !== "string" || !value)
+    throw Error(`${label}缺失`);
+  return value;
+};
+var digest = (value) => createHash2("sha256").update(JSON.stringify(value)).digest("hex");
+function createProductionEvents(workflow, content) {
+  async function detail(input) {
+    return (await workflow.query({ ...input, op: "production" })).production;
+  }
+  function currentRound(production, input) {
+    const round = production.rounds.at(-1);
+    if (!round || input.round !== undefined && round.round !== input.round || input.sourceRequestId !== undefined && round.requestId !== input.sourceRequestId || round.requirementRevision !== production.requirementRevision)
+      throw Error("制作轮次或需求已变化，请核对当前制作单");
+    if (input.projectGeneration !== undefined && round.projectGeneration !== input.projectGeneration && !(round.projectGeneration === undefined && input.allowLegacyReconciliation === true))
+      throw Error("候选轮次属于旧项目绑定，请核对历史后明确新建一轮");
+    return round;
+  }
+  async function sourceCandidates(round, values) {
+    if (!Array.isArray(values) || !values.length || values.length > 100)
+      throw Error("候选需要 1–100 个本轮真实文件");
+    const root = await realpath2(required(round.requirement.outputDirectory, "轮次输出目录"));
+    return Promise.all(values.map(async (value) => {
+      const candidate = object(value), path = required(candidate.sourcePath, "候选 sourcePath");
+      if (candidate.data !== undefined || candidate.base64 !== undefined)
+        throw Error("生产候选只能使用本轮 sourcePath 文件，不能同时提供内联数据");
+      if (!isAbsolute2(path))
+        throw Error("候选文件需要绝对路径");
+      const actual = await realpath2(path), inside = relative2(root, actual);
+      if (!inside || inside === ".." || inside.startsWith(".." + sep2) || isAbsolute2(inside))
+        throw Error("候选文件不属于当前冻结轮次的输出目录");
+      const info = await stat(actual);
+      if (!info.isFile() || info.size > 20000000)
+        throw Error("候选文件必须是 20 MB 以内的普通文件");
+      const bytes = await readFile2(actual);
+      if (bytes.length > 20000000)
+        throw Error("候选文件过大");
+      const revision = createHash2("sha256").update(bytes).digest("hex");
+      if (candidate.revision !== undefined && candidate.revision !== revision)
+        throw Error("候选文件已变化，请重新核对");
+      return { ...candidate, sourcePath: actual, revision };
+    }));
+  }
+  async function prepare(input) {
+    const projectId = required(input.projectId, "项目"), projectGeneration = required(input.projectGeneration, "项目代次");
+    const scope = { projectId, projectGeneration }, productionId = required(input.productionId, "制作单");
+    if (input.kind === "generation") {
+      let request = { ...input };
+      if (input.retry === true) {
+        const p = await detail(input), r = currentRound(p, input);
+        request = { ...request, requestId: r.requestId, round: r.round };
+      }
+      const reserved = object(await workflow.command("reserveProduction", request));
+      const { production, round } = reserved;
+      currentRound(production, { round: round.round });
+      const requestId = required(reserved.requestId, "请求"), key = `generation:${projectGeneration}:${requestId}`;
+      return { name: "cardgame.production.generationRequested", key, payload: { ...scope, productionId, requestId, round: round.round }, result: reserved };
+    }
+    const production = await detail(input);
+    if (input.kind === "candidates") {
+      const round = currentRound(production, input);
+      const candidates = await sourceCandidates(round, input.candidates);
+      const key = `asset-candidates:${projectGeneration}:${projectId}:${productionId}:${round.round}:${round.requestId}:${digest(candidates).slice(0, 16)}`;
+      return { name: "cardgame.production.candidatesRequested", key, payload: { ...scope, productionId, round: round.round, sourceRequestId: round.requestId, requestId: key, candidates }, result: {} };
+    }
+    if (input.kind === "adoption")
+      throw Error("通用素材直接采用尚未开放。请查看或复制候选引用；卡牌与牌组请建立试玩候选，再在功能进展确认。");
+    throw Error("未知生产事件");
+  }
+  async function receiveResult(input) {
+    const production = await detail(input), round = production.rounds.find((round) => round.requestId === input.requestId && (input.round === undefined || round.round === input.round));
+    const latest = production.rounds.at(-1);
+    if (!round || round.requestId !== latest?.requestId || round.requirementRevision !== production.requirementRevision)
+      return workflow.command("productionResult", input);
+    const result = object(input.result ?? input), values = result.candidateRefs ?? result.candidates ?? result.assetCandidates;
+    if (values !== undefined) {
+      const candidates = await sourceCandidates(round, values);
+      return workflow.command("productionResult", { ...input, result: { ...result, candidateRefs: candidates } });
+    }
+    return workflow.command("productionResult", input);
+  }
+  async function recordCandidates(input) {
+    const production = await detail(input), round = currentRound(production, input);
+    const sources = await sourceCandidates(round, input.sourceCandidates);
+    if (!Array.isArray(input.candidates) || input.candidates.length !== sources.length)
+      throw Error("候选回执数量不符");
+    const candidates = await Promise.all(input.candidates.map(async (value, index) => {
+      const candidate = object(value), id = required(candidate.id, "候选身份");
+      const asset = await content.query({ projectId: production.projectId, op: "asset", id });
+      const media = await content.resolveMedia({ projectId: production.projectId, op: "media", id, variant: "original" });
+      if (asset.status !== "candidate" || asset.revision !== sources[index].revision || media.revision !== sources[index].revision)
+        throw Error("候选服务回执与本轮真实文件不符");
+      return { ...asset, id, revision: asset.revision };
+    }));
+    return workflow.command("recordCandidates", { ...input, receipt: undefined, candidates }, { assets: { registerCandidates: async () => ({ status: "completed", result: candidates }) } });
+  }
+  async function recordAdoption(input) {
+    const production = await detail(input), assetId = required(input.assetId, "资源"), versionId = required(input.versionId, "版本"), candidateId = required(input.candidateId, "候选");
+    const asset = await content.query({ projectId: production.projectId, op: "asset", id: assetId });
+    if (asset.currentVersionId !== versionId)
+      throw Error("资源服务尚未采用该版本");
+    let cursor, version;
+    do {
+      const page = await content.query({ projectId: production.projectId, op: "versions", assetId, limit: 100, ...cursor ? { cursor } : {} });
+      version = page.items.find((item) => item.id === versionId);
+      cursor = page.nextCursor;
+    } while (!version && cursor);
+    if (!version || version.candidateId !== candidateId)
+      throw Error("已采用版本不是该候选的真实回执");
+    await content.resolveMedia({ projectId: production.projectId, op: "media", id: assetId, versionId, variant: "original" });
+    return workflow.command("recordAdoption", { ...input, receipt: undefined }, { assets: { adoptVersion: async () => ({ status: "completed", result: { assetId, versionId } }) } });
+  }
+  return { prepare, receiveResult, recordCandidates, recordAdoption };
+}
+
+// plugins/cardgame-content/src/context.ts
 var quote = (value) => JSON.stringify(value);
 async function readDetail(host, noteId, projectId, op, id, extra = {}) {
   const value = await host.runtime.resources?.read({ name: "extension.cardgame-content.query", input: { ...extra, projectId, op, ...op === "production" ? { productionId: id } : { id } } }, { access: { noteId, version: (await host.app.note(noteId)).value.codeVersion ?? "", caller: { kind: "system" } } });
@@ -532,10 +694,10 @@ async function cardgameSelectionLines(host, note) {
   return lines;
 }
 
-// backend/plugins/cardgame-content/src/pinned-references.ts
-import { createHash as createHash2 } from "node:crypto";
+// plugins/cardgame-content/src/pinned-references.ts
+import { createHash as createHash3 } from "node:crypto";
 
-// backend/plugins/cardgame-content/src/changes.ts
+// plugins/cardgame-content/src/changes.ts
 var gameChangeFilters = {
   draft: ["draft"],
   running: ["running"],
@@ -599,11 +761,11 @@ function projectGameChange(production, verified = new Set) {
   };
 }
 
-// backend/plugins/cardgame-content/src/pinned-references.ts
+// plugins/cardgame-content/src/pinned-references.ts
 var PINNED_REFERENCE_LIMIT = 8;
 var operations = { card: "card", asset: "asset", document: "document", production: "production", candidate: "production", story: "storyAnalysis", balance: "balanceOverview", deck: "gameDeck", battleComparison: "battleComparison" };
 var recordKey = (projectId) => `cardgame:pinned-references:${encodeURIComponent(projectId)}`;
-function required(value, name, max = 1024) {
+function required2(value, name, max = 1024) {
   if (typeof value !== "string" || !value.trim() || value.length > max)
     throw Error(`固定引用的 ${name} 无效`);
   return value;
@@ -611,11 +773,11 @@ function required(value, name, max = 1024) {
 function locator(projectId, input) {
   if (input.projectId !== undefined && input.projectId !== projectId)
     throw Error("不能固定另一项目的对象");
-  const kind = required(input.kind, "kind");
+  const kind = required2(input.kind, "kind");
   if (!Object.hasOwn(operations, kind))
     throw Error("不支持这种固定引用");
-  const id = required(kind === "document" ? input.path ?? input.id : input.id, "id");
-  const anchor = input.anchor === undefined ? undefined : required(input.anchor, "anchor");
+  const id = required2(kind === "document" ? input.path ?? input.id : input.id, "id");
+  const anchor = input.anchor === undefined ? undefined : required2(input.anchor, "anchor");
   if (anchor && kind !== "story")
     throw Error("只有剧情引用支持节点定位");
   let context;
@@ -626,27 +788,27 @@ function locator(projectId, input) {
       const metric = input.context;
       if (!metric || typeof metric.metric !== "string" || !["attack", "health"].includes(metric.metric))
         throw Error("定义指标无效");
-      context = { kind: required(metric.kind, "指标类别", 80), metric: metric.metric };
+      context = { kind: required2(metric.kind, "指标类别", 80), metric: metric.metric };
     }
   } else if (kind === "candidate") {
     const candidate = input.context;
-    const commit = required(candidate?.commit, "commit", 40);
+    const commit = required2(candidate?.commit, "commit", 40);
     if (!/^[a-f0-9]{40}$/.test(commit))
       throw Error("候选提交无效");
-    context = { productionId: required(candidate?.productionId, "productionId"), commit };
+    context = { productionId: required2(candidate?.productionId, "productionId"), commit };
   } else if (kind === "battleComparison") {
     if (id !== "paired-reports")
       throw Error("报告比较身份无效");
     const pair = input.context;
     const report = (value) => {
       const ref = value;
-      return { experimentId: required(ref?.experimentId, "experimentId", 64), reportId: required(ref?.reportId, "reportId", 64) };
+      return { experimentId: required2(ref?.experimentId, "experimentId", 64), reportId: required2(ref?.reportId, "reportId", 64) };
     };
     context = { before: report(pair?.before), after: report(pair?.after) };
   } else if (input.context !== undefined)
     throw Error("此类固定引用不支持额外上下文");
   const identity = { projectId, kind, id, ...anchor ? { anchor } : {}, ...context ? { context } : {} };
-  const key = createHash2("sha256").update(JSON.stringify(identity)).digest("hex");
+  const key = createHash3("sha256").update(JSON.stringify(identity)).digest("hex");
   return { ...identity, key, ...kind === "document" ? { path: id } : {} };
 }
 function createPinnedReferenceService(core, resolve) {
@@ -674,12 +836,12 @@ function createPinnedReferenceService(core, resolve) {
         current: projectGameChange(production).candidates.find((item) => item.id === candidate.id)?.current ?? false,
         status: candidate.status
       };
-      return { revision: createHash2("sha256").update(JSON.stringify(binding)).digest("hex"), title: `候选 ${candidate.targetId ?? candidate.cardId} · ${candidate.commit.slice(0, 8)}`, binding };
+      return { revision: createHash3("sha256").update(JSON.stringify(binding)).digest("hex"), title: `候选 ${candidate.targetId ?? candidate.cardId} · ${candidate.commit.slice(0, 8)}`, binding };
     }
     if (ref.kind === "battleComparison") {
       if (!detail.beforeVersion || !detail.afterVersion || !detail.settings)
         throw Error("比较报告身份不完整");
-      return { revision: createHash2("sha256").update(JSON.stringify(detail)).digest("hex"), title: `对局报告比较 · ${String(ref.context?.before?.reportId).slice(0, 8)} → ${String(ref.context?.after?.reportId).slice(0, 8)}` };
+      return { revision: createHash3("sha256").update(JSON.stringify(detail)).digest("hex"), title: `对局报告比较 · ${String(ref.context?.before?.reportId).slice(0, 8)} → ${String(ref.context?.after?.reportId).slice(0, 8)}` };
     }
     const object = ref.kind === "production" ? detail.production : detail;
     if (!object || !["string", "number"].includes(typeof object.revision))
@@ -702,7 +864,7 @@ function createPinnedReferenceService(core, resolve) {
     },
     async pin(projectId, input) {
       const ref = locator(projectId, input);
-      const expected = required(input.revision, "revision");
+      const expected = required2(input.revision, "revision");
       const row = await core.updateRecord("states", recordKey(projectId), async (value) => {
         const items = value?.items ?? [];
         const current = await inspect(ref);
@@ -721,7 +883,7 @@ function createPinnedReferenceService(core, resolve) {
       return { items: row.value.items, limit: PINNED_REFERENCE_LIMIT };
     },
     async remove(projectId, key) {
-      const target = required(key, "key", 64);
+      const target = required2(key, "key", 64);
       await core.updateRecord("states", recordKey(projectId), (value) => ({ items: (value?.items ?? []).filter((item) => item.key !== target) }));
       return { removed: true };
     },
@@ -750,24 +912,24 @@ function pinnedReferenceLines(items) {
   })];
 }
 
-// backend/plugins/cardgame-content/src/path-safety.ts
+// plugins/cardgame-content/src/path-safety.ts
 import path from "node:path";
 function isPathDescendant(root, target, paths = path) {
   const relative = paths.relative(paths.resolve(root), paths.resolve(target));
   return Boolean(relative) && relative !== ".." && !relative.startsWith(`..${paths.sep}`) && !paths.isAbsolute(relative);
 }
 
-// backend/plugins/cardgame-content/src/battle-execution-service.ts
-import { createHash as createHash4, randomUUID as randomUUID2 } from "node:crypto";
-import { mkdir as mkdir2, readFile as readFile3, writeFile as writeFile2, rename as rename2, readdir as readdir2, stat, realpath as realpath3, lstat as lstat3 } from "node:fs/promises";
+// plugins/cardgame-content/src/battle-execution-service.ts
+import { createHash as createHash5, randomUUID as randomUUID3 } from "node:crypto";
+import { mkdir as mkdir2, readFile as readFile4, writeFile as writeFile2, rename as rename2, readdir as readdir2, stat as stat2, realpath as realpath4, lstat as lstat3 } from "node:fs/promises";
 import { watch } from "node:fs";
 import { join as join3 } from "node:path";
 
-// backend/plugins/cardgame-content/src/battle-snapshot.ts
-import { createHash as createHash3, randomUUID } from "node:crypto";
-import { lstat as lstat2, mkdir, readFile as readFile2, readdir, realpath as realpath2, rename, rm, writeFile } from "node:fs/promises";
-import { dirname, join as join2, resolve, sep as sep2 } from "node:path";
-var digest = (bytes) => createHash3("sha256").update(bytes).digest("hex");
+// plugins/cardgame-content/src/battle-snapshot.ts
+import { createHash as createHash4, randomUUID as randomUUID2 } from "node:crypto";
+import { lstat as lstat2, mkdir, readFile as readFile3, readdir, realpath as realpath3, rename, rm, writeFile } from "node:fs/promises";
+import { dirname, join as join2, resolve, sep as sep3 } from "node:path";
+var digest2 = (bytes) => createHash4("sha256").update(bytes).digest("hex");
 var roots = ["src", "public", "package.json", "bun.lock", "bun.lockb", "package-lock.json", "pnpm-lock.yaml", "tsconfig.json", "tsconfig.node.json"];
 var limit = 512 * 1024 * 1024;
 var previewRoots = [...roots, "index.html", "vite", "vite.config.ts", "vite.config.mjs", "tsconfig.app.json", "knowledge"];
@@ -782,7 +944,7 @@ async function filesIn(root, scope = "battle") {
     });
     if (!info)
       return;
-    if (info.isSymbolicLink() || !(await realpath2(absolute)).startsWith(root + sep2))
+    if (info.isSymbolicLink() || !(await realpath3(absolute)).startsWith(root + sep3))
       throw Error(`实验快照不接受符号链接或越界文件：${path}`);
     if (info.isDirectory())
       for (const child of (await readdir(absolute)).sort())
@@ -799,21 +961,21 @@ async function filesIn(root, scope = "battle") {
   return files.sort();
 }
 async function readBattleProjectRevision(projectRoot, scope = "battle") {
-  const root = await realpath2(projectRoot);
+  const root = await realpath3(projectRoot);
   async function scan() {
     const paths = await filesIn(root, scope), files = [];
     let total = 0;
     for (const path of paths) {
       const absolute = join2(root, path), info = await lstat2(absolute);
-      if (!info.isFile() || info.isSymbolicLink() || !(await realpath2(absolute)).startsWith(root + sep2))
+      if (!info.isFile() || info.isSymbolicLink() || !(await realpath3(absolute)).startsWith(root + sep3))
         throw Error(`核对期间文件身份变化：${path}`);
       if (info.size > limit - total)
         throw Error("项目核对超过 512 MiB");
-      const bytes = await readFile2(absolute);
+      const bytes = await readFile3(absolute);
       total += bytes.length;
       if (total > limit)
         throw Error("项目核对超过 512 MiB");
-      files.push({ path, sha256: digest(bytes), bytes: bytes.length });
+      files.push({ path, sha256: digest2(bytes), bytes: bytes.length });
     }
     return files;
   }
@@ -821,15 +983,15 @@ async function readBattleProjectRevision(projectRoot, scope = "battle") {
   if (JSON.stringify(first) !== JSON.stringify(second))
     throw Error("核对期间项目发生变化，请刷新重试");
   return {
-    contentRevision: digest(JSON.stringify(first.filter((file) => file.path.startsWith("public/")))),
-    runtimeRevision: digest(JSON.stringify(first.filter((file) => !file.path.startsWith("public/"))))
+    contentRevision: digest2(JSON.stringify(first.filter((file) => file.path.startsWith("public/")))),
+    runtimeRevision: digest2(JSON.stringify(first.filter((file) => !file.path.startsWith("public/"))))
   };
 }
 async function createBattleSnapshot(projectRoot, destinationRoot, scope = "battle") {
-  const source = await realpath2(projectRoot), destination = resolve(destinationRoot);
+  const source = await realpath3(projectRoot), destination = resolve(destinationRoot);
   async function futureRealpath(path) {
     try {
-      return await realpath2(path);
+      return await realpath3(path);
     } catch (error) {
       if (error.code !== "ENOENT")
         throw error;
@@ -837,10 +999,10 @@ async function createBattleSnapshot(projectRoot, destinationRoot, scope = "battl
     }
   }
   const canonicalDestination = await futureRealpath(destination);
-  if (canonicalDestination === source || canonicalDestination.startsWith(source + sep2))
+  if (canonicalDestination === source || canonicalDestination.startsWith(source + sep3))
     throw Error("实验快照必须保存在游戏项目之外");
   await mkdir(destination, { recursive: true, mode: 448 });
-  const id = randomUUID(), staging = join2(destination, `.${id}.pending`), final = join2(destination, id);
+  const id = randomUUID2(), staging = join2(destination, `.${id}.pending`), final = join2(destination, id);
   await mkdir(staging, { mode: 448 });
   try {
     for (const path of ["src", "public"])
@@ -849,15 +1011,15 @@ async function createBattleSnapshot(projectRoot, destinationRoot, scope = "battl
     let total = 0;
     for (const path of paths) {
       const info = await lstat2(join2(source, path));
-      if (!info.isFile() || info.isSymbolicLink() || !(await realpath2(join2(source, path))).startsWith(source + sep2))
+      if (!info.isFile() || info.isSymbolicLink() || !(await realpath3(join2(source, path))).startsWith(source + sep3))
         throw Error(`快照期间文件身份变化：${path}`);
       if (info.size > limit - total)
         throw Error("实验快照超过 512 MiB");
-      const bytes = await readFile2(join2(source, path));
+      const bytes = await readFile3(join2(source, path));
       total += bytes.length;
       if (total > limit)
         throw Error("实验快照超过 512 MiB");
-      files.push({ path, sha256: digest(bytes), bytes: bytes.length });
+      files.push({ path, sha256: digest2(bytes), bytes: bytes.length });
       const target = join2(staging, "project", path);
       await mkdir(dirname(target), { recursive: true, mode: 448 });
       await writeFile(target, bytes, { mode: 384, flag: "wx" });
@@ -865,9 +1027,9 @@ async function createBattleSnapshot(projectRoot, destinationRoot, scope = "battl
     if (JSON.stringify(await filesIn(source, scope)) !== JSON.stringify(paths))
       throw Error("生成快照期间项目文件列表发生变化，请重试");
     for (const file of files)
-      if (digest(await readFile2(join2(source, file.path))) !== file.sha256)
+      if (digest2(await readFile3(join2(source, file.path))) !== file.sha256)
         throw Error(`生成快照期间内容发生变化：${file.path}`);
-    const revision = (entries) => digest(JSON.stringify(entries));
+    const revision = (entries) => digest2(JSON.stringify(entries));
     const manifest = {
       schemaVersion: 1,
       ...scope === "game-preview" ? { scope } : {},
@@ -887,19 +1049,19 @@ async function createBattleSnapshot(projectRoot, destinationRoot, scope = "battl
   }
 }
 async function verifyBattleSnapshot(directory) {
-  const manifest = JSON.parse(await readFile2(join2(directory, "manifest.json"), "utf8"));
+  const manifest = JSON.parse(await readFile3(join2(directory, "manifest.json"), "utf8"));
   if (manifest.schemaVersion !== 1 || manifest.scope !== undefined && manifest.scope !== "game-preview" || !Array.isArray(manifest.files))
     throw Error("无效实验快照清单");
-  const root = await realpath2(join2(directory, "project"));
+  const root = await realpath3(join2(directory, "project"));
   const paths = await filesIn(root, manifest.scope ?? "battle");
   if (JSON.stringify(paths) !== JSON.stringify(manifest.files.map((file) => file.path)))
     throw Error("实验快照文件列表已变化");
   for (const file of manifest.files) {
-    const bytes = await readFile2(join2(root, file.path));
-    if (bytes.length !== file.bytes || digest(bytes) !== file.sha256)
+    const bytes = await readFile3(join2(root, file.path));
+    if (bytes.length !== file.bytes || digest2(bytes) !== file.sha256)
       throw Error(`实验快照已变化：${file.path}`);
   }
-  const revision = (entries) => digest(JSON.stringify(entries));
+  const revision = (entries) => digest2(JSON.stringify(entries));
   if (manifest.snapshotRevision !== revision(manifest.files) || manifest.contentRevision !== revision(manifest.files.filter((file) => file.path.startsWith("public/"))) || manifest.runtimeRevision !== revision(manifest.files.filter((file) => !file.path.startsWith("public/"))))
     throw Error("实验快照指纹不一致");
   return manifest;
@@ -907,8 +1069,8 @@ async function verifyBattleSnapshot(directory) {
 var createGamePreviewSnapshot = (projectRoot, destinationRoot) => createBattleSnapshot(projectRoot, destinationRoot, "game-preview");
 var readGamePreviewProjectRevision = (projectRoot) => readBattleProjectRevision(projectRoot, "game-preview");
 
-// backend/plugins/cardgame-content/src/battle-experiment.ts
-var digest2 = async (value) => [...new Uint8Array(await crypto.subtle.digest("SHA-256", new TextEncoder().encode(JSON.stringify(value))))].map((byte) => byte.toString(16).padStart(2, "0")).join("");
+// plugins/cardgame-content/src/battle-experiment.ts
+var digest3 = async (value) => [...new Uint8Array(await crypto.subtle.digest("SHA-256", new TextEncoder().encode(JSON.stringify(value))))].map((byte) => byte.toString(16).padStart(2, "0")).join("");
 function validateBattleSettings(input) {
   if (!input.deckId?.trim() || !input.encounterId?.trim() || !input.policyVersion?.trim())
     throw Error("需要牌组、遭遇和策略版本");
@@ -925,7 +1087,7 @@ function validateTrial(trial, settings) {
     throw Error("执行器返回了无效对局结果");
 }
 async function compareBattleExperiments(before, after) {
-  if (await digest2(validateBattleSettings(before.settings)) !== before.settingsHash || await digest2(validateBattleSettings(after.settings)) !== after.settingsHash)
+  if (await digest3(validateBattleSettings(before.settings)) !== before.settingsHash || await digest3(validateBattleSettings(after.settings)) !== after.settingsHash)
     throw Error("报告实验设置指纹不一致");
   if (before.settingsHash !== after.settingsHash || before.adapterVersion !== after.adapterVersion)
     throw Error("仅能比较相同种子、牌组、遭遇、策略、先手和预算的报告");
@@ -959,7 +1121,7 @@ async function compareBattleExperiments(before, after) {
   };
 }
 
-// backend/plugins/cardgame-content/src/battle-execution-service.ts
+// plugins/cardgame-content/src/battle-execution-service.ts
 var uuid = /^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$/;
 async function createBattleExecutionService(options) {
   const directory = join3(options.dataRoot, "battle-experiments");
@@ -980,12 +1142,12 @@ async function createBattleExecutionService(options) {
     const project = options.projects.find((item) => item.id === projectId);
     if (!project)
       throw Error("未登记的游戏项目");
-    return { project, root: join3(directory, createHash4("sha256").update(projectId).digest("hex")) };
+    return { project, root: join3(directory, createHash5("sha256").update(projectId).digest("hex")) };
   };
   async function load(projectId) {
     const { root } = rootFor(projectId);
     try {
-      return JSON.parse(await readFile3(join3(root, "current.json"), "utf8"));
+      return JSON.parse(await readFile4(join3(root, "current.json"), "utf8"));
     } catch (error) {
       if (error.code === "ENOENT")
         return;
@@ -995,11 +1157,11 @@ async function createBattleExecutionService(options) {
   async function save(record) {
     const { root } = rootFor(record.projectId);
     await mkdir2(root, { recursive: true, mode: 448 });
-    const temp = join3(root, randomUUID2() + ".tmp");
+    const temp = join3(root, randomUUID3() + ".tmp");
     await writeFile2(temp, JSON.stringify(record), { mode: 384 });
     await rename2(temp, join3(root, "current.json"));
     invalidate();
-    const runRoot = join3(root, "runs", record.id), runTemp = join3(runRoot, randomUUID2() + ".tmp");
+    const runRoot = join3(root, "runs", record.id), runTemp = join3(runRoot, randomUUID3() + ".tmp");
     await writeFile2(runTemp, JSON.stringify(record), { mode: 384 });
     await rename2(runTemp, join3(runRoot, "experiment.json"));
   }
@@ -1013,7 +1175,7 @@ async function createBattleExecutionService(options) {
       throw error;
     });
     for (const id of entries.filter((id) => /^[a-f0-9-]{36}$/.test(id))) {
-      const saved = await readFile3(join3(root, "runs", id, "experiment.json"), "utf8").then((value) => JSON.parse(value), (error) => {
+      const saved = await readFile4(join3(root, "runs", id, "experiment.json"), "utf8").then((value) => JSON.parse(value), (error) => {
         if (error.code === "ENOENT")
           return;
         throw error;
@@ -1030,14 +1192,14 @@ async function createBattleExecutionService(options) {
       });
       for (const name of files.filter((name) => uuid.test(name.replace(/\.json$/, "")) && name.endsWith(".json"))) {
         const path = join3(reports, name);
-        reportFiles.push({ path, modified: (await stat(path)).mtimeMs, experimentId: id, reportId: name.slice(0, -5) });
+        reportFiles.push({ path, modified: (await stat2(path)).mtimeMs, experimentId: id, reportId: name.slice(0, -5) });
       }
     }
     reportFiles.sort((a, b) => b.modified - a.modified);
     const current = reportFiles.length ? await readBattleProjectRevision(project.root).then((revision) => ({ revision, error: "" }), (error) => ({ revision: undefined, error: error instanceof Error ? error.message : String(error) })) : undefined;
     const checkedAt = new Date().toISOString();
     const reports = await Promise.all(reportFiles.slice(0, 30).map(async (file) => {
-      const report = JSON.parse(await readFile3(file.path, "utf8")), saved = records.get(file.experimentId);
+      const report = JSON.parse(await readFile4(file.path, "utf8")), saved = records.get(file.experimentId);
       const known = current?.revision && saved?.sourceRevision && saved.contentRevision === report.contentRevision && saved.runtimeRevision === report.runtimeRevision;
       const projectStatus = !known ? "unknown" : current.revision.contentRevision === report.contentRevision && current.revision.runtimeRevision === saved.sourceRevision ? "matches-project" : "different-project";
       return {
@@ -1064,9 +1226,9 @@ async function createBattleExecutionService(options) {
       });
       if (!info.isFile() || info.size > 2 * 1024 * 1024)
         throw Error("对局报告文件无效或过大");
-      if (!isPathDescendant(await realpath3(root), await realpath3(path)))
+      if (!isPathDescendant(await realpath4(root), await realpath4(path)))
         throw Error("对局报告路径越界");
-      const report = JSON.parse(await readFile3(path, "utf8"));
+      const report = JSON.parse(await readFile4(path, "utf8"));
       if (report.schemaVersion !== 1 || !Array.isArray(report.trials) || report.trials.length > 200 || ![report.contentRevision, report.runtimeRevision].every((value) => /^[a-f0-9]{64}$/.test(value)) || !report.adapterVersion)
         throw Error("对局报告格式无效");
       return report;
@@ -1107,7 +1269,7 @@ async function createBattleExecutionService(options) {
         await existingProcess.done;
       }
       const phaser = project.battlePhaserModule ?? join3(project.root, "node_modules/phaser/dist/phaser.esm.js");
-      if (!(await stat(phaser).catch(() => {
+      if (!(await stat2(phaser).catch(() => {
         return;
       }))?.isFile())
         throw Error("游戏 Phaser 依赖尚未准备。请在本机项目配置 battlePhaserModule，或安装游戏依赖后重试");
@@ -1116,7 +1278,7 @@ async function createBattleExecutionService(options) {
         const selected = candidate ? await options.resolveCandidate?.(projectId, candidate) : undefined;
         if (candidate && !selected)
           throw Error("候选实验来源尚未接通");
-        const id = randomUUID2(), runRoot = join3(root, "runs", id);
+        const id = randomUUID3(), runRoot = join3(root, "runs", id);
         await mkdir2(runRoot, { recursive: true, mode: 448 });
         const snapshot = await createBattleSnapshot(selected?.root ?? project.root, join3(runRoot, "snapshots"));
         await selected?.verify();
@@ -1256,11 +1418,11 @@ function subscribe(stream, callback) {
   };
 }
 
-// backend/plugins/cardgame-content/src/formal-preview.ts
+// plugins/cardgame-content/src/formal-preview.ts
 import { execFile } from "node:child_process";
 import { promisify } from "node:util";
 import { devNull } from "node:os";
-import { mkdir as mkdir3, readFile as readFile4, rename as rename3, writeFile as writeFile3 } from "node:fs/promises";
+import { mkdir as mkdir3, readFile as readFile5, rename as rename3, writeFile as writeFile3 } from "node:fs/promises";
 import { join as join4 } from "node:path";
 var run = promisify(execFile);
 var git = async (cwd, ...args) => (await run("git", ["-c", `core.hooksPath=${devNull}`, "-c", "commit.gpgsign=false", ...args], {
@@ -1282,7 +1444,7 @@ function createFormalPreviewService(options) {
   }
   async function read(projectId) {
     const { latest } = paths(projectId);
-    const value = await readFile4(latest, "utf8").catch((error) => {
+    const value = await readFile5(latest, "utf8").catch((error) => {
       if (error.code === "ENOENT")
         return;
       throw error;
@@ -1360,11 +1522,11 @@ function createFormalPreviewService(options) {
   };
 }
 
-// backend/plugins/cardgame-content/src/story-execution-service.ts
-import { createHash as createHash5, randomUUID as randomUUID3 } from "node:crypto";
-import { mkdir as mkdir4, readFile as readFile5, writeFile as writeFile4, rename as rename4 } from "node:fs/promises";
+// plugins/cardgame-content/src/story-execution-service.ts
+import { createHash as createHash6, randomUUID as randomUUID4 } from "node:crypto";
+import { mkdir as mkdir4, readFile as readFile6, writeFile as writeFile4, rename as rename4 } from "node:fs/promises";
 import { join as join5 } from "node:path";
-var hash = (value) => createHash5("sha256").update(value).digest("hex");
+var hash = (value) => createHash6("sha256").update(value).digest("hex");
 function createStoryExecutionService(options) {
   const active = new Map, processes = new Set, listeners = new Set;
   let closed = false;
@@ -1377,7 +1539,7 @@ function createStoryExecutionService(options) {
   };
   const read = async (key) => {
     try {
-      return JSON.parse(await readFile5(join5(directory, `${key}.json`), "utf8"));
+      return JSON.parse(await readFile6(join5(directory, `${key}.json`), "utf8"));
     } catch (error) {
       if (error.code === "ENOENT")
         return;
@@ -1386,7 +1548,7 @@ function createStoryExecutionService(options) {
   };
   const save = async (key, state) => {
     await mkdir4(directory, { recursive: true });
-    const temporary = join5(directory, `${key}.${randomUUID3()}.tmp`);
+    const temporary = join5(directory, `${key}.${randomUUID4()}.tmp`);
     await writeFile4(temporary, JSON.stringify(state), { mode: 384 });
     await rename4(temporary, join5(directory, `${key}.json`));
     for (const invalidate of listeners) {
@@ -1532,7 +1694,7 @@ function subscribe2(stream, listener) {
   };
 }
 
-// backend/plugins/cardgame-content/src/native-guard.ts
+// plugins/cardgame-content/src/native-guard.ts
 var fileTools = new Set(["bash", "shell", "terminal", "exec", "exec_command", "edit", "write", "multi_edit", "apply_patch", "notebook_edit", "python"]);
 var contentModes = new Set(["cards", "knowledge", "assets"]);
 var contentKinds = new Set(["production", "todo", "execution", "preview"]);
@@ -1561,20 +1723,20 @@ async function cardgameNativeWriteDenial(core, sessionId, tool, nativeParentId) 
   return;
 }
 
-// backend/plugins/cardgame-content/src/registration.ts
+// plugins/cardgame-content/src/registration.ts
 import { join as join11, resolve as resolve6 } from "node:path";
 
-// backend/plugins/cardgame-content/src/content.ts
+// plugins/cardgame-content/src/content.ts
 import { watch as watch2 } from "node:fs";
 import {
   mkdir as mkdir6,
   link,
   readdir as readdir3,
-  readFile as readFile7,
-  realpath as realpath5,
+  readFile as readFile8,
+  realpath as realpath6,
   rename as rename6,
   rm as rm2,
-  stat as stat3,
+  stat as stat4,
   lstat as lstat4,
   writeFile as writeFile5,
   open as open2
@@ -1583,15 +1745,15 @@ import {
   basename,
   dirname as dirname3,
   extname as extname2,
-  isAbsolute as isAbsolute3,
+  isAbsolute as isAbsolute4,
   posix,
-  relative as relative3,
+  relative as relative4,
   resolve as resolve3,
-  sep as sep4
+  sep as sep5
 } from "node:path";
-import { createHash as createHash7, randomUUID as randomUUID5 } from "node:crypto";
+import { createHash as createHash8, randomUUID as randomUUID6 } from "node:crypto";
 
-// backend/plugins/cardgame-content/src/story-analysis.ts
+// plugins/cardgame-content/src/story-analysis.ts
 function analyzeStory(value) {
   if (!value || typeof value !== "object" || Array.isArray(value))
     throw new Error("剧情必须是 JSON 对象");
@@ -1667,7 +1829,7 @@ function analyzeStory(value) {
   };
 }
 
-// backend/plugins/cardgame-content/src/card-collections.ts
+// plugins/cardgame-content/src/card-collections.ts
 var CARD_COLLECTIONS = {
   unit: { path: "public/data/cards/units.json", key: "units", inDeck: true },
   artifact: { path: "public/data/cards/artifacts.json", key: "artifacts", inDeck: true },
@@ -1682,7 +1844,7 @@ function cardCollection(kind) {
   return CARD_COLLECTIONS[kind];
 }
 
-// backend/plugins/cardgame-content/src/story-rules.ts
+// plugins/cardgame-content/src/story-rules.ts
 function record2(value, label) {
   if (typeof value !== "object" || value === null || Array.isArray(value)) {
     throw new Error(`${label} 必须是对象。`);
@@ -1892,13 +2054,13 @@ function validateInitialStoryState(value, label) {
   return output;
 }
 
-// backend/plugins/cardgame-content/src/media.ts
-import { mkdir as mkdir5, open, readFile as readFile6, realpath as realpath4, rename as rename5, stat as stat2 } from "node:fs/promises";
-import { createHash as createHash6, randomUUID as randomUUID4 } from "node:crypto";
+// plugins/cardgame-content/src/media.ts
+import { mkdir as mkdir5, open, readFile as readFile7, realpath as realpath5, rename as rename5, stat as stat3 } from "node:fs/promises";
+import { createHash as createHash7, randomUUID as randomUUID5 } from "node:crypto";
 import { tmpdir } from "node:os";
 import sharp from "sharp";
 import { parseFile } from "music-metadata";
-import { dirname as dirname2, extname, isAbsolute as isAbsolute2, relative as relative2, resolve as resolve2, sep as sep3 } from "node:path";
+import { dirname as dirname2, extname, isAbsolute as isAbsolute3, relative as relative3, resolve as resolve2, sep as sep4 } from "node:path";
 var MIME_BY_EXTENSION = {
   ".png": "image/png",
   ".jpg": "image/jpeg",
@@ -2075,7 +2237,7 @@ function inspectMediaBytes(bytes, filePath, indexed) {
   };
 }
 async function inspectMediaFile(filePath, indexed) {
-  const info = await stat2(filePath);
+  const info = await stat3(filePath);
   const mimeType = indexed?.mimeType ?? mediaTypeFromPath(filePath);
   const result = { ...indexed, mimeType, kind: indexed?.kind ?? mediaKindFromMime(mimeType, filePath, indexed?.frameCount), size: info.size };
   if (mimeType.startsWith("image/")) {
@@ -2110,10 +2272,10 @@ sharp.concurrency(2);
 var thumbnails = new Map;
 async function thumbnail(source, options, mtime, size) {
   const cacheRoot = options.cacheRoot ?? resolve2(tmpdir(), "worka-cardgame-media");
-  const key = createHash6("sha256").update(`${source}\x00${options.revision}\x00${mtime}\x00${size}\x00thumbnail-v1`).digest("hex");
+  const key = createHash7("sha256").update(`${source}\x00${options.revision}\x00${mtime}\x00${size}\x00thumbnail-v1`).digest("hex");
   const destination = resolve2(cacheRoot, `${key}.png`);
   try {
-    await stat2(destination);
+    await stat3(destination);
     return destination;
   } catch (error) {
     if (error.code !== "ENOENT")
@@ -2124,7 +2286,7 @@ async function thumbnail(source, options, mtime, size) {
     return pending;
   const work = (async () => {
     await mkdir5(cacheRoot, { recursive: true });
-    const temporary = `${destination}.${randomUUID4()}.tmp`;
+    const temporary = `${destination}.${randomUUID5()}.tmp`;
     await sharp(source, { animated: false, limitInputPixels: 64 * 1024 * 1024 }).resize(256, 256, { fit: "inside", withoutEnlargement: true, kernel: "nearest" }).png().toFile(temporary);
     await rename5(temporary, destination);
     return destination;
@@ -2137,18 +2299,18 @@ async function thumbnail(source, options, mtime, size) {
   }
 }
 async function resolveMediaFile(options) {
-  const root = await realpath4(options.root);
+  const root = await realpath5(options.root);
   const absolutePath = resolve2(options.absolutePath);
-  const lexicalRelative = relative2(root, absolutePath);
-  if (isAbsolute2(lexicalRelative) || lexicalRelative === ".." || lexicalRelative.startsWith(`..${sep3}`)) {
+  const lexicalRelative = relative3(root, absolutePath);
+  if (isAbsolute3(lexicalRelative) || lexicalRelative === ".." || lexicalRelative.startsWith(`..${sep4}`)) {
     throw new Error("media path escapes project root");
   }
-  const resolved = await realpath4(absolutePath);
-  const actualRelative = relative2(root, resolved);
-  if (isAbsolute2(actualRelative) || actualRelative === ".." || actualRelative.startsWith(`..${sep3}`)) {
+  const resolved = await realpath5(absolutePath);
+  const actualRelative = relative3(root, resolved);
+  if (isAbsolute3(actualRelative) || actualRelative === ".." || actualRelative.startsWith(`..${sep4}`)) {
     throw new Error("media symlink escapes project root");
   }
-  const fileStat = await stat2(resolved);
+  const fileStat = await stat3(resolved);
   if (!fileStat.isFile())
     throw new Error("media path is not a regular file");
   const indexed = options.indexed;
@@ -2158,10 +2320,10 @@ async function resolveMediaFile(options) {
   if (variant === "waveform")
     throw new Error("Waveforms are decoded on demand in the selected audio preview");
   const servedPath = variant === "thumbnail" && inspection.mimeType.startsWith("image/") ? await thumbnail(resolved, options, fileStat.mtimeMs, fileStat.size) : resolved;
-  const servedStat = servedPath === resolved ? fileStat : await stat2(servedPath);
+  const servedStat = servedPath === resolved ? fileStat : await stat3(servedPath);
   const response = {
     id: options.id,
-    path: actualRelative.split(sep3).join("/"),
+    path: actualRelative.split(sep4).join("/"),
     ...options.versionId ? { versionId: options.versionId } : {},
     variant,
     mimeType: servedPath === resolved ? inspection.mimeType : "image/png",
@@ -2175,7 +2337,7 @@ async function resolveMediaFile(options) {
     absolutePath: servedPath
   };
   if (variant === "original" && options.inlineLimit !== undefined && inspection.size <= options.inlineLimit) {
-    const bytes = await readFile6(resolved);
+    const bytes = await readFile7(resolved);
     response.data = `data:${inspection.mimeType};base64,${Buffer.from(bytes).toString("base64")}`;
   }
   return response;
@@ -2186,7 +2348,7 @@ function candidateSpriteMetadataPath(filePath) {
   return [`${filePath}.json`, `${base}.json`];
 }
 
-// backend/plugins/cardgame-content/src/types.ts
+// plugins/cardgame-content/src/types.ts
 class ContentServiceError extends Error {
   code;
   details;
@@ -2198,7 +2360,7 @@ class ContentServiceError extends Error {
   }
 }
 
-// backend/plugins/cardgame-content/src/content.ts
+// plugins/cardgame-content/src/content.ts
 var MAX_PAGE_SIZE = 100;
 var DEFAULT_INLINE_MEDIA_LIMIT = 0;
 var MANIFEST_FILE_NAME = "asset-manifest.json";
@@ -2228,14 +2390,14 @@ function nowIso() {
   return new Date().toISOString();
 }
 function hashBytes(value) {
-  return createHash7("sha256").update(value).digest("hex");
+  return createHash8("sha256").update(value).digest("hex");
 }
 function fileFingerprint(info) {
   return `${info.dev}:${info.ino}:${info.size}:${info.mtimeNs}:${info.ctimeNs}`;
 }
 async function hashFile(filePath) {
   const file = await open2(filePath, "r");
-  const hash = createHash7("sha256");
+  const hash = createHash8("sha256");
   const buffer = Buffer.allocUnsafe(1024 * 1024);
   try {
     while (true) {
@@ -2285,8 +2447,8 @@ function normalizeRelativePath(value, label = "path") {
   return normalized.replace(/^\.\//, "");
 }
 function isContained(root, child) {
-  const childRelative = relative3(root, child);
-  return !isAbsolute3(childRelative) && childRelative !== ".." && !childRelative.startsWith(`..${sep4}`);
+  const childRelative = relative4(root, child);
+  return !isAbsolute4(childRelative) && childRelative !== ".." && !childRelative.startsWith(`..${sep5}`);
 }
 function clampLimit(limit) {
   if (typeof limit !== "number" || !Number.isFinite(limit))
@@ -2740,7 +2902,7 @@ function candidateAssetFromRow(row, dataRoot) {
   const metadata = parseJson(row.metadata_json, {});
   const frameCount = readNumber(metadata.frameCount ?? metadata.frames);
   const metadataKind = typeof metadata.kind === "string" && ["image", "audio", "spritesheet", "other"].includes(metadata.kind) ? metadata.kind : undefined;
-  const path = toPosixPath(relative3(dataRoot, row.file_path));
+  const path = toPosixPath(relative4(dataRoot, row.file_path));
   const kind = metadataKind ?? mediaKindFromMime(row.mime_type, row.file_path, frameCount);
   const name = row.name || basename(row.file_path);
   return {
@@ -3023,7 +3185,7 @@ class ContentServiceImpl {
       return;
     for (const state of this.projects.values()) {
       try {
-        state.root = await realpath5(resolve3(state.input.root));
+        state.root = await realpath6(resolve3(state.input.root));
         db.prepare("INSERT INTO projects(id, root, title) VALUES (?, ?, ?) ON CONFLICT(id) DO UPDATE SET root=excluded.root, title=excluded.title").run(state.input.id, state.root, state.input.title ?? null);
         state.phase = "indexing";
       } catch (error) {
@@ -3314,11 +3476,11 @@ class ContentServiceImpl {
       return;
     }
     for (let attempt = 0;attempt < 3; attempt += 1) {
-      const beforeRead = await stat3(absolute, { bigint: true });
+      const beforeRead = await stat4(absolute, { bigint: true });
       if (!beforeRead.isFile())
         return;
-      const content = await readFile7(absolute, "utf8");
-      const afterRead = await stat3(absolute, { bigint: true });
+      const content = await readFile8(absolute, "utf8");
+      const afterRead = await stat4(absolute, { bigint: true });
       if (afterRead.isFile() && fileFingerprint(beforeRead) === fileFingerprint(afterRead)) {
         return this.upsertDocument(state.input.id, safePath, content, afterRead);
       }
@@ -3413,7 +3575,7 @@ ${content}`);
     let parsed;
     let sourceRevision;
     try {
-      const sourceText = await readFile7(absolute, "utf8");
+      const sourceText = await readFile8(absolute, "utf8");
       sourceRevision = hashBytes(sourceText);
       parsed = JSON.parse(sourceText);
     } catch (error) {
@@ -3427,7 +3589,7 @@ ${content}`);
       return;
     }
     const collections = Object.entries(rootRecord).filter(([, value]) => Array.isArray(value));
-    const fileStat = await stat3(absolute);
+    const fileStat = await stat4(absolute);
     const seen = new Set;
     for (const [collection, values] of collections) {
       for (const value of values) {
@@ -3480,17 +3642,17 @@ ${content}`);
       this.getDatabase().prepare("UPDATE assets SET deleted = 1 WHERE project_id = ? AND path = ?").run(state.input.id, path);
       return;
     }
-    const fileStat = await stat3(absolute);
+    const fileStat = await stat4(absolute);
     if (!fileStat.isFile())
       return;
     const revision = await hashFile(absolute);
     const isJsonAsset = extname2(path).toLowerCase() === ".json";
-    const jsonBytes = isJsonAsset ? await readFile7(absolute) : undefined;
+    const jsonBytes = isJsonAsset ? await readFile8(absolute) : undefined;
     let spriteInfo = {};
     if (extname2(path).toLowerCase() !== ".json") {
       for (const metadataPath of candidateSpriteMetadataPath(absolute)) {
         try {
-          const metadata = JSON.parse(await readFile7(metadataPath, "utf8"));
+          const metadata = JSON.parse(await readFile8(metadataPath, "utf8"));
           spriteInfo = parseSpriteMetadata(metadata);
           if (spriteInfo.frameCount)
             break;
@@ -3611,7 +3773,7 @@ ${content}`);
       const info = await lstat4(lexical);
       if (info.isSymbolicLink())
         return;
-      const resolved = await realpath5(lexical);
+      const resolved = await realpath6(lexical);
       return isContained(state.root, resolved) ? resolved : undefined;
     } catch {
       return;
@@ -4401,7 +4563,7 @@ ${content}`);
         throw new ContentServiceError("NOT_FOUND", "project root is unavailable.");
       const unresolved = await this.safeExistingPath(state, requestedPath);
       if (unresolved) {
-        const info = await stat3(unresolved);
+        const info = await stat4(unresolved);
         if (info.isFile()) {
           return resolveMediaFile({
             root: state.root,
@@ -4473,13 +4635,13 @@ ${content}`);
     });
   }
   async resolveCandidateMedia(candidate, input) {
-    const candidateRoot = await realpath5(this.candidateRoot(candidate.project_id)).catch(() => {
+    const candidateRoot = await realpath6(this.candidateRoot(candidate.project_id)).catch(() => {
       return;
     });
-    const candidateReal = await realpath5(candidate.file_path).catch(() => {
+    const candidateReal = await realpath6(candidate.file_path).catch(() => {
       return;
     });
-    const dataRootReal = await realpath5(this.dataRoot);
+    const dataRootReal = await realpath6(this.dataRoot);
     if (!candidateRoot || !candidateReal || !isContained(dataRootReal, candidateReal) || !isContained(candidateRoot, candidateReal)) {
       throw new ContentServiceError("PATH_ESCAPE", "candidate media path escapes the authorized candidate root.");
     }
@@ -4580,7 +4742,7 @@ ${content}`);
     if (!isContained(state.root, absolute))
       throw new ContentServiceError("PATH_ESCAPE", "write path escapes project root.");
     await mkdir6(dirname3(absolute), { recursive: true });
-    const parent = await realpath5(dirname3(absolute));
+    const parent = await realpath6(dirname3(absolute));
     if (!isContained(state.root, parent))
       throw new ContentServiceError("PATH_ESCAPE", "write parent escapes project root.");
     try {
@@ -4593,7 +4755,7 @@ ${content}`);
       if (error.code !== "ENOENT")
         throw error;
     }
-    const temporary = `${absolute}.workbench-${randomUUID5()}.tmp`;
+    const temporary = `${absolute}.workbench-${randomUUID6()}.tmp`;
     try {
       await writeFile5(temporary, bytes, { mode: 384 });
       if (exclusive) {
@@ -4614,7 +4776,7 @@ ${content}`);
         return;
       });
     }
-    const resolved = await realpath5(absolute);
+    const resolved = await realpath6(absolute);
     if (!isContained(state.root, resolved))
       throw new ContentServiceError("PATH_ESCAPE", "written path escapes project root.");
     return resolved;
@@ -4631,7 +4793,7 @@ ${content}`);
     }
     let content;
     try {
-      content = await readFile7(absolute, "utf8");
+      content = await readFile8(absolute, "utf8");
     } catch (error) {
       throw new ContentServiceError("CONTENT_CONFLICT", `document changed or disappeared: ${row.path}`, { cause: toErrorMessage(error) });
     }
@@ -4666,7 +4828,7 @@ ${content}`);
     const assertFreshFile = async () => {
       let info;
       try {
-        info = await stat3(absolute, { bigint: true });
+        info = await stat4(absolute, { bigint: true });
       } catch {
         throw new ContentServiceError("CONTENT_CONFLICT", `document changed or disappeared: ${row.path}`);
       }
@@ -4735,7 +4897,7 @@ ${content}`);
   async queryBalanceOverview(projectId) {
     const rows = this.getDatabase().prepare("SELECT id, kind, name, revision, json FROM cards WHERE project_id = ? AND deleted = 0 ORDER BY id").all(projectId);
     const groups = new Map;
-    const revision = createHash7("sha256");
+    const revision = createHash8("sha256");
     for (const row of rows) {
       revision.update(JSON.stringify([row.id, row.revision]));
       const group = groups.get(row.kind) || { kind: row.kind, count: 0, attack: [], health: [] };
@@ -4753,7 +4915,7 @@ ${content}`);
     const absolute = await this.safeExistingPath(this.project(projectId), "public/data/content-catalog.json");
     if (!absolute)
       throw new ContentServiceError("NOT_FOUND", "游戏内容目录尚不存在");
-    const bytes = await readFile7(absolute);
+    const bytes = await readFile8(absolute);
     const catalog = JSON.parse(bytes.toString("utf8"));
     if (!Array.isArray(catalog.resources))
       throw new ContentServiceError("VALIDATION_ERROR", "游戏内容目录缺少 resources");
@@ -4784,10 +4946,10 @@ ${row.path}`.toLocaleLowerCase().includes(search)).sort((a, b) => a.id.localeCom
     const absolute = await this.safeExistingPath(this.project(input.projectId), path);
     if (!absolute)
       throw new ContentServiceError("NOT_FOUND", "卡组文件不存在");
-    const info = await stat3(absolute);
+    const info = await stat4(absolute);
     if (!info.isFile() || info.size > 1024 * 1024)
       throw new ContentServiceError("VALIDATION_ERROR", "卡组文件不是普通文件或超过 1 MiB");
-    const bytes = await readFile7(absolute);
+    const bytes = await readFile8(absolute);
     const deck = JSON.parse(bytes.toString("utf8"));
     if (!deck || !Array.isArray(deck.cards) || deck.cards.length > 1000)
       throw new ContentServiceError("VALIDATION_ERROR", "卡组 cards 格式无效或超过 1000 项");
@@ -4821,10 +4983,10 @@ ${row.path}`.toLocaleLowerCase().includes(search)).sort((a, b) => a.id.localeCom
     const absolute = await this.safeExistingPath(this.project(input.projectId), path);
     if (!absolute)
       throw new ContentServiceError("NOT_FOUND", "剧情文件不存在");
-    const info = await stat3(absolute);
+    const info = await stat4(absolute);
     if (!info.isFile() || info.size > 8 * 1024 * 1024)
       throw new ContentServiceError("VALIDATION_ERROR", "剧情文件不是普通文件或超过 8 MiB");
-    const bytes = await readFile7(absolute);
+    const bytes = await readFile8(absolute);
     const revision = hashBytes(bytes);
     if (input.expectedRevision && input.expectedRevision !== revision)
       throw new ContentServiceError("CONTENT_CONFLICT", "剧情已变化，请重新读取");
@@ -5097,7 +5259,7 @@ ${row.path}`.toLocaleLowerCase().includes(search)).sort((a, b) => a.id.localeCom
     const catalogAbsolute = await this.safeExistingPath(state, CONTENT_CATALOG_PATH);
     if (catalogAbsolute) {
       try {
-        catalog = JSON.parse(await readFile7(catalogAbsolute, "utf8"));
+        catalog = JSON.parse(await readFile8(catalogAbsolute, "utf8"));
       } catch {
         throw new ContentServiceError("VALIDATION_ERROR", `${CONTENT_CATALOG_PATH} is not valid JSON; refusing to update it.`);
       }
@@ -5109,7 +5271,7 @@ ${row.path}`.toLocaleLowerCase().includes(search)).sort((a, b) => a.id.localeCom
       fail(entry.path, `剧情产物 ${outputPath} 已在内容目录中属于 ${String(asRecord(catalogOwner)?.resourceId)}，请使用不会映射到同一文件名的 storyId。`);
     }
     const existingOutput = await this.safeExistingPath(state, outputPath);
-    const existingStoryJson = existingOutput ? await readFile7(existingOutput, "utf8") : undefined;
+    const existingStoryJson = existingOutput ? await readFile8(existingOutput, "utf8") : undefined;
     if (existingStoryJson) {
       try {
         const existingGraph = asRecord(JSON.parse(existingStoryJson));
@@ -5237,7 +5399,7 @@ ${row.path}`.toLocaleLowerCase().includes(search)).sort((a, b) => a.id.localeCom
       }
     }
     await this.safeWriteText(state, path, input.content, !existing);
-    const info = await stat3(resolve3(state.root, ...path.split("/")), { bigint: true });
+    const info = await stat4(resolve3(state.root, ...path.split("/")), { bigint: true });
     const row = this.upsertDocument(projectId, path, input.content, info);
     if (oldPath && oldPath !== path) {
       this.getDatabase().prepare("UPDATE documents SET deleted = 1 WHERE project_id = ? AND id = ? AND path = ?").run(projectId, existing.id, oldPath);
@@ -5297,13 +5459,13 @@ ${input.content}`), projectId, row.id);
     }
     const sourceAbsolute = resolve3(state.root, ...source.path.split("/"));
     const destinationAbsolute = resolve3(state.root, ...toPath.split("/"));
-    const sourceResolved = await realpath5(sourceAbsolute).catch(() => {
+    const sourceResolved = await realpath6(sourceAbsolute).catch(() => {
       return;
     });
     if (!sourceResolved || !isContained(state.root, sourceResolved))
       throw new ContentServiceError("PATH_ESCAPE", "source path is outside project root.");
     await mkdir6(dirname3(destinationAbsolute), { recursive: true });
-    const destinationParent = await realpath5(dirname3(destinationAbsolute));
+    const destinationParent = await realpath6(dirname3(destinationAbsolute));
     if (!isContained(state.root, destinationParent))
       throw new ContentServiceError("PATH_ESCAPE", "destination parent escapes project root.");
     try {
@@ -5334,7 +5496,7 @@ ${input.content}`), projectId, row.id);
     for (const document of allDocuments) {
       const change = rewritten.get(document.id);
       const targetPath = change.path;
-      const info = await stat3(resolve3(state.root, ...targetPath.split("/")), { bigint: true });
+      const info = await stat4(resolve3(state.root, ...targetPath.split("/")), { bigint: true });
       this.upsertDocument(projectId, targetPath, change.content, info);
       if (document.id !== source.id && change.content === document.content)
         continue;
@@ -5378,7 +5540,7 @@ ${rewritten.get(source.id).content}`), projectId, source.id);
     await this.validateCardReferences(state, card);
     const { path, key } = cardCollection(card.kind);
     const absolute = await this.safeExistingPath(state, path);
-    const source = absolute ? JSON.parse(await readFile7(absolute, "utf8")) : { [key]: [] };
+    const source = absolute ? JSON.parse(await readFile8(absolute, "utf8")) : { [key]: [] };
     if (!Array.isArray(source[key]))
       throw new ContentServiceError("VALIDATION_ERROR", `${path} needs a ${key} array.`);
     if (source[key].some((item) => item?.id === id))
@@ -5411,7 +5573,7 @@ ${rewritten.get(source.id).content}`), projectId, source.id);
     const sourceAbsolute = resolve3(state.root, ...row.path.split("/"));
     let sourceText;
     try {
-      sourceText = await readFile7(sourceAbsolute, "utf8");
+      sourceText = await readFile8(sourceAbsolute, "utf8");
     } catch (error) {
       throw new ContentServiceError("CONTENT_CONFLICT", `card source changed or disappeared: ${row.path}`, { cause: toErrorMessage(error) });
     }
@@ -5489,7 +5651,7 @@ ${rewritten.get(source.id).content}`), projectId, source.id);
         return;
       let parsed;
       try {
-        parsed = JSON.parse(await readFile7(absolute, "utf8"));
+        parsed = JSON.parse(await readFile8(absolute, "utf8"));
       } catch (error) {
         throw new ContentServiceError("VALIDATION_ERROR", `${path} is not valid JSON: ${toErrorMessage(error)}`);
       }
@@ -5578,13 +5740,13 @@ ${rewritten.get(source.id).content}`), projectId, source.id);
         bytes = Buffer.from(source, "base64");
       } else if (candidateInput.sourcePath) {
         const sourcePath = resolve3(candidateInput.sourcePath);
-        const dataRootReal = await realpath5(this.dataRoot);
-        const sourceReal = await realpath5(sourcePath).catch(() => {
+        const dataRootReal = await realpath6(this.dataRoot);
+        const sourceReal = await realpath6(sourcePath).catch(() => {
           return;
         });
         if (!sourceReal || !isContained(dataRootReal, sourceReal))
           throw new ContentServiceError("PATH_ESCAPE", "candidate source must be inside dataRoot.");
-        bytes = await readFile7(sourceReal);
+        bytes = await readFile8(sourceReal);
       } else {
         throw new ContentServiceError("INVALID_INPUT", `candidate ${name} requires data, base64, or sourcePath.`);
       }
@@ -5620,7 +5782,7 @@ ${rewritten.get(source.id).content}`), projectId, source.id);
       const base = {
         id: row.id,
         title: row.name,
-        path: toPosixPath(relative3(this.dataRoot, row.file_path)),
+        path: toPosixPath(relative4(this.dataRoot, row.file_path)),
         revision: row.revision,
         mimeType: row.mime_type,
         size: row.size,
@@ -5686,15 +5848,15 @@ ${rewritten.get(source.id).content}`), projectId, source.id);
     if (!candidate && !existingVersion)
       throw new ContentServiceError("NOT_FOUND", "candidate or version was not found.");
     if (candidate && !existingVersion) {
-      const source = await realpath5(candidate.file_path).catch(() => {
+      const source = await realpath6(candidate.file_path).catch(() => {
         return;
       });
-      const dataRootReal = await realpath5(this.dataRoot);
+      const dataRootReal = await realpath6(this.dataRoot);
       if (!source || !isContained(dataRootReal, source))
         throw new ContentServiceError("PATH_ESCAPE", "candidate path escapes dataRoot.");
     }
     const sourcePath = candidate?.file_path ?? existingVersion.path;
-    const bytes = candidate ? await readFile7(sourcePath) : await this.readVersionBytes(state, existingVersion);
+    const bytes = candidate ? await readFile8(sourcePath) : await this.readVersionBytes(state, existingVersion);
     const desiredPath = normalizeAssetDestination(input.path ?? input.fileName ?? candidate?.name ?? basename(existingVersion?.path ?? "asset.bin"));
     const revision = hashBytes(bytes);
     const existingById = input.assetId ? db.prepare("SELECT * FROM assets WHERE project_id = ? AND id = ? AND deleted = 0").get(projectId, input.assetId) : undefined;
@@ -5784,7 +5946,7 @@ ${rewritten.get(source.id).content}`), projectId, source.id);
     const absolute = await this.safeExistingPath(state, version.path);
     if (!absolute)
       throw new ContentServiceError("NOT_FOUND", "asset version file is unavailable.");
-    return readFile7(absolute);
+    return readFile8(absolute);
   }
   async loadManifest(projectId) {
     const cached = this.manifestCache.get(projectId);
@@ -5796,13 +5958,13 @@ ${rewritten.get(source.id).content}`), projectId, source.id);
     const sharedPath = resolve3(this.dataRoot, MANIFEST_FILE_NAME);
     let parsed;
     try {
-      parsed = projectPath ? JSON.parse(await readFile7(projectPath, "utf8")) : undefined;
+      parsed = projectPath ? JSON.parse(await readFile8(projectPath, "utf8")) : undefined;
     } catch {
       try {
-        parsed = JSON.parse(await readFile7(workaPath, "utf8"));
+        parsed = JSON.parse(await readFile8(workaPath, "utf8"));
       } catch {
         try {
-          parsed = JSON.parse(await readFile7(sharedPath, "utf8"));
+          parsed = JSON.parse(await readFile8(sharedPath, "utf8"));
         } catch {
           parsed = undefined;
         }
@@ -5999,9 +6161,9 @@ function createContentService(options) {
   return new ContentServiceImpl(options);
 }
 
-// backend/plugins/cardgame-content/src/workflow.ts
-import { createHash as createHash8, randomUUID as randomUUID6 } from "node:crypto";
-import { mkdir as mkdir7, readFile as readFile8, rename as rename7, writeFile as writeFile6 } from "node:fs/promises";
+// plugins/cardgame-content/src/workflow.ts
+import { createHash as createHash9, randomUUID as randomUUID7 } from "node:crypto";
+import { mkdir as mkdir7, readFile as readFile9, rename as rename7, writeFile as writeFile6 } from "node:fs/promises";
 import { join as join6 } from "node:path";
 var WORKFLOW_SCHEMA_VERSION = 1;
 var WORKFLOW_PAGE_SIZE = 100;
@@ -6052,8 +6214,8 @@ function stable(value) {
   const object = value;
   return `{${Object.keys(object).sort().map((name) => `${JSON.stringify(name)}:${stable(object[name])}`).join(",")}}`;
 }
-function digest3(value) {
-  return createHash8("sha256").update(stable(value)).digest("hex");
+function digest4(value) {
+  return createHash9("sha256").update(stable(value)).digest("hex");
 }
 function iso(now) {
   return new Date(now).toISOString();
@@ -6154,7 +6316,7 @@ function normalizeCandidates(value, identitySeed) {
       const source = optionalText(candidate.sourcePath ?? candidate.path ?? candidate.name ?? candidate.fileName);
       if (!source)
         throw new WorkflowError("invalid-input", `candidateRefs[${index}] 缺少稳定 id 或 sourcePath`);
-      candidate.id = `candidate:${digest3({ seed: identitySeed ?? "candidate", index, source }).slice(0, 32)}`;
+      candidate.id = `candidate:${digest4({ seed: identitySeed ?? "candidate", index, source }).slice(0, 32)}`;
     }
     return candidate;
   });
@@ -6318,7 +6480,7 @@ class DurableWorkflowStore {
     if (this.fallbackPath === ":memory:")
       return emptyState();
     try {
-      const parsed = JSON.parse(await readFile8(this.fallbackPath, "utf8"));
+      const parsed = JSON.parse(await readFile9(this.fallbackPath, "utf8"));
       return {
         schemaVersion: WORKFLOW_SCHEMA_VERSION,
         nextHistoryId: Number(parsed.nextHistoryId) || 1,
@@ -6346,7 +6508,7 @@ class DurableWorkflowStore {
   async flush() {
     if (this.native || this.fallbackPath === ":memory:")
       return;
-    const temporary = `${this.fallbackPath}.${process.pid}.${randomUUID6()}.tmp`;
+    const temporary = `${this.fallbackPath}.${process.pid}.${randomUUID7()}.tmp`;
     await writeFile6(temporary, JSON.stringify(this.ensureFallback()), "utf8");
     await rename7(temporary, this.fallbackPath);
   }
@@ -6466,13 +6628,15 @@ ${item.description ?? ""}`.toLocaleLowerCase().includes(q)));
       const hasNext = rows.length > limit;
       const items = rows.slice(0, limit).map((row) => productionListItemFromSql(row));
       const totalParams = [projectId, ...status ? [status] : [], ...todoId ? [todoId] : [], ...q ? [`%${q}%`, `%${q}%`, `%${q}%`] : []];
-      const total = Number(this.statement(`SELECT COUNT(*) AS count FROM productions WHERE ${clauses.filter((clause) => !clause.startsWith("(updated_at")).join(" AND ")}`).get(...totalParams).count);
-      return { projectId, items, limit, total, ...hasNext && items.length ? { nextCursor: encodeCursor2({ updatedAt: items.at(-1).updatedAt, id: items.at(-1).id }) } : {} };
+      const snapshot = this.statement(`SELECT COUNT(*) AS count,(SELECT COALESCE(SUM(revision),0) FROM productions WHERE project_id = ?) AS revisions FROM productions WHERE ${clauses.filter((clause) => !clause.startsWith("(updated_at")).join(" AND ")}`).get(projectId, ...totalParams);
+      const total = Number(snapshot.count), revision = String(snapshot.revisions);
+      return { projectId, items, limit, total, revision, ...hasNext && items.length ? { nextCursor: encodeCursor2({ updatedAt: items.at(-1).updatedAt, id: items.at(-1).id }) } : {} };
     }
-    const items = this.listProductions(projectId).filter((item) => (!status || item.status === status) && (!todoId || item.todoId === todoId) && (!q || `${item.brief}
+    const all = this.listProductions(projectId);
+    const items = all.filter((item) => (!status || item.status === status) && (!todoId || item.todoId === todoId) && (!q || `${item.brief}
 ${item.id}
 ${item.todoId ?? ""}`.toLocaleLowerCase().includes(q))).map(productionListItemFromRecord);
-    return pageRecords(items, input);
+    return { ...pageRecords(items, input), revision: String(all.reduce((sum, item) => sum + item.revision, 0)) };
   }
   countProductions(projectId) {
     if (this.native)
@@ -6700,7 +6864,7 @@ function createWorkflowService(options) {
     projects.set(project.id, { ...project, id: project.id.trim() });
   }
   const now = options.now ?? Date.now;
-  const makeId = options.idFactory ?? randomUUID6;
+  const makeId = options.idFactory ?? randomUUID7;
   const listeners = new Set;
   const ready = DurableWorkflowStore.open(options.dataRoot);
   let closed = false;
@@ -6909,7 +7073,7 @@ function createWorkflowService(options) {
         for (let index = 0;index < input.items.length; index += 1) {
           const source = asRecord2(input.items[index]);
           const sourceId = optionalText(source.id ?? source.itemId ?? source.key);
-          const id = sourceId ?? `legacy-${digest3({ projectId, title: source.title, description: source.description, index }).slice(0, 24)}`;
+          const id = sourceId ?? `legacy-${digest4({ projectId, title: source.title, description: source.description, index }).slice(0, 24)}`;
           const existing = store.getTodo(projectId, id);
           const title = text(source.title ?? source.name ?? `待办 ${id}`, "title");
           const incomingRequirement = {
@@ -7022,7 +7186,7 @@ function createWorkflowService(options) {
         delegationId: item.execution?.delegationId
       };
       const request = requestId(input.requestId ?? item.delivery?.requestId, `todo-repair:${projectId}:${id}:${item.requirementRevision}`);
-      const fingerprint = digest3({ operation: "repair", payload: { ...payload, delegationId: undefined } });
+      const fingerprint = digest4({ operation: "repair", payload: { ...payload, delegationId: undefined } });
       const prior = store.getRequest(projectId, request);
       if (prior && prior.fingerprint !== fingerprint)
         throw new WorkflowRequestIdReuseError(undefined, { requestId: request, previous: prior });
@@ -7126,7 +7290,7 @@ function createWorkflowService(options) {
       try {
         for (let index = 0;index < input.items.length; index += 1) {
           const source = asRecord2(input.items[index]);
-          const id = text(source.id ?? source.productionId ?? `legacy-production-${digest3({ projectId, index, brief: source.brief }).slice(0, 24)}`, "productionId");
+          const id = text(source.id ?? source.productionId ?? `legacy-production-${digest4({ projectId, index, brief: source.brief }).slice(0, 24)}`, "productionId");
           const todoId = optionalText(source.todoId);
           const current = store.getProduction(projectId, id) ?? (todoId ? store.findProductionForTodo(projectId, todoId) : undefined);
           const requirement = productionRequirement({ ...source, projectId, id, ...todoId ? { todoId } : {} }, current);
@@ -7289,6 +7453,15 @@ function createWorkflowService(options) {
       return current.rounds.find((item) => item.round === round);
     return current.rounds.at(-1);
   }
+  function assertRoundScope(round, input) {
+    if (input.projectGeneration === undefined)
+      return;
+    if (round.projectGeneration === input.projectGeneration)
+      return;
+    if (!round.projectGeneration && input.allowLegacyReconciliation === true)
+      return;
+    throw new WorkflowError("conflict", "原轮次属于旧项目绑定，不能重试或写回；请核对历史后明确新建一轮");
+  }
   function requirementForRound(current) {
     return {
       brief: current.brief,
@@ -7301,7 +7474,7 @@ function createWorkflowService(options) {
   }
   function outputDirectoryFor(projectId, productionId, round) {
     const projectPart = projectId.replace(/[^a-zA-Z0-9._-]/g, "_");
-    return join6(options.dataRoot, "incoming", projectPart, digest3(productionId).slice(0, 24), String(round));
+    return join6(options.dataRoot, "incoming", projectPart, digest4(productionId).slice(0, 24), String(round));
   }
   function dispatchInput(production, round) {
     return {
@@ -7316,11 +7489,11 @@ function createWorkflowService(options) {
       scope: [...round.scope],
       ...round.requirement.outputDirectory ? { outputDirectory: round.requirement.outputDirectory } : {},
       ...round.cwd ? { cwd: round.cwd } : {},
-      ...production.todoId ? { todoId: production.todoId } : {}
+      ...round.requirement.todoId ? { todoId: round.requirement.todoId } : {}
     };
   }
   function productionDispatchFingerprint(production, round) {
-    return digest3({ operation: "production", input: dispatchInput(production, round) });
+    return digest4({ operation: "production", input: dispatchInput(production, round) });
   }
   async function reserveProduction(input) {
     return enqueue(async (store) => {
@@ -7334,6 +7507,7 @@ function createWorkflowService(options) {
         throw new WorkflowError("invalid-input", "卡牌批次请使用分阶段工作流，插画由 Codex 回填");
       const isNewRound = input.newRound === true || !previous && input.round !== undefined;
       if (previous && !isNewRound) {
+        assertRoundScope(previous, input);
         if (previous.requirement.outputDirectory)
           await mkdir7(previous.requirement.outputDirectory, { recursive: true });
         const expectedRequest = requestId(input.requestId, previous.requestId);
@@ -7368,7 +7542,7 @@ function createWorkflowService(options) {
       }
       const at = iso(now());
       await mkdir7(outputDirectory, { recursive: true });
-      const round = { round: roundNumber, requestId: rid, businessKey, requirementRevision: current.requirementRevision, dispatchRevision, requirement, scope, ...cwd ? { cwd } : {}, status: "reserved", createdAt: at, updatedAt: at };
+      const round = { ...typeof input.projectGeneration === "string" ? { projectGeneration: input.projectGeneration } : {}, round: roundNumber, requestId: rid, businessKey, requirementRevision: current.requirementRevision, dispatchRevision, requirement, scope, ...cwd ? { cwd } : {}, status: "reserved", createdAt: at, updatedAt: at };
       const next = clone(current);
       next.rounds.push(round);
       next.status = "reserved";
@@ -7392,17 +7566,36 @@ function createWorkflowService(options) {
       const round = productionRound(input, current);
       if (!round)
         throw new WorkflowError("not-found", "找不到制作轮次");
+      assertRoundScope(round, input);
       const receipt = input.receipt && typeof input.receipt === "object" ? asRecord2(input.receipt) : input;
       const receiptStatus = optionalText(receipt.status) ?? "accepted";
       const taskStatus = taskStatusFromReceipt(receipt);
       const boundStatus = taskStatus && ["queued", "running", "failed", "needs-input", "stale", "cancelled", "paused", "interrupted"].includes(taskStatus) ? taskStatus : statusFromReceipt({ status: receiptStatus });
+      const fingerprint = digest4(receipt);
+      if (round.dispatchReceiptFingerprint === fingerprint)
+        return { production: clone(current), revision: current.revision };
+      const newest = current.rounds.at(-1);
+      const terminal = Boolean(round.result) || current.status === "adopted";
+      if (round.requestId !== newest.requestId || round.requirementRevision !== current.requirementRevision || terminal) {
+        const next = clone(current), at = iso(now()), target = next.rounds.find((value) => value.requestId === round.requestId);
+        target.dispatchReceiptFingerprint = fingerprint;
+        target.dispatchReceipt = clone(receipt);
+        next.revision += 1;
+        next.updatedAt = at;
+        touchProduction(store, next, "late-binding-receipt", { requestId: round.requestId, round: round.round, receipt: clone(receipt) }, at);
+        emit({ projectId, kind: "production", id, revision: next.revision });
+        return { production: clone(next), revision: next.revision };
+      }
+      const binding = executionBindingFromReceipt(receipt);
+      const nextExecution = { ...current.execution ?? {}, requestId: round.requestId, status: boundStatus, transportStatus: receiptStatus, ...binding };
       const at = iso(now());
       const next = clone(current);
       const targetRound = next.rounds.find((item) => item.requestId === round.requestId);
+      targetRound.dispatchReceiptFingerprint = fingerprint;
+      targetRound.dispatchReceipt = clone(receipt);
       targetRound.status = boundStatus;
       targetRound.updatedAt = at;
-      const binding = executionBindingFromReceipt(receipt);
-      next.execution = { ...next.execution ?? {}, requestId: round.requestId, status: boundStatus, transportStatus: receiptStatus, ...binding };
+      next.execution = nextExecution;
       next.generation = { ...next.generation ?? { status: targetRound.status, updatedAt: at }, status: boundStatus, requestId: round.requestId, round: targetRound.round, updatedAt: at };
       next.status = targetRound.status;
       next.revision += 1;
@@ -7424,13 +7617,15 @@ function createWorkflowService(options) {
         throw new WorkflowError("not-found", `找不到制作请求：${id}`);
       const rid = text(input.requestId, "requestId");
       const round = current.rounds.find((item) => item.requestId === rid && (input.round === undefined || item.round === integer(input.round)));
+      if (round)
+        assertRoundScope(round, input);
       const prior = store.getRequest(projectId, rid);
       const resultStatus = optionalText(input.status ?? (input.result && typeof input.result === "object" ? input.result.status : undefined)) ?? "completed";
       const resultPayload = input.result && typeof input.result === "object" && !Array.isArray(input.result) ? asRecord2(input.result) : input;
       const candidatesValue = resultPayload.candidateRefs ?? resultPayload.candidates ?? resultPayload.assetCandidates;
       const candidateRefs = candidatesValue === undefined ? undefined : normalizeCandidates(candidatesValue, `${rid}:${round?.round ?? input.round ?? 0}`);
       const resultRevision = integer(input.revision ?? input.requirementRevision ?? input.requestRevision ?? prior?.requirementRevision ?? 0);
-      const fingerprint = digest3({ status: resultStatus, conclusion: resultPayload.conclusion, error: resultPayload.error, candidateRefs, raw: resultPayload });
+      const fingerprint = digest4({ status: resultStatus, conclusion: resultPayload.conclusion, error: resultPayload.error, candidateRefs, raw: resultPayload });
       if (!round || prior && prior.productionId !== id) {
         if (prior)
           store.putRequest({ ...prior, status: "stale", result: resultPayload, updatedAt: iso(now()) });
@@ -7578,17 +7773,21 @@ function createWorkflowService(options) {
       const production = store.getProduction(projectId, productionId);
       if (!production)
         throw new WorkflowError("not-found", `找不到制作请求：${productionId}`);
-      const round = productionRound(input, production);
+      const round = productionRound({ requestId: input.sourceRequestId, round: input.round }, production);
+      if (!round)
+        throw new WorkflowError("not-found", "找不到候选所属轮次");
       return { production, round };
     });
     const round = current.round;
-    const rid = requestId(input.requestId, `asset-candidates:${projectId}:${productionId}:${round?.round ?? 0}:${digest3(candidates).slice(0, 16)}`);
+    const rid = requestId(input.requestId, `asset-candidates:${projectId}:${productionId}:${round?.round ?? 0}:${digest4(candidates).slice(0, 16)}`);
     const payload = { projectId, candidates: clone(candidates) };
     let external;
     if (suppliedReceipt)
       external = suppliedReceipt;
     else if (context?.assets?.registerCandidates)
       external = await context.assets.registerCandidates(payload);
+    if (!external)
+      throw new WorkflowError("delivery-pending", "缺少资源服务的真实回执");
     if (external && typeof external === "object" && !Array.isArray(external) && "status" in external && !connectionCompleted(external)) {
       throw new WorkflowError("delivery-pending", `候选登记尚未完成：${String(external.status)}`, external);
     }
@@ -7596,6 +7795,11 @@ function createWorkflowService(options) {
       const production = store.getProduction(projectId, productionId);
       if (!production)
         throw new WorkflowError("not-found", `找不到制作请求：${productionId}`);
+      const latest = production.rounds.at(-1);
+      if (round && (latest?.requestId !== round.requestId || production.requirementRevision !== round.requirementRevision))
+        throw new WorkflowError("conflict", "候选回执属于旧轮次");
+      if (production.candidateRegistration?.requestId === rid && production.candidateRegistration.status === "completed")
+        return { production: clone(production), candidates: clone(candidates), requestId: rid, result: external };
       const at = iso(now());
       const next = clone(production);
       next.candidateRefs = mergeCandidates(next.candidateRefs, candidates);
@@ -7638,6 +7842,8 @@ function createWorkflowService(options) {
       external = suppliedReceipt;
     else if (context?.assets?.adoptVersion)
       external = await context.assets.adoptVersion(payload);
+    if (!external)
+      throw new WorkflowError("delivery-pending", "缺少资源服务的真实回执");
     if (external && typeof external === "object" && !Array.isArray(external) && "status" in external && !connectionCompleted(external)) {
       throw new WorkflowError("delivery-pending", `资源采用尚未完成：${String(external.status)}`, external);
     }
@@ -7651,6 +7857,10 @@ function createWorkflowService(options) {
       const current = store.getProduction(projectId, productionId);
       if (!current)
         throw new WorkflowError("not-found", `找不到制作请求：${productionId}`);
+      if (current.candidateRefs.find((candidate) => (candidate.id ?? candidate.key ?? candidate.assetId) === candidateId)?.rejectedAt)
+        throw new WorkflowError("conflict", "候选已被否决；资源回执已保留，请人工核对实际采用结果", { candidateId, assetId: adoptedAssetId, versionId: adoptedVersionId, receipt: external });
+      if (current.adoption?.candidateId === candidateId && current.adoption.assetId === adoptedAssetId && current.adoption.version === adoptedVersionId)
+        return { production: clone(current), candidateId, requestId: rid, result: external };
       const at = iso(now());
       const next = clone(current);
       next.adoption = { status: "adopted", candidateId, ...adoptedAssetId ? { assetId: adoptedAssetId } : {}, ...adoptedVersionId ? { version: adoptedVersionId } : {}, updatedAt: at, result: clone(external) };
@@ -7673,7 +7883,7 @@ function createWorkflowService(options) {
         throw new WorkflowError("not-found", `找不到制作请求：${productionId}`);
       checkRevision(production.revision, input.baseRevision, production);
       const rid = requestId(input.requestId, `reject-candidate:${projectId}:${productionId}:${candidateId}`);
-      const fingerprint = digest3({ operation: "reject-candidate", productionId, candidateId, reason: reason ?? "" });
+      const fingerprint = digest4({ operation: "reject-candidate", productionId, candidateId, reason: reason ?? "" });
       const prior = store.getRequest(projectId, rid);
       if (prior && prior.fingerprint !== fingerprint)
         throw new WorkflowRequestIdReuseError(undefined, { requestId: rid, previous: prior });
@@ -7753,6 +7963,18 @@ ${item.todoId ?? ""}`.toLocaleLowerCase().includes(q)).map((item) => projectGame
       }
       const page = store.listProductionsPage(projectId, input);
       return { ...page, items: page.items.map((item) => projectGameChange(store.getProduction(projectId, item.id))) };
+    }
+    if (op === "productionDispatch") {
+      const production = store.getProduction(projectId, text(input.productionId, "productionId"));
+      if (!production)
+        throw new WorkflowError("not-found", "找不到制作单");
+      const round = production.rounds.at(-1);
+      if (!round || round.requestId !== input.requestId || round.round !== input.round || round.requirementRevision !== production.requirementRevision)
+        throw new WorkflowError("conflict", "制作轮次或需求已变化，未交办执行");
+      assertRoundScope(round, input);
+      if (round.result || production.status === "adopted")
+        return { completed: true, production: clone(production) };
+      return { production: clone(production), round: clone(round), submit: dispatchInput(production, round), legacyReconciliation: !round.projectGeneration };
     }
     if (op === "production") {
       const id = text(input.id ?? input.productionId, "productionId");
@@ -7853,10 +8075,10 @@ ${item.todoId ?? ""}`.toLocaleLowerCase().includes(q)).map((item) => projectGame
   };
 }
 
-// backend/plugins/cardgame-content/src/deck-plan.ts
-import { createHash as createHash9 } from "node:crypto";
+// plugins/cardgame-content/src/deck-plan.ts
+import { createHash as createHash10 } from "node:crypto";
 var stable2 = (value) => JSON.stringify(value, (_key, item) => item && typeof item === "object" && !Array.isArray(item) ? Object.fromEntries(Object.entries(item).sort(([a], [b]) => a.localeCompare(b))) : item);
-var deckHash = (value) => createHash9("sha256").update(stable2(value)).digest("hex");
+var deckHash = (value) => createHash10("sha256").update(stable2(value)).digest("hex");
 var deckPath = (plan) => `public/data/decks/worka-${plan.id}.json`;
 function validDeckTargetPath(path) {
   return /^public\/data\/cards\/(units|artifacts|talismans|fields)\.json$/.test(path) || /^public\/data\/decks\/worka-[A-Za-z0-9][A-Za-z0-9_-]{0,63}\.json$/.test(path) || path === "public/data/decks/starter-deck.json" || path === "public/assets/asset-manifest.json" || /^public\/assets\/card-faces\/[A-Za-z0-9][A-Za-z0-9._-]{0,127}\/[A-Za-z0-9._-]+\.png$/.test(path);
@@ -7985,14 +8207,17 @@ function assertDeckWriteAccess(method, input, callerKind) {
     throw Error("卡牌批次内容与确认状态只能通过 cardWorkflow 专用动作更新");
 }
 
-// backend/plugins/cardgame-content/src/card-pipeline.ts
-import { createHash as createHash10, randomUUID as randomUUID7 } from "node:crypto";
-import { readFile as readFile9, realpath as realpath6, stat as stat4 } from "node:fs/promises";
+// ../notes/note-4/card-operations.ts
+var CARD_OPERATIONS = ["createCardBatch", "setCardDrafts", "saveCardDraft", "approveCardDrafts", "requestCardArt", "reuseCardArt", "attachCardArt", "assembleCardFaces", "integrateCard", "saveDeckPlan", "confirmDeckDraft", "prepareDeckArt", "stageDeckCandidate"];
+
+// plugins/cardgame-content/src/card-pipeline.ts
+import { createHash as createHash11, randomUUID as randomUUID8 } from "node:crypto";
+import { readFile as readFile10, realpath as realpath7, stat as stat5 } from "node:fs/promises";
 import { homedir } from "node:os";
-import { isAbsolute as isAbsolute4, join as join7, relative as relative4, sep as sep5 } from "node:path";
+import { isAbsolute as isAbsolute5, join as join7, relative as relative5, sep as sep6 } from "node:path";
 import sharp2 from "sharp";
 
-// backend/templates/cardgame-production/card-face.ts
+// ../notes/note-4/card-face.ts
 var CARD_FACE_VERSION = 4;
 var CARD_FACE_THEMES = [
   { id: "jade", name: "青玉", description: "青玉牌框 · 大幅插画", version: 1 },
@@ -8057,7 +8282,7 @@ function renderCardFace(card, art, presentation, includeStats = true, fontFamily
   const ruleLines = lines(cardRules(card), 19);
   const text = (x, y, value, size, color, anchor = "middle") => `<text x="${x}" y="${y}" font-size="${size}" fill="${color}" text-anchor="${anchor}">${escape(value)}</text>`;
   const rarity = { common: "普通", uncommon: "精良", rare: "稀有", epic: "史诗", legendary: "传说" };
-  const meta = [card.race ?? CARD_KIND_LABELS[card.kind] ?? card.kind, (card.linggen ?? []).join("·"), rarity[card.rarity] ?? card.rarity].filter(Boolean).join(" · ");
+  const meta = [card.race ?? CARD_KIND_LABELS[card.kind ?? ""] ?? card.kind, (card.linggen ?? []).join("·"), rarity[card.rarity ?? ""] ?? card.rarity].filter(Boolean).join(" · ");
   return `<svg xmlns="http://www.w3.org/2000/svg" width="540" height="780" viewBox="0 0 540 780">
   <defs><clipPath id="art"><rect x="${x}" y="${y}" width="${w}" height="${h}" rx="${scroll ? 2 : 3}"/></clipPath></defs>
   <rect x="3" y="3" width="534" height="774" rx="${scroll ? 5 : 20}" fill="${shell}" stroke="${gold}" stroke-width="4"/>
@@ -8071,12 +8296,12 @@ function renderCardFace(card, art, presentation, includeStats = true, fontFamily
   ${text(270, scroll ? 512 : 538, meta, 20, scroll ? "#655f4c" : "#465741")}
   ${ruleLines.map((line, index) => text(52, 566 + index * 23, line, 22, "#2f3829", "start")).join("")}
   <path d="M54 692H486" stroke="${gold}" stroke-width="1"/>
-  ${card.kind === "unit" ? `<rect x="45" y="707" width="132" height="43" rx="7" fill="#553426"/><rect x="363" y="707" width="132" height="43" rx="7" fill="#254936"/>${includeStats ? text(111, 738, `攻 ${card.attack}`, 29, "#f3cd9b") + text(429, 738, `命 ${card.health}`, 29, "#d7e6b4") : ""}` : text(270, 725, CARD_KIND_LABELS[card.kind] ?? card.kind, 23, ink)}
+  ${card.kind === "unit" ? `<rect x="45" y="707" width="132" height="43" rx="7" fill="#553426"/><rect x="363" y="707" width="132" height="43" rx="7" fill="#254936"/>${includeStats ? text(111, 738, `攻 ${card.attack}`, 29, "#f3cd9b") + text(429, 738, `命 ${card.health}`, 29, "#d7e6b4") : ""}` : text(270, 725, CARD_KIND_LABELS[card.kind ?? ""] ?? card.kind, 23, ink)}
   ${text(270, card.kind === "unit" ? 735 : 751, card.id, 14, scroll ? "#756e5c" : "#a0b5a2")}
   </g></svg>`;
 }
 
-// backend/plugins/cardgame-content/src/card-pipeline.ts
+// plugins/cardgame-content/src/card-pipeline.ts
 function stable3(value) {
   if (Array.isArray(value))
     return `[${value.map(stable3).join(",")}]`;
@@ -8084,7 +8309,7 @@ function stable3(value) {
     return `{${Object.keys(value).sort().filter((key) => value[key] !== undefined).map((key) => JSON.stringify(key) + ":" + stable3(value[key])).join(",")}}`;
   return JSON.stringify(value);
 }
-var hash2 = (value) => createHash10("sha256").update(stable3(value)).digest("hex");
+var hash2 = (value) => createHash11("sha256").update(stable3(value)).digest("hex");
 var text2 = (value, label) => {
   if (typeof value !== "string" || !value.trim())
     throw Error(`${label}不能为空`);
@@ -8129,7 +8354,7 @@ function createCardPipeline(content, workflow, fonts = {}, candidates, options =
       ...process.platform === "win32" ? [{ file: join7(process.env.WINDIR || "C:\\Windows", "Fonts", "simkai.ttf"), family: "KaiTi" }] : []
     ];
     for (const item of choices)
-      if (await stat4(item.file).then((info) => info.isFile(), () => false))
+      if (await stat5(item.file).then((info) => info.isFile(), () => false))
         return item;
     return;
   })();
@@ -8153,23 +8378,23 @@ function createCardPipeline(content, workflow, fonts = {}, candidates, options =
   }
   async function readGeneratedImage(pathInput) {
     const path = text2(pathInput, "Codex 生图文件路径");
-    if (!isAbsolute4(path))
+    if (!isAbsolute5(path))
       throw Error("Codex 生图文件必须使用绝对路径");
     let root;
     let resolved;
     try {
-      [root, resolved] = await Promise.all([realpath6(generatedImagesRoot), realpath6(path)]);
+      [root, resolved] = await Promise.all([realpath7(generatedImagesRoot), realpath7(path)]);
     } catch {
       throw Error("Codex 生图文件不存在或输出目录不可用");
     }
-    const within = relative4(root, resolved);
-    if (!within || within === ".." || within.startsWith(`..${sep5}`) || isAbsolute4(within)) {
+    const within = relative5(root, resolved);
+    if (!within || within === ".." || within.startsWith(`..${sep6}`) || isAbsolute5(within)) {
       throw Error("仅接受 Codex generated_images 目录中的文件");
     }
-    const file = await stat4(resolved);
+    const file = await stat5(resolved);
     if (!file.isFile() || file.size > 20000000)
       throw Error("Codex 生图文件必须是 20 MB 以内的普通文件");
-    const bytes = await readFile9(resolved);
+    const bytes = await readFile10(resolved);
     if (bytes.length > 20000000)
       throw Error("Codex 生图文件超过 20 MB");
     return bytes;
@@ -8326,6 +8551,17 @@ function createCardPipeline(content, workflow, fonts = {}, candidates, options =
       batch.draftSource = batch.draftOrigin === "agent" ? input._draftSource : undefined;
       return save(production, batch);
     }
+    if (method === "linkCardCompanion") {
+      const source = await content.query({ projectId: input.projectId, op: "card", id: text2(input.sourceCardId, "配套单位") });
+      const { item: todo } = await workflow.query({ projectId: input.projectId, op: "todo", id: text2(input.todoId, "待办") });
+      if (source.kind !== "unit" || source.revision !== input.sourceRevision)
+        throw Error("配套单位已变化，请刷新后重试");
+      if (todo.productionId && todo.productionId !== production.id)
+        throw Error("待办已关联另一制作单");
+      batch.companion = { cardId: source.id, revision: source.revision };
+      const saved = await save(production, batch);
+      return workflow.command("bindTodo", { projectId: input.projectId, productionId: production.id, todoId: todo.id, todoBaseRevision: todo.revision, productionBaseRevision: saved.revision });
+    }
     if (method === "saveDeckPlan") {
       batch.deck = normalizeDeckPlan(input.deckPlan, production.brief, batch.deck);
       return save(production, batch);
@@ -8409,7 +8645,7 @@ function createCardPipeline(content, workflow, fonts = {}, candidates, options =
       if (typeof artwork !== "string" || !artwork.startsWith("/assets/card-faces/"))
         throw Error("这张卡没有可复用的插画");
       const media = await content.resolveMedia({ projectId: input.projectId, op: "media", path: "public" + artwork, variant: "original" });
-      const metadata = await sharp2(await readFile9(media.absolutePath), { limitInputPixels: 24000000 }).metadata();
+      const metadata = await sharp2(await readFile10(media.absolutePath), { limitInputPixels: 24000000 }).metadata();
       if (!["png", "jpeg", "webp"].includes(metadata.format ?? "") || (metadata.width ?? 0) < 256 || (metadata.height ?? 0) < 256)
         throw Error("来源需要至少 256×256 的 PNG、JPEG 或 WebP");
       const art = { id: media.id, revision: media.revision, fingerprint: artFingerprint(card), provider: "existing", sourceCardId: sourceId };
@@ -8428,7 +8664,7 @@ function createCardPipeline(content, workflow, fonts = {}, candidates, options =
       const fingerprint = artFingerprint(card);
       if (card.artRequest?.fingerprint !== fingerprint)
         card.artRequest = {
-          id: randomUUID7(),
+          id: randomUUID8(),
           fingerprint,
           prompt: `${card.artBrief}
 只生成独立插画；不要卡名、规则、数字、边框或水印。保留四周裁切余量，主体放在中央。卡牌定义：${JSON.stringify(card.definition)}。`
@@ -8476,7 +8712,7 @@ ${card.artRequest.prompt}` } };
       if (card.assembly?.fingerprint === fingerprint)
         return { production, reused: true };
       const media = await content.resolveMedia({ projectId: input.projectId, op: "media", id: card.art.id, variant: "original" });
-      const art = `data:image/png;base64,${(await readFile9(media.absolutePath)).toString("base64")}`;
+      const art = `data:image/png;base64,${(await readFile10(media.absolutePath)).toString("base64")}`;
       const font = await faceFont(input.projectId);
       if (font)
         await sharp2({ text: { text: "卡牌", font: font.family, fontfile: font.file, rgba: true } }).png().toBuffer();
@@ -8521,9 +8757,9 @@ ${card.artRequest.prompt}` } };
     }
   };
 }
-var CARD_PIPELINE_COMMANDS = new Set(["createCardBatch", "setCardDrafts", "saveCardDraft", "approveCardDrafts", "requestCardArt", "reuseCardArt", "attachCardArt", "assembleCardFaces", "integrateCard", "saveDeckPlan", "confirmDeckDraft", "prepareDeckArt", "stageDeckCandidate"]);
+var CARD_PIPELINE_COMMANDS = new Set([...CARD_OPERATIONS, "linkCardCompanion"]);
 
-// backend/plugins/cardgame-content/src/codex-imagegen.ts
+// plugins/cardgame-content/src/codex-imagegen.ts
 import { spawn } from "node:child_process";
 import { readdir as readdir4, mkdtemp, rm as rm3 } from "node:fs/promises";
 import { homedir as homedir2, tmpdir as tmpdir2 } from "node:os";
@@ -8617,15 +8853,15 @@ Generate exactly one original image with a transparent background. Use the built
   return { available, generate };
 }
 
-// backend/plugins/cardgame-content/src/game-candidates.ts
-import { createHash as createHash11, randomUUID as randomUUID8 } from "node:crypto";
+// plugins/cardgame-content/src/game-candidates.ts
+import { createHash as createHash12, randomUUID as randomUUID9 } from "node:crypto";
 import { execFile as execFile2 } from "node:child_process";
-import { cp, lstat as lstat5, mkdir as mkdir8, mkdtemp as mkdtemp2, readFile as readFile10, realpath as realpath7, rm as rm4, writeFile as writeFile7 } from "node:fs/promises";
+import { cp, lstat as lstat5, mkdir as mkdir8, mkdtemp as mkdtemp2, readFile as readFile11, realpath as realpath8, rm as rm4, writeFile as writeFile7 } from "node:fs/promises";
 import { tmpdir as tmpdir3 } from "node:os";
 import { dirname as dirname5, join as join9, resolve as resolve4 } from "node:path";
 import { promisify as promisify2 } from "node:util";
 
-// backend/plugins/cardgame-content/src/story-copy-edits.ts
+// plugins/cardgame-content/src/story-copy-edits.ts
 var hubPath = /^public\/data\/hub\/(?:[A-Za-z0-9._-]+\/)*[A-Za-z0-9._-]+\.json$/u;
 var worldMapPath = "public/data/world/world-map.json";
 var idPattern = /^[A-Za-z][A-Za-z0-9._-]{1,127}$/u;
@@ -8703,9 +8939,9 @@ function applyStoryCopyEdits(path, content, edits) {
 `;
 }
 
-// backend/plugins/cardgame-content/src/game-candidates.ts
+// plugins/cardgame-content/src/game-candidates.ts
 var run2 = promisify2(execFile2);
-var digest4 = (value) => createHash11("sha256").update(value).digest("hex");
+var digest5 = (value) => createHash12("sha256").update(value).digest("hex");
 var stable4 = (value) => JSON.stringify(value, (_key, item) => item && typeof item === "object" && !Array.isArray(item) ? Object.fromEntries(Object.entries(item).sort(([a], [b]) => a.localeCompare(b))) : item);
 var safe = (value) => value.replace(/[^A-Za-z0-9._-]+/g, "_").slice(0, 80);
 var git2 = async (cwd, ...args) => (await run2("git", args, {
@@ -8716,7 +8952,7 @@ var git2 = async (cwd, ...args) => (await run2("git", args, {
 })).stdout.trim();
 var fileHash = async (path) => {
   try {
-    return digest4(await readFile10(path));
+    return digest5(await readFile11(path));
   } catch (error) {
     if (error.code === "ENOENT")
       return null;
@@ -8725,7 +8961,7 @@ var fileHash = async (path) => {
 };
 async function candidateFile(checkout, path) {
   const absolute = join9(checkout, path);
-  if ((await lstat5(absolute)).isSymbolicLink() || !isPathDescendant(await realpath7(checkout), await realpath7(absolute))) {
+  if ((await lstat5(absolute)).isSymbolicLink() || !isPathDescendant(await realpath8(checkout), await realpath8(absolute))) {
     throw Error(`候选依赖文件越界：${path}`);
   }
   return absolute;
@@ -8865,7 +9101,7 @@ function validStoryTargetPath(path) {
   return validStorySourcePath(path) || /^public\/data\/(?:story|hub)\/(?:[A-Za-z0-9._-]+\/)*[A-Za-z0-9._-]+\.json$/u.test(path) || validStoryCopyPath(path) || /^public\/data\/mijing\/(?:[A-Za-z0-9._-]+\/)*[A-Za-z0-9._-]+\.json$/u.test(path) || validStoryAssetPath(path) || validItemIconAssetPath(path) || validStoryBattlePath(path, "encounter") || validStoryBattlePath(path, "deck") || path === STORY_ASSET_MANIFEST_PATH || path === STORY_CATALOG_PATH || path === CARD_UNITS_PATH || path === STORY_NPC_CATALOG_PATH || path === STORY_ITEM_CATALOG_PATH || path === STORY_QUEST_CATALOG_PATH;
 }
 async function storyTargetBaseRevision(root, baseDependencies) {
-  return digest4(stable4(await Promise.all(baseDependencies.map(async (item) => ({ path: item.path, revision: await fileHash(join9(root, item.path)) })))));
+  return digest5(stable4(await Promise.all(baseDependencies.map(async (item) => ({ path: item.path, revision: await fileHash(join9(root, item.path)) })))));
 }
 function candidateAssetPaths(candidate) {
   const cardPaths = new Set(Object.values(CARD_COLLECTIONS).map((item) => item.path));
@@ -8879,21 +9115,21 @@ function candidateCardKind(candidate) {
 }
 async function cardTargetBaseRevision(root, cardId, assetPaths, kind = "unit") {
   const collection = cardCollection(kind);
-  const source = JSON.parse(await readFile10(join9(root, collection.path), "utf8"));
+  const source = JSON.parse(await readFile11(join9(root, collection.path), "utf8"));
   const card = source[collection.key]?.find((item) => item.id === cardId);
-  const manifest = JSON.parse(await readFile10(join9(root, CARD_ASSET_MANIFEST_PATH), "utf8").catch((error) => {
+  const manifest = JSON.parse(await readFile11(join9(root, CARD_ASSET_MANIFEST_PATH), "utf8").catch((error) => {
     if (error.code === "ENOENT")
       return '{"assets":[]}';
     throw error;
   }));
-  const deck = collection.inDeck ? JSON.parse(await readFile10(join9(root, CARD_STARTER_DECK_PATH), "utf8")) : undefined;
-  const loadout = collection.inDeck ? undefined : await readFile10(join9(root, CARD_BATTLE_LOADOUT_PATH));
+  const deck = collection.inDeck ? JSON.parse(await readFile11(join9(root, CARD_STARTER_DECK_PATH), "utf8")) : undefined;
+  const loadout = collection.inDeck ? undefined : await readFile11(join9(root, CARD_BATTLE_LOADOUT_PATH));
   if (deck && !Array.isArray(deck.cards))
     throw Error("默认卡组格式无效");
-  return digest4(stable4({
-    card: card ? digest4(JSON.stringify(card)) : null,
+  return digest5(stable4({
+    card: card ? digest5(JSON.stringify(card)) : null,
     deckCard: deck?.cards?.find((item) => item.id === cardId) ?? null,
-    ...loadout ? { loadout: digest4(loadout) } : {},
+    ...loadout ? { loadout: digest5(loadout) } : {},
     assets: await Promise.all(assetPaths.map(async (path) => ({ path, file: await fileHash(join9(root, path)), entry: manifest.assets?.find((item) => item.path === path) ?? null })))
   }));
 }
@@ -8944,7 +9180,7 @@ function createGameCandidateService(options) {
     const fingerprint = candidateFingerprint(card, featureId);
     const source = project(projectId);
     const sourceTree = await gameRuntimeSnapshotTree(source);
-    const slot = candidateSlot(`card-${digest4(stable4({ projectId, productionId, cardId, fingerprint, sourceTree })).slice(0, 36)}`, production.gameCandidates);
+    const slot = candidateSlot(`card-${digest5(stable4({ projectId, productionId, cardId, fingerprint, sourceTree })).slice(0, 36)}`, production.gameCandidates);
     const { id, previous } = slot;
     if (previous) {
       await registerPreview(previous);
@@ -8965,7 +9201,7 @@ function createGameCandidateService(options) {
       try {
         const adopt = async (sourceId, name) => {
           const original = await options.content.resolveMedia({ projectId, op: "media", id: sourceId, variant: "original" });
-          const bytes = await readFile10(original.absolutePath);
+          const bytes = await readFile11(original.absolutePath);
           const [registered] = await scoped.command("registerCandidates", { projectId, candidates: [{ name: `${cardId}-${name}.png`, mimeType: "image/png", base64: bytes.toString("base64"), metadata: { purpose: "card-face", provider: "codex" } }] });
           const asset = await scoped.command("adoptVersion", {
             projectId,
@@ -8996,7 +9232,7 @@ function createGameCandidateService(options) {
         await scoped.command("savePipelineCard", { projectId, card: desired, expectedRevision: existing?.revision ?? null });
         if (collection.inDeck) {
           const deckPath = join9(checkout, CARD_STARTER_DECK_PATH);
-          const deck = JSON.parse(await readFile10(deckPath, "utf8"));
+          const deck = JSON.parse(await readFile11(deckPath, "utf8"));
           if (!Array.isArray(deck.cards))
             throw Error("默认卡组格式无效");
           if (batch?.companion) {
@@ -9026,7 +9262,7 @@ function createGameCandidateService(options) {
           }
         } else {
           const loadoutPath = join9(checkout, CARD_BATTLE_LOADOUT_PATH);
-          const loadout = JSON.parse(await readFile10(loadoutPath, "utf8"));
+          const loadout = JSON.parse(await readFile11(loadoutPath, "utf8"));
           const key = card.definition.kind === "pill" ? "pillIds" : "skillIds";
           const ids = loadout[key];
           if (loadout.schemaVersion !== 1 || !Array.isArray(ids) || ids.length > 3 || ids.some((id) => typeof id !== "string" || !id.trim()) || new Set(ids).size !== ids.length)
@@ -9053,8 +9289,8 @@ function createGameCandidateService(options) {
       if (!/^[0-9a-f]{40}$/.test(commit))
         throw Error("候选没有确切提交");
       const targetBaseRevision = await cardTargetBaseRevision(source, cardId, paths, card.definition.kind);
-      const validationManifest = digest4(stable4({ commit, checks: ["game-shell", "content-catalog", "card-definition", "card-themes", collection.inDeck ? "playable-deck" : "playable-loadout"] }));
-      const candidateHash = digest4(stable4({ commit, fingerprint, sourceTree, sourceSnapshotScope: "runtime", targetBaseRevision, validationManifest, dependencies }));
+      const validationManifest = digest5(stable4({ commit, checks: ["game-shell", "content-catalog", "card-definition", "card-themes", collection.inDeck ? "playable-deck" : "playable-loadout"] }));
+      const candidateHash = digest5(stable4({ commit, fingerprint, sourceTree, sourceSnapshotScope: "runtime", targetBaseRevision, validationManifest, dependencies }));
       const at = new Date().toISOString();
       const candidate = { id, projectId, productionId, cardId, featureId, fingerprint, sourceSnapshotTree: sourceTree, sourceSnapshotScope: "runtime", candidateHash, commit, repo: checkout, targetBaseRevision, validationManifest, dependencies, status: "candidate", createdAt: at, updatedAt: at };
       const recorded = await options.workflow.command("recordGameCandidate", { projectId, productionId, baseRevision: production.revision, candidate });
@@ -9087,7 +9323,7 @@ function createGameCandidateService(options) {
     if (artMode && cards.some((card) => !card.art || card.art.fingerprint !== artFingerprint(card) || card.assembly?.fingerprint !== faceFingerprint(card)))
       throw Error("整套插画和两套卡面尚未全部完成当前版本组装");
     const artHashes = artMode ? deckArtFingerprints(batch.cards, plan) : undefined;
-    const fingerprint = artMode ? digest4(stable4({ logic: report.fingerprint, art: artHashes })) : report.fingerprint;
+    const fingerprint = artMode ? digest5(stable4({ logic: report.fingerprint, art: artHashes })) : report.fingerprint;
     const adopted = production.gameCandidates?.filter((item) => item.kind === "deck" && item.targetId === plan.id).at(-1);
     if (adopted?.status === "adopted" && adopted.fingerprint === fingerprint)
       return { candidate: adopted, production, reused: true };
@@ -9112,13 +9348,13 @@ function createGameCandidateService(options) {
     if (baseDependencies.find((item) => item.path === entryPath)?.revision) {
       if (!artMode || !batch.artBaseline)
         throw Error("独立牌组目标已存在，请在新制作单使用另一个 ID");
-      const existingDeck = JSON.parse(await readFile10(join9(source, entryPath), "utf8"));
+      const existingDeck = JSON.parse(await readFile11(join9(source, entryPath), "utf8"));
       if (existingDeck.id !== plan.id || stable4(existingDeck.cards) !== stable4(plan.entries.map((entry) => ({ id: entry.cardId, count: entry.count }))))
         throw Error("正式牌组的副本计划已变化，请先核对");
     }
     const targetBaseRevision = await storyTargetBaseRevision(source, baseDependencies);
     const sourceTree = await gameRuntimeSnapshotTree(source);
-    const { id, previous } = candidateSlot(`deck-${digest4(stable4({ projectId, productionId, fingerprint, sourceTree, targetBaseRevision })).slice(0, 36)}`, production.gameCandidates);
+    const { id, previous } = candidateSlot(`deck-${digest5(stable4({ projectId, productionId, fingerprint, sourceTree, targetBaseRevision })).slice(0, 36)}`, production.gameCandidates);
     if (previous) {
       await registerPreview(previous);
       return { candidate: previous, production, reused: true };
@@ -9147,7 +9383,7 @@ function createGameCandidateService(options) {
           if (artMode) {
             const adopt = async (sourceId, name) => {
               const original = await options.content.resolveMedia({ projectId, op: "media", id: sourceId, variant: "original" });
-              const [registered] = await scoped.command("registerCandidates", { projectId, candidates: [{ name: `${card.definition.id}-${name}.png`, mimeType: "image/png", base64: (await readFile10(original.absolutePath)).toString("base64"), metadata: { purpose: "card-face", provider: "codex" } }] });
+              const [registered] = await scoped.command("registerCandidates", { projectId, candidates: [{ name: `${card.definition.id}-${name}.png`, mimeType: "image/png", base64: (await readFile11(original.absolutePath)).toString("base64"), metadata: { purpose: "card-face", provider: "codex" } }] });
               const asset = await scoped.command("adoptVersion", { projectId, candidateId: registered.id, path: `public/assets/card-faces/${card.definition.id}/${card.assembly.fingerprint.slice(0, 20)}-${name}.png` });
               return "/" + asset.path.replace(/^public\//, "");
             };
@@ -9167,7 +9403,7 @@ function createGameCandidateService(options) {
         await cp(options.deckPreviewAdapter, path);
         await cp(join9(dirname5(options.deckPreviewAdapter), "serve-static.mjs"), join9(dirname5(path), "serve-static.mjs"));
       }
-      const starter = JSON.parse(await readFile10(join9(checkout, CARD_STARTER_DECK_PATH), "utf8"));
+      const starter = JSON.parse(await readFile11(join9(checkout, CARD_STARTER_DECK_PATH), "utf8"));
       const deck = {
         ...starter,
         id: plan.id,
@@ -9205,7 +9441,7 @@ function createGameCandidateService(options) {
         commit,
         repo: checkout,
         targetBaseRevision,
-        validationManifest: digest4(stable4({ commit, checks: ["game-shell", "content-catalog", "deck-definition", "deck-composition", ...artMode ? ["deck-art"] : []] })),
+        validationManifest: digest5(stable4({ commit, checks: ["game-shell", "content-catalog", "deck-definition", "deck-composition", ...artMode ? ["deck-art"] : []] })),
         dependencies,
         baseDependencies,
         changedPaths,
@@ -9289,11 +9525,11 @@ function createGameCandidateService(options) {
     }
     if (input.launch && (!/^public\/data\/hub\/(?:[A-Za-z0-9._-]+\/)*[A-Za-z0-9._-]+\.json$/u.test(input.launch.hubPath) || !/^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$/u.test(input.launch.actionId) || !input.launch.locationId?.trim() || !input.launch.label?.trim()))
       throw Error("剧情 Hub 入口无效");
-    const productionId = `story-${digest4(stable4({ projectId, featureId: input.featureId, storyId: input.storyId })).slice(0, 24)}`;
+    const productionId = `story-${digest5(stable4({ projectId, featureId: input.featureId, storyId: input.storyId })).slice(0, 24)}`;
     const created = await options.workflow.command("createProduction", { projectId, id: productionId, brief: input.brief, featureId: input.featureId });
     if (created.production.featureId !== input.featureId)
       throw Error("剧情制作单属于另一个功能项");
-    const tempDirectory = candidatePath(projectId, `building-${randomUUID8()}`);
+    const tempDirectory = candidatePath(projectId, `building-${randomUUID9()}`);
     const tempCheckout = join9(tempDirectory, "repo");
     await mkdir8(dirname5(tempDirectory), { recursive: true });
     let moved = false;
@@ -9308,7 +9544,7 @@ function createGameCandidateService(options) {
       }
       if (input.npcs?.length) {
         const path = join9(tempCheckout, STORY_NPC_CATALOG_PATH);
-        const catalog = JSON.parse(await readFile10(path, "utf8"));
+        const catalog = JSON.parse(await readFile11(path, "utf8"));
         if (!Array.isArray(catalog.npcs))
           throw Error("游戏人物目录格式无效");
         for (const npc of input.npcs) {
@@ -9330,7 +9566,7 @@ function createGameCandidateService(options) {
       }
       if (input.items?.length) {
         const path = join9(tempCheckout, STORY_ITEM_CATALOG_PATH);
-        const catalog = JSON.parse(await readFile10(path, "utf8"));
+        const catalog = JSON.parse(await readFile11(path, "utf8"));
         const fields = { artifact: "artifacts", tool: "tools", consumable: "consumables", material: "materials", quest: "questItems" };
         const known = new Set;
         for (const field of ["artifacts", "tools", "consumables", "materials", "quests", "questItems"]) {
@@ -9368,7 +9604,7 @@ function createGameCandidateService(options) {
       }
       if (input.recipes?.length) {
         const path = await candidateFile(tempCheckout, STORY_ITEM_CATALOG_PATH);
-        const catalog = JSON.parse(await readFile10(path, "utf8"));
+        const catalog = JSON.parse(await readFile11(path, "utf8"));
         const known = new Map;
         for (const [field, kind] of [["artifacts", "artifact"], ["tools", "tool"], ["consumables", "consumable"], ["materials", "material"], ["quests", "quest"], ["questItems", "quest"]]) {
           const entries = catalog[field];
@@ -9411,7 +9647,7 @@ function createGameCandidateService(options) {
       }
       if (input.quests?.length) {
         const path = await candidateFile(tempCheckout, STORY_QUEST_CATALOG_PATH);
-        const catalog = JSON.parse(await readFile10(path, "utf8"));
+        const catalog = JSON.parse(await readFile11(path, "utf8"));
         if (catalog.schemaVersion !== 1 || !Array.isArray(catalog.quests))
           throw Error("游戏任务目录格式无效");
         const known = new Set;
@@ -9445,7 +9681,7 @@ function createGameCandidateService(options) {
           const original = await options.content.resolveMedia({ projectId, op: "media", id: asset.candidateId, variant: "original" });
           if (original.mimeType !== "image/png")
             throw Error(`剧情素材必须为 PNG：${asset.path}`);
-          const bytes = await readFile10(original.absolutePath);
+          const bytes = await readFile11(original.absolutePath);
           const purpose = validItemIconAssetPath(asset.path) ? "item-icon" : input.npcs?.some((npc) => `public/${npc.portraitAsset}` === asset.path) ? "story-portrait" : "story-scene";
           const [registered] = await scoped.command("registerCandidates", { projectId, candidates: [{ name: asset.path.split("/").at(-1), mimeType: "image/png", base64: bytes.toString("base64"), metadata: { ...original.metadata, purpose } }] });
           const adopted = await scoped.command("adoptVersion", { projectId, candidateId: registered.id, path: asset.path });
@@ -9489,11 +9725,11 @@ function createGameCandidateService(options) {
       let hubPath;
       let entryHubId;
       let entryActionId;
-      const catalog = JSON.parse(await readFile10(join9(tempCheckout, STORY_CATALOG_PATH), "utf8"));
+      const catalog = JSON.parse(await readFile11(join9(tempCheckout, STORY_CATALOG_PATH), "utf8"));
       if (input.launch) {
         hubPath = input.launch.hubPath;
         const path = join9(tempCheckout, hubPath);
-        const hub = JSON.parse(await readFile10(path, "utf8"));
+        const hub = JSON.parse(await readFile11(path, "utf8"));
         if (!hub.hubId || !catalog.resources?.some((item) => item.kind === "hub" && item.resourceId === hub.hubId && item.publicPath === hubPath.slice("public/".length)))
           throw Error("剧情 Hub 入口未登记或 ID 不一致");
         entryHubId = hub.hubId;
@@ -9514,7 +9750,7 @@ function createGameCandidateService(options) {
       } else {
         const hubs = (catalog.resources ?? []).filter((item) => item.kind === "hub" && typeof item.resourceId === "string" && typeof item.publicPath === "string" && /^data\/hub\/(?:[A-Za-z0-9._-]+\/)*[A-Za-z0-9._-]+\.json$/u.test(item.publicPath));
         const reachable = await Promise.all(hubs.map(async (item) => {
-          const hub = JSON.parse(await readFile10(join9(tempCheckout, "public", item.publicPath), "utf8"));
+          const hub = JSON.parse(await readFile11(join9(tempCheckout, "public", item.publicPath), "utf8"));
           if (hub.hubId !== item.resourceId)
             return null;
           const action = hub.locations?.flatMap((location) => location.actions ?? []).find((action) => action.kind === "startStory" && typeof action.id === "string" && /^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$/u.test(action.id) && action.storyResourceId === input.storyId && action.storyGraphFile === publicPath);
@@ -9529,9 +9765,9 @@ function createGameCandidateService(options) {
       }
       for (const edit of input.copyEdits ?? []) {
         const path = await candidateFile(tempCheckout, edit.path);
-        await writeFile7(path, applyStoryCopyEdits(edit.path, await readFile10(path, "utf8"), edit.edits));
+        await writeFile7(path, applyStoryCopyEdits(edit.path, await readFile11(path, "utf8"), edit.edits));
       }
-      const graph = JSON.parse(await readFile10(join9(tempCheckout, build.outputPath), "utf8"));
+      const graph = JSON.parse(await readFile11(join9(tempCheckout, build.outputPath), "utf8"));
       if (input.quests?.length && graph.shareFactsAcrossStories !== true) {
         throw Error("剧情任务必须启用 shareFactsAcrossStories，才能在据点与大地图查看进度");
       }
@@ -9569,7 +9805,7 @@ function createGameCandidateService(options) {
         collectAbilityReads(choice.enabledWhen);
       }
       if (speakers.size || input.npcs?.length || abilityReads.length || input.quests?.some((quest) => quest.actorIds.length)) {
-        const npcCatalog = JSON.parse(await readFile10(join9(tempCheckout, STORY_NPC_CATALOG_PATH), "utf8"));
+        const npcCatalog = JSON.parse(await readFile11(join9(tempCheckout, STORY_NPC_CATALOG_PATH), "utf8"));
         if (!Array.isArray(npcCatalog.npcs))
           throw Error("游戏人物目录格式无效");
         const known = new Set(npcCatalog.npcs.map((npc) => npc.id));
@@ -9623,7 +9859,7 @@ function createGameCandidateService(options) {
       for (const choice of graph.choices ?? [])
         collectEffects(choice.effects);
       if (input.quests?.length) {
-        const catalog = JSON.parse(await readFile10(join9(tempCheckout, STORY_QUEST_CATALOG_PATH), "utf8"));
+        const catalog = JSON.parse(await readFile11(join9(tempCheckout, STORY_QUEST_CATALOG_PATH), "utf8"));
         if (!Array.isArray(catalog.quests))
           throw Error("游戏任务目录格式无效");
         for (const [id, stages] of questRefs) {
@@ -9639,7 +9875,7 @@ function createGameCandidateService(options) {
       if ((grants.length || itemEffects.length) && graph.shareFactsAcrossStories !== true)
         throw Error("剧情仓库变更必须启用 shareFactsAcrossStories");
       if (itemReads.size || itemEffects.length || input.items?.length || input.recipes?.length) {
-        const catalog = JSON.parse(await readFile10(join9(tempCheckout, STORY_ITEM_CATALOG_PATH), "utf8"));
+        const catalog = JSON.parse(await readFile11(join9(tempCheckout, STORY_ITEM_CATALOG_PATH), "utf8"));
         const known = new Map;
         const definitions = new Map;
         for (const [field, kind] of [["artifacts", "artifact"], ["tools", "tool"], ["consumables", "consumable"], ["materials", "material"], ["quests", "quest"], ["questItems", "quest"]]) {
@@ -9679,7 +9915,7 @@ function createGameCandidateService(options) {
         }
       }
       if (grants.length) {
-        const units = JSON.parse(await readFile10(join9(tempCheckout, CARD_UNITS_PATH), "utf8"));
+        const units = JSON.parse(await readFile11(join9(tempCheckout, CARD_UNITS_PATH), "utf8"));
         const ids = new Set(units.units?.map((unit) => unit.id) ?? []);
         if (grants.some((grant) => !ids.has(grant.cardId)))
           throw Error(`剧情奖励引用不存在的卡牌：${grants.find((grant) => !ids.has(grant.cardId))?.cardId}`);
@@ -9693,7 +9929,7 @@ function createGameCandidateService(options) {
       }
       const battlePaths = new Set;
       if (battles.length) {
-        const catalog = JSON.parse(await readFile10(join9(tempCheckout, STORY_CATALOG_PATH), "utf8"));
+        const catalog = JSON.parse(await readFile11(join9(tempCheckout, STORY_CATALOG_PATH), "utf8"));
         for (const battle of battles) {
           for (const [kind, resourceId, path] of [
             ["encounter", battle.encounterResourceId, battle.encounterFile],
@@ -9704,7 +9940,7 @@ function createGameCandidateService(options) {
             }
             battlePaths.add(`public/${path}`);
           }
-          const encounter = JSON.parse(await readFile10(join9(tempCheckout, "public", battle.encounterFile), "utf8"));
+          const encounter = JSON.parse(await readFile11(join9(tempCheckout, "public", battle.encounterFile), "utf8"));
           if (encounter.id !== battle.encounterId)
             throw Error(`剧情战斗遭遇 ID 不一致：${battle.battleId}`);
         }
@@ -9712,9 +9948,9 @@ function createGameCandidateService(options) {
       const shopDependencies = new Set;
       const shopTargets = [];
       if (input.shops?.length) {
-        const catalog = JSON.parse(await readFile10(join9(tempCheckout, STORY_CATALOG_PATH), "utf8"));
+        const catalog = JSON.parse(await readFile11(join9(tempCheckout, STORY_CATALOG_PATH), "utf8"));
         const resources = catalog.resources ?? [];
-        const itemCatalog = JSON.parse(await readFile10(await candidateFile(tempCheckout, STORY_ITEM_CATALOG_PATH), "utf8"));
+        const itemCatalog = JSON.parse(await readFile11(await candidateFile(tempCheckout, STORY_ITEM_CATALOG_PATH), "utf8"));
         const knownItems = new Map;
         for (const [field, kind] of [["artifacts", "artifact"], ["tools", "tool"], ["consumables", "consumable"], ["materials", "material"], ["quests", "quest"], ["questItems", "quest"]]) {
           const entries = itemCatalog[field];
@@ -9735,7 +9971,7 @@ function createGameCandidateService(options) {
           });
           if (!sourcePath)
             continue;
-          const definitions = JSON.parse(await readFile10(sourcePath, "utf8"));
+          const definitions = JSON.parse(await readFile11(sourcePath, "utf8"));
           const cards = definitions[collection.key];
           if (!Array.isArray(cards))
             throw Error(`游戏卡牌目录格式无效：${collection.path}`);
@@ -9752,7 +9988,7 @@ function createGameCandidateService(options) {
             throw Error(`商店未登记或路径无效：${shop.resourceId}`);
           }
           const shopFile = await candidateFile(tempCheckout, shopPath);
-          const collection = JSON.parse(await readFile10(shopFile, "utf8"));
+          const collection = JSON.parse(await readFile11(shopFile, "utf8"));
           const definition = collection.shopsByNodeId?.[shop.nodeId];
           if (collection.id !== shop.resourceId || !Object.hasOwn(collection.shopsByNodeId ?? {}, shop.nodeId) || definition?.nodeId !== shop.nodeId || !Array.isArray(definition.offers)) {
             throw Error(`商店节点不存在或 ID 不一致：${shop.resourceId}.${shop.nodeId}`);
@@ -9762,7 +9998,7 @@ function createGameCandidateService(options) {
             const mapPath = mapEntry.publicPath ? `public/${mapEntry.publicPath}` : "";
             if (!mapEntry.resourceId || !validStoryTargetPath(mapPath) || !mapPath.startsWith("public/data/mijing/"))
               continue;
-            const map = JSON.parse(await readFile10(await candidateFile(tempCheckout, mapPath), "utf8"));
+            const map = JSON.parse(await readFile11(await candidateFile(tempCheckout, mapPath), "utf8"));
             if (!Array.isArray(map.nodes))
               continue;
             const nodes = new Map(map.nodes.map((node) => [node.id, node]));
@@ -9856,9 +10092,9 @@ function createGameCandidateService(options) {
       const changedPaths = paths.filter((path, index) => baseDependencies[index].revision !== dependencies[index].revision);
       if (!changedPaths.length)
         throw Error("剧情候选没有文件变化");
-      const targetBaseRevision = digest4(stable4(baseDependencies));
-      const fingerprint = digest4(stable4({ storyId: input.storyId, entryPath: input.entryPath, dependencies, changedPaths }));
-      const baseId = `story-${digest4(stable4({ projectId, productionId, fingerprint, targetBaseRevision, sourceTree })).slice(0, 36)}`;
+      const targetBaseRevision = digest5(stable4(baseDependencies));
+      const fingerprint = digest5(stable4({ storyId: input.storyId, entryPath: input.entryPath, dependencies, changedPaths }));
+      const baseId = `story-${digest5(stable4({ projectId, productionId, fingerprint, targetBaseRevision, sourceTree })).slice(0, 36)}`;
       const detail = await options.workflow.query({ projectId, op: "production", productionId });
       const { id, previous } = candidateSlot(baseId, detail.production.gameCandidates);
       if (previous) {
@@ -9871,7 +10107,7 @@ function createGameCandidateService(options) {
       const commit = await git2(tempCheckout, "rev-parse", "HEAD");
       if (!/^[0-9a-f]{40}$/u.test(commit))
         throw Error("剧情候选没有确切提交");
-      const validationManifest = digest4(stable4({ commit, checks: [
+      const validationManifest = digest5(stable4({ commit, checks: [
         "game-shell",
         "content-catalog",
         "story-resource",
@@ -9893,7 +10129,7 @@ function createGameCandidateService(options) {
       const questIds = input.quests?.map((quest) => quest.id) ?? [];
       const portraitPaths = [...portraits].sort();
       const itemIconPathsSorted = [...itemIconPaths].sort();
-      const candidateHash = digest4(stable4({ kind: "story", targetId: input.storyId, entryHubId, entryActionId, ...shopTargets.length ? { shopTargets } : {}, ...recipeIds.length ? { recipeIds } : {}, ...itemUseIds.length ? { itemUseIds } : {}, ...questIds.length ? { questIds } : {}, ...copyPaths.length ? { copyPaths } : {}, ...portraitPaths.length ? { portraitPaths } : {}, ...itemIconPathsSorted.length ? { itemIconPaths: itemIconPathsSorted } : {}, commit, fingerprint, sourceTree, sourceSnapshotScope: "runtime", targetBaseRevision, validationManifest, dependencies, baseDependencies, changedPaths }));
+      const candidateHash = digest5(stable4({ kind: "story", targetId: input.storyId, entryHubId, entryActionId, ...shopTargets.length ? { shopTargets } : {}, ...recipeIds.length ? { recipeIds } : {}, ...itemUseIds.length ? { itemUseIds } : {}, ...questIds.length ? { questIds } : {}, ...copyPaths.length ? { copyPaths } : {}, ...portraitPaths.length ? { portraitPaths } : {}, ...itemIconPathsSorted.length ? { itemIconPaths: itemIconPathsSorted } : {}, commit, fingerprint, sourceTree, sourceSnapshotScope: "runtime", targetBaseRevision, validationManifest, dependencies, baseDependencies, changedPaths }));
       const finalDirectory = candidatePath(projectId, id);
       await rm4(finalDirectory, { recursive: true, force: true });
       await mkdir8(dirname5(finalDirectory), { recursive: true });
@@ -9959,11 +10195,11 @@ function createGameCandidateService(options) {
       unique.add(doc.path);
     }
     const paths = [...unique].sort();
-    const productionId = `documents-${digest4(stable4({ projectId, featureId: input.featureId, paths })).slice(0, 24)}`;
+    const productionId = `documents-${digest5(stable4({ projectId, featureId: input.featureId, paths })).slice(0, 24)}`;
     const created = await options.workflow.command("createProduction", { projectId, id: productionId, brief: input.brief, featureId: input.featureId });
     if (created.production.featureId !== input.featureId)
       throw Error("资料制作单属于另一个功能项");
-    const tempDirectory = candidatePath(projectId, `building-${randomUUID8()}`);
+    const tempDirectory = candidatePath(projectId, `building-${randomUUID9()}`);
     const tempCheckout = join9(tempDirectory, "repo");
     await mkdir8(dirname5(tempDirectory), { recursive: true });
     let moved = false;
@@ -10007,9 +10243,9 @@ function createGameCandidateService(options) {
       const changedPaths = paths.filter((path, index) => baseDependencies[index].revision !== dependencies[index].revision);
       if (!changedPaths.length)
         throw Error("资料候选没有文件变化");
-      const targetBaseRevision = digest4(stable4(baseDependencies));
-      const fingerprint = digest4(stable4({ paths, dependencies, changedPaths }));
-      const baseId = `documents-${digest4(stable4({ projectId, productionId, fingerprint, targetBaseRevision, sourceTree })).slice(0, 36)}`;
+      const targetBaseRevision = digest5(stable4(baseDependencies));
+      const fingerprint = digest5(stable4({ paths, dependencies, changedPaths }));
+      const baseId = `documents-${digest5(stable4({ projectId, productionId, fingerprint, targetBaseRevision, sourceTree })).slice(0, 36)}`;
       const detail = await options.workflow.query({ projectId, op: "production", productionId });
       const { id, previous } = candidateSlot(baseId, detail.production.gameCandidates);
       if (previous) {
@@ -10022,9 +10258,9 @@ function createGameCandidateService(options) {
       const commit = await git2(tempCheckout, "rev-parse", "HEAD");
       if (!/^[0-9a-f]{40}$/u.test(commit))
         throw Error("资料候选没有确切提交");
-      const validationManifest = digest4(stable4({ commit, checks: ["game-shell", "content-catalog", "knowledge-documents"], paths }));
+      const validationManifest = digest5(stable4({ commit, checks: ["game-shell", "content-catalog", "knowledge-documents"], paths }));
       const targetId = paths[0];
-      const candidateHash = digest4(stable4({ kind: "documents", targetId, commit, fingerprint, sourceTree, sourceSnapshotScope: "runtime", targetBaseRevision, validationManifest, dependencies, baseDependencies, changedPaths }));
+      const candidateHash = digest5(stable4({ kind: "documents", targetId, commit, fingerprint, sourceTree, sourceSnapshotScope: "runtime", targetBaseRevision, validationManifest, dependencies, baseDependencies, changedPaths }));
       const finalDirectory = candidatePath(projectId, id);
       await rm4(finalDirectory, { recursive: true, force: true });
       await mkdir8(dirname5(finalDirectory), { recursive: true });
@@ -10074,17 +10310,17 @@ function createGameCandidateService(options) {
   };
 }
 
-// backend/plugins/cardgame-content/src/game-adoption.ts
-import { createHash as createHash12, randomUUID as randomUUID9 } from "node:crypto";
+// plugins/cardgame-content/src/game-adoption.ts
+import { createHash as createHash13, randomUUID as randomUUID10 } from "node:crypto";
 import { execFile as execFile3 } from "node:child_process";
-import { lstat as lstat6, mkdir as mkdir9, readFile as readFile11, readdir as readdir5, realpath as realpath8, rename as rename8, rm as rm5, writeFile as writeFile8 } from "node:fs/promises";
+import { lstat as lstat6, mkdir as mkdir9, readFile as readFile12, readdir as readdir5, realpath as realpath9, rename as rename8, rm as rm5, writeFile as writeFile8 } from "node:fs/promises";
 import { dirname as dirname6, join as join10, resolve as resolve5 } from "node:path";
 import { promisify as promisify3 } from "node:util";
 var run3 = promisify3(execFile3);
-var hash3 = (value) => createHash12("sha256").update(value).digest("hex");
+var hash3 = (value) => createHash13("sha256").update(value).digest("hex");
 var stable5 = (value) => JSON.stringify(value, (_key, item) => item && typeof item === "object" && !Array.isArray(item) ? Object.fromEntries(Object.entries(item).sort(([a], [b]) => a.localeCompare(b))) : item);
 var eq = (a, b) => stable5(a) === stable5(b);
-var bytes = async (path) => readFile11(path).catch((error) => {
+var bytes = async (path) => readFile12(path).catch((error) => {
   if (error.code === "ENOENT")
     return null;
   throw error;
@@ -10119,7 +10355,7 @@ function createGameAdoptionService(options) {
   const writeJournal = async (journal) => {
     const path = journalPath(journal);
     await mkdir9(dirname6(path), { recursive: true });
-    const temp = `${path}.${randomUUID9()}.tmp`;
+    const temp = `${path}.${randomUUID10()}.tmp`;
     await writeFile8(temp, JSON.stringify(journal));
     await rename8(temp, path);
   };
@@ -10139,8 +10375,8 @@ function createGameAdoptionService(options) {
   const checkSnapshot = async (item) => {
     if (!/^[0-9a-f]{40}$/.test(item.commit) || !isPathDescendant(resolve5(options.dataRoot, "game-candidates"), item.repo))
       throw Error("候选快照无效");
-    const candidateRoot = await realpath8(resolve5(options.dataRoot, "game-candidates"));
-    const checkout = await realpath8(item.repo);
+    const candidateRoot = await realpath9(resolve5(options.dataRoot, "game-candidates"));
+    const checkout = await realpath9(item.repo);
     if (!isPathDescendant(candidateRoot, checkout))
       throw Error("候选快照目录越界");
     const actual = (await run3("git", ["rev-parse", "HEAD"], { cwd: item.repo })).stdout.trim();
@@ -10163,9 +10399,9 @@ function createGameAdoptionService(options) {
         throw Error("候选依赖清单不完整");
       for (const dependency of item.dependencies) {
         const path = join10(item.repo, dependency.path);
-        if ((await lstat6(path)).isSymbolicLink() || !isPathDescendant(checkout, await realpath8(path)))
+        if ((await lstat6(path)).isSymbolicLink() || !isPathDescendant(checkout, await realpath9(path)))
           throw Error(`剧情候选依赖越界：${dependency.path}`);
-        if (hash3(await readFile11(path)) !== dependency.revision)
+        if (hash3(await readFile12(path)) !== dependency.revision)
           throw Error(`候选依赖已改变：${dependency.path}`);
       }
       if (item.kind === "deck" && item.deckArtFingerprints) {
@@ -10203,9 +10439,9 @@ function createGameAdoptionService(options) {
       throw Error("候选素材依赖不完整");
     for (const dependency of item.dependencies) {
       const path = join10(item.repo, dependency.path);
-      if ((await lstat6(path)).isSymbolicLink() || !isPathDescendant(checkout, await realpath8(path)))
+      if ((await lstat6(path)).isSymbolicLink() || !isPathDescendant(checkout, await realpath9(path)))
         throw Error(`候选依赖越界：${dependency.path}`);
-      if (hash3(await readFile11(path)) !== dependency.revision)
+      if (hash3(await readFile12(path)) !== dependency.revision)
         throw Error(`候选依赖已改变：${dependency.path}`);
     }
     return paths;
@@ -10224,7 +10460,7 @@ function createGameAdoptionService(options) {
       return;
     }
     await mkdir9(dirname6(path), { recursive: true });
-    const temp = `${path}.${randomUUID9()}.tmp`;
+    const temp = `${path}.${randomUUID10()}.tmp`;
     await writeFile8(temp, desired);
     await rename8(temp, path);
   };
@@ -10352,7 +10588,7 @@ function createGameAdoptionService(options) {
     ];
     for (const path of paths) {
       const prior = await bytes(join10(base, path));
-      const adopted = await readFile11(join10(item.repo, path));
+      const adopted = await readFile12(join10(item.repo, path));
       if (undo && !same(prior, adopted))
         throw Error(`采用后的素材文件已有新修改：${path}`);
       const original = adoption?.patches.find((patch) => patch.path === path)?.before ?? null;
@@ -10383,7 +10619,7 @@ function createGameAdoptionService(options) {
     const targetRevision = item.kind === "story" || item.kind === "documents" || item.kind === "deck" ? await storyTargetBaseRevision(root(item.projectId), item.baseDependencies ?? []) : await cardTargetBaseRevision(root(item.projectId), item.cardId, candidateAssetPaths(item), candidateCardKind(item));
     if (targetRevision !== item.targetBaseRevision)
       throw Error("正式项目的内容或依赖已改变，请建立新候选");
-    const journal = { id: randomUUID9(), candidateId: item.id, projectId: item.projectId, productionId: item.productionId, status: "applying", createdAt: new Date().toISOString(), patches: await merge(item, false) };
+    const journal = { id: randomUUID10(), candidateId: item.id, projectId: item.projectId, productionId: item.productionId, status: "applying", createdAt: new Date().toISOString(), patches: await merge(item, false) };
     await writeJournal(journal);
     let adopted = false;
     try {
@@ -10456,7 +10692,7 @@ function createGameAdoptionService(options) {
     const old = await json(journalPath({ projectId: item.projectId, id: item.adoptionId }), null);
     if (!old || old.status !== "complete" || old.candidateId !== item.id)
       throw Error("找不到完整采用日志");
-    const journal = { id: randomUUID9(), candidateId: item.id, projectId: item.projectId, productionId: item.productionId, status: "undoing", createdAt: new Date().toISOString(), patches: await merge(item, true, old) };
+    const journal = { id: randomUUID10(), candidateId: item.id, projectId: item.projectId, productionId: item.productionId, status: "undoing", createdAt: new Date().toISOString(), patches: await merge(item, true, old) };
     await writeJournal(journal);
     await apply(root(item.projectId), journal.patches);
     const result = await options.workflow.command("recordGameAdoption", { projectId: item.projectId, productionId: item.productionId, candidateId: item.id, status: "undone" });
@@ -10515,8 +10751,8 @@ function createGameAdoptionService(options) {
   } };
 }
 
-// backend/plugins/cardgame-content/src/registration.ts
-import { createHash as createHash13 } from "node:crypto";
+// plugins/cardgame-content/src/registration.ts
+import { createHash as createHash14 } from "node:crypto";
 import { isDeepStrictEqual } from "node:util";
 async function verifiedCardDraftSource(app, caller) {
   if (caller.kind === "user")
@@ -10531,7 +10767,7 @@ async function verifiedCardDraftSource(app, caller) {
   } catch {}
   return { _draftOrigin: "unknown" };
 }
-var workflowQueries = new Set(["todos", "todo", "productions", "production", "workflowStatus", "gameCandidates", "changes"]);
+var workflowQueries = new Set(["todos", "todo", "productions", "production", "productionDispatch", "workflowStatus", "gameCandidates", "changes"]);
 var contentCommands = new Set(["saveDocument", "moveDocument", "updateCard", "updateAsset", "registerCandidates", "adoptVersion", "compileStory"]);
 var formalMutations = new Set(["saveDocument", "moveDocument", "updateCard", "updateAsset", "adoptVersion", "compileStory", "adoptAsset"]);
 var internalWorkflowCommands = new Set(["recordGameCandidate", "recordGameAdoption"]);
@@ -10607,6 +10843,7 @@ async function createCardgameProvider(host, media, packageRoot, bunPath, project
     await Promise.allSettled([battleExecution.close(), storyExecution.close(), content.close()]);
     throw error;
   });
+  const productionEvents = createProductionEvents(workflows, content);
   const pinnedReferences = createPinnedReferenceService(host.app.core, (input) => input.op === "battleComparison" ? battleExecution.compare(String(input.projectId), input.before, input.after) : input.op === "production" ? workflows.query(input) : content.query(input));
   const previewNote = async (candidate) => {
     const noteId = await resolvePreviewNote(candidate.projectId);
@@ -10653,7 +10890,7 @@ async function createCardgameProvider(host, media, packageRoot, bunPath, project
     const expectedOptions = candidatePreviewOptions(candidate);
     if (entry?.adapter !== expectedAdapter || !isDeepStrictEqual(entry.repos, expectedRepos) || !isDeepStrictEqual(entry.options, expectedOptions))
       throw Error("请先在试玩便笺完成这个确切候选的运行与验证");
-    const fingerprint = createHash13("sha256").update(JSON.stringify({ adapter: entry.adapter, repos: entry.repos, options: entry.options })).digest("hex").slice(0, 16);
+    const fingerprint = createHash14("sha256").update(JSON.stringify({ adapter: entry.adapter, repos: entry.repos, options: entry.options })).digest("hex").slice(0, 16);
     const status = entry.status?.web;
     if (status?.phase !== "ready" || status.source !== fingerprint || status.verified?.ok !== true)
       throw Error("请先在试玩便笺完成这个确切候选的运行与验证");
@@ -10875,6 +11112,14 @@ async function createCardgameProvider(host, media, packageRoot, bunPath, project
       } },
       async invoke(method, input, caller) {
         await assertProject(input, caller.noteId, method === "confirmGameCandidate" || method === "undoGameCandidate");
+        if (method === "prepareProductionEvent")
+          return productionEvents.prepare(input);
+        if (method === "productionResult" || method === "receiveResult")
+          return productionEvents.receiveResult(input);
+        if (method === "recordCandidates")
+          return productionEvents.recordCandidates(input);
+        if (method === "recordAdoption")
+          return productionEvents.recordAdoption(input);
         if (method === "pinReference" || method === "removePinnedReference") {
           if (!caller.noteId || caller.dryRun || caller.replay)
             throw Error("请从项目便笺操作固定引用");
@@ -10960,7 +11205,7 @@ async function createCardgameProvider(host, media, packageRoot, bunPath, project
   }
 }
 
-// backend/plugin.ts
+// plugin.ts
 var name = "cardgame-local-content";
 var inject = ["worka"];
 async function apply(ctx, config = {}) {

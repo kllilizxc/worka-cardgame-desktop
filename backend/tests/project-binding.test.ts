@@ -86,7 +86,7 @@ function fixture() {
   return { host, media, manager, note, notes, configs, records, events, mediaHandlers, setLoad: (value: typeof load) => load = value,
     setWriteFailure(value: boolean) { failWrite = value; }, get createCount() { return createCount; }, get validationCount() { return validationCount; }, get releaseSubscription() { return releaseSubscription; } };
 }
-const mediaInput = (root: string, projectId: string) => ({ projectId, projectGeneration: createHash('sha256').update(root).digest('hex').slice(0,24) });
+const mediaInput = (f: ReturnType<typeof fixture>, projectId: string) => ({projectId,projectGeneration:f.records.get(projectId).value.generation});
 const user = (noteId = 'a-cards') => ({ kind: 'user' as const, noteId });
 const context = (noteId = 'a-cards') => ({ scope: { workspace: 'test', access: 'test', noteId }, signal: new AbortController().signal, read: async () => null }) as any;
 const configure = (manager: ReturnType<typeof createProjectBindingManager>, root: string, caller: any = user()) => manager.invoke('configureProject', { root }, caller);
@@ -149,7 +149,7 @@ test('owner Agent setup changes only tagged same-desktop config and remains lazy
   expect(f.configs.get('a-weather:config')).toEqual(beforeWeather);
   await expect(read(manager, { op: 'cards', projectId: desktopProjectId('b') })).rejects.toThrow('另一桌面');
   await expect(manager.invoke('configureProject', { root, desktopId: 'b' }, user())).rejects.toThrow('另一桌面');
-  expect(await read(manager, { op: 'cards' })).toEqual({ projectId: desktopProjectId('a'), items: [] });
+  expect(await read(manager, { op: 'cards' })).toMatchObject({ projectId: desktopProjectId('a'), items: [] });
   expect(f.createCount).toBe(1);
   await configure(manager, root);
   await read(manager, { op: 'cards' }); expect(f.createCount).toBe(1);
@@ -168,7 +168,7 @@ test('persisted binding restores after restart with lazy media and query routing
   expect(f.createCount).toBe(0);
   const result = await restored.invoke('synthetic', {}, user()) as any;
   expect(JSON.parse(result.url).input.projectId).toBe(desktopProjectId('a'));
-  const image = await f.mediaHandlers.get('cardgame-content')(mediaInput(root, desktopProjectId('a')));
+  const image = await f.mediaHandlers.get('cardgame-content')(mediaInput(f, desktopProjectId('a')));
   expect(image.path).toBe(root + '/synthetic.png');
   expect(f.createCount).toBe(1);
   await expect(f.mediaHandlers.get('cardgame-content')({ projectId: desktopProjectId('b') })).rejects.toThrow('尚未配置');
@@ -181,8 +181,8 @@ test('two desktops keep independent providers and only one media registration', 
   await configure(manager, rootA); await configure(manager, rootB, user('b-cards'));
   await Promise.all([read(manager, { op: 'cards' }), read(manager, { op: 'cards' }, 'b-cards'), read(manager, { op: 'cards' })]);
   expect(f.createCount).toBe(2); expect(f.mediaHandlers.size).toBe(1);
-  expect((await f.mediaHandlers.get('cardgame-content')(mediaInput(rootA, desktopProjectId('a')))).path).toBe(rootA + '/synthetic.png');
-  expect((await f.mediaHandlers.get('cardgame-content')(mediaInput(rootB, desktopProjectId('b')))).path).toBe(rootB + '/synthetic.png');
+  expect((await f.mediaHandlers.get('cardgame-content')(mediaInput(f, desktopProjectId('a')))).path).toBe(rootA + '/synthetic.png');
+  expect((await f.mediaHandlers.get('cardgame-content')(mediaInput(f, desktopProjectId('b')))).path).toBe(rootB + '/synthetic.png');
   await manager.close();
   expect(f.events.filter(value => value.startsWith('close:'))).toHaveLength(2);
   expect(f.mediaHandlers.size).toBe(0);
@@ -263,7 +263,7 @@ for (const approve of [undefined, async () => false]) test('owner Agent cannot b
 });
 test('changing roots drains old requests and subscriptions, isolates data and invalidates old media', async () => {
  const a=await project(),b=await project(),f=fixture(),manager=f.manager();
- await configure(manager,a);await read(manager,{op:'cards'});
+ await configure(manager,a); const oldMedia=mediaInput(f,desktopProjectId('a'));await read(manager,{op:'cards'});
  const dispose=await manager.resources!.query!.subscribe!({op:'cards'},()=>{},context());
  let enter!:()=>void,finish!:()=>void;const entered=new Promise<void>(resolve=>enter=resolve);
  f.setLoad(async()=>{enter();await new Promise<void>(resolve=>finish=resolve);return {old:true};});
@@ -273,8 +273,8 @@ test('changing roots drains old requests and subscriptions, isolates data and in
  await expect(read(manager,{op:'cards'})).rejects.toThrow('切换');
  finish();await pending;await switching;
  expect(f.events.filter(e=>e.startsWith('close:'))).toHaveLength(1);expect(f.releaseSubscription).toBeGreaterThan(0);
- await expect(f.mediaHandlers.get('cardgame-content')(mediaInput(a,desktopProjectId('a')))).rejects.toThrow('旧项目');
- expect((await f.mediaHandlers.get('cardgame-content')(mediaInput(b,desktopProjectId('a')))).path).toBe(b+'/synthetic.png');
+ await expect(f.mediaHandlers.get('cardgame-content')(oldMedia)).rejects.toThrow('旧项目');
+ expect((await f.mediaHandlers.get('cardgame-content')(mediaInput(f,desktopProjectId('a')))).path).toBe(b+'/synthetic.png');
  await dispose!();
 });
 test('bad replacement and failed persistence preserve the old binding and restore config projections', async () => {
@@ -298,4 +298,38 @@ test('failed old provider disposal cannot create an overlapping new provider', a
  await expect(configure(manager,b)).rejects.toThrow('failed disposal');
  await expect(read(manager,{op:'cards'})).rejects.toThrow('重启');
  await expect(configure(manager,b)).rejects.toThrow('重启');expect(creates).toBe(1);
+});
+
+test('binding epoch is durable, changes on rebind, and fences stale same-id actions/receipts',async()=>{
+ const a=await project(),b=await project(),f=fixture(),manager=f.manager();
+ await configure(manager,a);
+ const initial=(await read(manager,{op:'projectBinding'}) as any).projectGeneration;
+ expect(initial).toMatch(/^[0-9a-f-]{36}$/);
+ await configure(manager,a);expect((await read(manager,{op:'projectBinding'}) as any).projectGeneration).toBe(initial);
+ await expect(manager.invoke('updateProduction',{productionId:'same',baseRevision:1,projectGeneration:initial},user())).resolves.toMatchObject({method:'updateProduction'});
+ await configure(manager,b);
+ const next=(await read(manager,{op:'projectBinding'}) as any).projectGeneration;expect(next).not.toBe(initial);
+ for(const method of ['updateProduction','bindProduction','productionResult','recordCandidates','recordAdoption'])await expect(manager.invoke(method,{productionId:'same',baseRevision:1,projectGeneration:initial},user())).rejects.toThrow('旧编辑或回执');
+ for(const method of ['bindProduction','productionResult','recordCandidates','recordAdoption'])await expect(manager.invoke(method,{productionId:'same'},user())).rejects.toThrow('旧回执缺少');
+ await expect(read(manager,{op:'production',productionId:'same',projectGeneration:initial})).rejects.toThrow('旧编辑或回执');
+ await configure(manager,a);expect((await read(manager,{op:'projectBinding'}) as any).projectGeneration).not.toBe(initial);
+});
+test('legacy epoch migration persists once before work and persistence failure does not grant access',async()=>{
+ const root=await project(),f=fixture(),manager=f.manager();await configure(manager,root);
+ const stored=f.records.get(desktopProjectId('a'));delete stored.value.generation;
+ f.setWriteFailure(true);await expect(read(manager,{op:'cards'})).rejects.toThrow('durable write failure');expect(f.createCount).toBe(0);
+ f.setWriteFailure(false);const first=await read(manager,{op:'projectBinding'}) as any;
+ expect(first.projectGeneration).toMatch(/^[0-9a-f-]{36}$/);expect(f.records.get(desktopProjectId('a')).value.generation).toBe(first.projectGeneration);
+ await manager.close();const reopened=f.manager();expect((await read(reopened,{op:'projectBinding'}) as any).projectGeneration).toBe(first.projectGeneration);
+});
+
+test('legacy reconciliation privilege is persisted for one unchanged binding and cannot be caller-spoofed after rebind',async()=>{
+ const f=fixture(),root=await project(),manager=f.manager(),projectId=desktopProjectId('a');
+ await configure(manager,root);const row=f.records.get(projectId);delete row.value.generation;
+ let seen:any;f.setLoad(async input=>{seen=input;return {items:[]};});
+ await read(manager,{op:'cards'});const generation=f.records.get(projectId).value.generation;
+ expect(seen.allowLegacyReconciliation).toBe(true);expect(f.records.get(projectId).value.legacyGeneration).toBe(generation);
+ await configure(manager,root);await read(manager,{op:'cards'});expect(seen.allowLegacyReconciliation).toBe(true);
+ await configure(manager,await project());await read(manager,{op:'cards',allowLegacyReconciliation:true});expect(seen.allowLegacyReconciliation).toBe(false);
+ await configure(manager,root);await read(manager,{op:'cards',allowLegacyReconciliation:true});expect(seen.allowLegacyReconciliation).toBe(false);expect(f.records.get(projectId).value.generation).not.toBe(generation);
 });

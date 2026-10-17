@@ -10,7 +10,7 @@ import { CARD_COLLECTIONS, cardCollection, type CardKind } from './card-collecti
 import type { ContentService, CardItem, CompileStoryResult, Page, StoryBuildItem } from './types';
 import type { GameCandidateRecord, ProductionRecord, WorkflowService } from './workflow';
 import { deckCandidateHash, deckCardFingerprints, deckArtFingerprints, deckPath, inspectDeck } from './deck-plan';
-import { CARD_FACE_VERSION } from '../../../templates/cardgame-production/card-face';
+import { CARD_FACE_VERSION } from '../../../../notes/note-4/card-face';
 import { artFingerprint, candidateFingerprint, faceFingerprint, type CardBatch } from './card-pipeline';
 import { applyStoryCopyEdits, validStoryCopyPath, validateStoryCopyEdits, type StoryCopyEdit } from './story-copy-edits';
 

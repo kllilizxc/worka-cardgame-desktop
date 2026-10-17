@@ -1,29 +1,28 @@
+import {editableBoostSchema,type PipelineCard,type CardOperation} from './contracts';
 import { DeckOutcome } from './deck-outcome';
 import { CompanionContext } from './companion-context';
 import { CompanionCreate } from './companion-create';
-import {useNoteDraft,type NoteDraftSource} from '@dsh-workbench/react';
-import {useActions,useResource,useWorkbench} from './surface';
+import {useNoteDraft,useAction,type NoteDraftSource} from '@dsh-workbench/react';
+import {useProductionNote} from './surface';
 import { Button, Input, Label, ScrollShadow, Spinner, TextArea, TextField } from '@heroui/react';
 import { useEffect, useRef, useState } from 'react';
 import { CARD_FACE_THEMES, CARD_KIND_LABELS, cardRules } from './card-face';
 
 const LABELS: Record<string, string> = { review: '核对定义', art: '等待插画', assemble: '待组装', integrate: '待建候选', done: '候选已建立' };
 
-function QueryFailure({ resource, label }: { resource: { error?: Error | null; revalidate(): Promise<unknown> }; label: string }) {
-  const [retrying, setRetrying] = useState(false);
-  return <div><p role="alert" className="cw-error">{resource.error?.message}</p><Button variant="secondary" isDisabled={retrying} onPress={() => {
-    setRetrying(true);
-    void resource.revalidate().catch(() => { /* The resource retains the current read error. */ }).finally(() => setRetrying(false));
-  }}>{retrying ? '正在重新读取…' : label}</Button></div>;
+function QueryFailure({ resource, label }: { resource: { error?: Error | null; refresh(): Promise<unknown> }; label: string }) {
+  const retry=useAction();
+  return <div><p role="alert" className="cw-error">{retry.error?.message??resource.error?.message}</p><Button variant="secondary" isDisabled={retry.pending} onPress={()=>void retry.run(()=>resource.refresh())}>{retry.pending?'正在重新读取…':label}</Button></div>;
 }
 
-export function CreateCardWorkflow({ projectId, onCreated }: { projectId: string; onCreated: (id: string) => void | Promise<void> }) {
-  const actions = useActions<typeof import('./actions')>();
-  const features = useResource<{ items: Array<{ id: string; title: string }> }>('featureChoices', {});
+export function CreateCardWorkflow({ onCreated }: { onCreated: (id: string) => void | Promise<void> }) {
+  const { actions, useQuery, host: workbench, metadata, scopeGeneration } = useProductionNote();
+  const features = useQuery('featureChoices', {});
   const created = useRef<string | undefined>(undefined);
-  const [navigationError, setNavigationError] = useState('');
-  const draft = useNoteDraft({ key: `create-card:${projectId}`, value: { brief: '', featureId: '' }, save: async (value, context) => {
-    const result = await actions.cardWorkflow({ operation: 'createCardBatch', projectId, ...value, requestId: context.requestId }, context);
+  const navigation=useAction();
+  const navigationError=navigation.error?`制作单已保存，打开失败：${navigation.error.message}`:'';
+  const draft = useNoteDraft({ key: `create-card:${metadata.id}:${scopeGeneration}`, value: { brief: '', featureId: '' }, save: async (value, context) => {
+    const result = await actions.cardWorkflow({ operation: 'createCardBatch',  ...value, requestId: context.requestId }, context);
     if (!context.signal.aborted) created.current = result.production.id;
     return { value: { brief: '', featureId: '' } };
   } });
@@ -34,38 +33,38 @@ export function CreateCardWorkflow({ projectId, onCreated }: { projectId: string
   const error = draft.error?.message ?? navigationError;
   async function openCreated() {
     if (!created.current) return;
-    try { await onCreated(created.current); setNavigationError(''); }
-    catch (cause) { setNavigationError(`制作单已保存，打开失败：${cause instanceof Error ? cause.message : String(cause)}`); }
+    const id=created.current;
+    await navigation.run(async()=>{await onCreated(id);});
   }
-  async function create() { setNavigationError(''); if (await draft.save()) await openCreated(); }
-  return <><div className="cw-create"><style>{STYLE + REFINEMENTS + COMPACT_REFINEMENTS + REUSE_STYLE}</style><TextField value={brief} onChange={setBrief} isDisabled={busy} fullWidth><Label>卡牌生成工作流</Label><Input placeholder="例如：设计一套青云宗灵兽卡组，先制作 3 张" /></TextField><label className="cw-feature">所属功能<select aria-label="所属功能" disabled={busy} value={featureId} onChange={event => setFeatureId(event.target.value)}><option value="">选择已有功能</option>{(features.data?.items ?? []).map(item => <option key={item.id} value={item.id}>{item.title}</option>)}</select></label><Button isDisabled={!brief.trim() || !featureId || busy} onPress={() => { void create(); }}>{busy ? '创建中…' : '新建卡牌工作流'}</Button>{features.error && <QueryFailure resource={features} label="重试读取所属功能" />}{error && <p role="alert" className="cw-error">{error}</p>}{navigationError && created.current && <Button variant="secondary" onPress={() => { void openCreated(); }}>打开已创建制作单</Button>}</div><CompanionCreate projectId={projectId} onCreated={onCreated} /></>;
+  async function create() { navigation.clearError(); if (await draft.save()) await openCreated(); }
+  return <><div className="cw-create"><style>{STYLE + REFINEMENTS + COMPACT_REFINEMENTS + REUSE_STYLE}</style><TextField value={brief} onChange={setBrief} isDisabled={busy} fullWidth><Label>卡牌生成工作流</Label><Input placeholder="例如：设计一套青云宗灵兽卡组，先制作 3 张" /></TextField><label className="cw-feature">所属功能<select aria-label="所属功能" disabled={busy} value={featureId} onChange={event => setFeatureId(event.target.value)}><option value="">选择已有功能</option>{(features.data?.items ?? []).map(item => <option key={item.id} value={item.id}>{item.title}</option>)}</select></label><Button isDisabled={!brief.trim() || !featureId || busy} onPress={() => { void create(); }}>{busy ? '创建中…' : '新建卡牌工作流'}</Button>{features.error && <QueryFailure resource={features} label="重试读取所属功能" />}{error && <p role="alert" className="cw-error">{error}</p>}{navigationError && created.current && <Button variant="secondary" onPress={() => { void openCreated(); }}>打开已创建制作单</Button>}</div><CompanionCreate onCreated={onCreated} /></>;
 }
 
-export function CardWorkflow({ projectId, productionId, libraryNoteId }: { projectId: string; productionId: string; libraryNoteId?: string }) {
-  const resource = useResource<any>('cardBatch', { projectId, productionId });
-  const actions = useActions<typeof import('./actions')>();
-  const workbench = useWorkbench();
+export function CardWorkflow({ productionId, libraryNoteId, onEditing }: { productionId: string; libraryNoteId?: string; onEditing?:(dirty:boolean)=>void }) {
+  const { actions, useQuery, host: workbench, metadata, projectId } = useProductionNote();
+  const resource = useQuery('cardBatch', { productionId });
   const [selected, setSelected] = useState<string>();
   const [showSteps, setShowSteps] = useState(false);
   const value = resource.data;
   const [editing, setEditing] = useState(false);
+  useEffect(()=>{onEditing?.(editing);return ()=>onEditing?.(false);},[editing,onEditing]);
   if (!value) return <div className="cw-workflow"><style>{STYLE + REFINEMENTS + COMPACT_REFINEMENTS + REUSE_STYLE}</style>{resource.error ? <QueryFailure resource={resource} label="重试读取制作单" /> : <Spinner />}</div>;
   const { batch, production, stages } = value;
-  if (batch.deck) return <DeckOutcome projectId={projectId} value={value} />;
-  const card = batch.cards.find((item: any) => item.definition.id === selected) ?? batch.cards[0];
+  if (batch.deck) return <DeckOutcome value={value} />;
+  const card = batch.cards.find((item) => item.definition.id === selected) ?? batch.cards[0];
   const currentStep = !card ? 0 : ({ review: 1, art: 2, assemble: 3, integrate: 4, done: 5 } as Record<string, number>)[stages[card.definition.id]] ?? 0;
   return <section className="cw-workflow"><style>{STYLE + REFINEMENTS + COMPACT_REFINEMENTS + REUSE_STYLE}</style>
-    <CompanionContext projectId={projectId} production={production} />
+    <CompanionContext production={production} />
     <header className="cw-heading"><div><span className="cw-muted">卡牌生成 · Codex 插画</span><h2>{production.brief}</h2></div><span>{batch.cards.length} 张</span></header>
     <Button className="cw-step-toggle" variant="tertiary" aria-expanded={showSteps} aria-controls="cw-production-steps" onPress={() => setShowSteps(value => !value)}>{currentStep >= 5 ? "制作已完成" : `第 ${currentStep + 1}/5 步 · ${card ? LABELS[stages[card.definition.id]] : "草稿"}`} · {showSteps ? "收起步骤" : "查看步骤"}</Button>
     <ol id="cw-production-steps" className={`cw-steps${showSteps ? " is-expanded" : ""}`} aria-label="制作进度">{['AI 卡组草稿', '人工微调', 'Codex 生图', '模板组装', '试玩候选'].map((step, index) => <li key={step} className={index < currentStep ? 'is-complete' : index === currentStep ? 'is-current' : ''} aria-current={index === currentStep ? 'step' : undefined}><span>{index < currentStep ? '✓' : index + 1}</span>{step}</li>)}</ol>
     {!card ? <div className="cw-empty"><strong>等待卡组草稿</strong><p>在便笺原生对话中描述想要的卡组，草稿会保存在这份制作单中。</p></div> : <>
-      {batch.cards.length > 1 && <div className="cw-card-nav">{batch.cards.map((item: any) => <Button key={item.definition.id} size="sm" isDisabled={editing} variant={card.definition.id === item.definition.id ? 'primary' : 'tertiary'} onPress={() => setSelected(item.definition.id)}>{item.definition.name} · {LABELS[stages[item.definition.id]]}</Button>)}</div>}
-      <CardEditor key={card.definition.id} card={card} stage={stages[card.definition.id]} projectId={projectId} productionId={productionId} featureId={production.featureId} companion={batch.companion} adopted={production.gameCandidates?.filter((candidate: any) => candidate.cardId === card.definition.id).at(-1)?.status === "adopted"} baseRevision={production.revision} source={resource.draftSource(next => {
-        const latest = next?.batch.cards.find((item: any) => item.definition.id === card.definition.id);
+      {batch.cards.length > 1 && <div className="cw-card-nav">{batch.cards.map((item) => <Button key={item.definition.id} size="sm" isDisabled={editing} variant={card.definition.id === item.definition.id ? 'primary' : 'tertiary'} onPress={() => setSelected(item.definition.id)}>{item.definition.name} · {LABELS[stages[item.definition.id]]}</Button>)}</div>}
+      <CardEditor key={card.definition.id} card={card} stage={stages[card.definition.id]} productionId={productionId} featureId={production.featureId} companion={batch.companion} adopted={production.gameCandidates?.filter((candidate) => candidate.cardId === card.definition.id).at(-1)?.status === "adopted"} baseRevision={production.revision} source={resource.draftSource(next => {
+        const latest = next?.batch.cards.find((item) => item.definition.id === card.definition.id);
         if (!latest) throw new Error('卡牌已不存在，请重新选择');
-        return { value: cardEditorValue(latest), revision: next.production.revision };
-      })} onDirty={setEditing} onOpenLibrary={libraryNoteId ? () => { void workbench.openNote(libraryNoteId, `cg:${encodeURIComponent(JSON.stringify({ projectId, kind: 'card', id: card.definition.id }))}`); } : undefined} />
+        return { value: cardEditorValue(latest), revision: next?.production.revision };
+      })} onDirty={setEditing} onOpenLibrary={libraryNoteId ? () => { void workbench.openNote(libraryNoteId, `cg:${encodeURIComponent(JSON.stringify({ projectId:production.projectId, kind: 'card', id: card.definition.id }))}`); } : undefined} />
     </>}
   </section>;
 }
@@ -82,68 +81,64 @@ const REFINEMENTS = `
 @media(max-width:680px){.cw-workflow{padding:4px 0 20px}.cw-heading h2{font-size:18px}.cw-steps{margin:10px 0 18px;gap:9px}.cw-steps li{font-size:11px}.cw-steps li>span{width:20px;height:20px}.cw-controls{padding:18px}.cw-preview-image{width:min(100%,235px)}.cw-editor.stage-review .cw-preview{flex-direction:row;justify-content:center;flex-wrap:wrap}.cw-editor.stage-review .cw-preview-image{width:86px}.cw-editor.stage-review .cw-preview strong{font-size:14px}.cw-editor.stage-art .cw-preview{display:none}}
 `;
 
-function cardBoostEffect(card: any) {
+function cardBoostEffect(card: PipelineCard) {
   const effect = card.definition.kind === 'talisman' && card.definition.effects?.length === 1 ? card.definition.effects[0] : undefined;
-  return effect?.timing === 'reaction' && effect.target?.scope === 'singleAlly' && effect.target.requiredLabelsAllOf?.length === 1 && effect.actions?.length === 1 && effect.actions[0].type === 'modifyAttack' && effect.actions[0].duration === 'turn' ? effect : undefined;
+  const parsed=editableBoostSchema.safeParse(effect);return parsed.success?parsed.data:undefined;
 }
 
-function cardEditorValue(card: any) {
+function cardEditorValue(card: PipelineCard) {
   const effect = cardBoostEffect(card);
-  return { name: card.definition.name as string, description: card.definition.description as string, attack: String(card.definition.attack), health: String(card.definition.health), artBrief: card.artBrief as string, boost: String(effect ? effect.actions[0].value : '') };
+  return { name:card.definition.name,description:card.definition.description??'',attack:String(card.definition.attack??''),health:String(card.definition.health??''),artBrief:card.artBrief, boost: String(effect ? effect.actions![0].value : '') };
 }
 
-function CardEditor({ card, stage, projectId, productionId, featureId, companion, adopted, baseRevision, source, onDirty, onOpenLibrary }: { card: any; stage: string; projectId: string; productionId: string; featureId?: string; companion?: { cardId: string; revision: string }; adopted?: boolean; baseRevision: number; source: NoteDraftSource<ReturnType<typeof cardEditorValue>>; onDirty: (dirty: boolean) => void; onOpenLibrary?: () => void }) {
-  const actions = useActions<typeof import('./actions')>();
-  const workbench = useWorkbench();
+function CardEditor({ card, stage,  productionId, featureId, companion, adopted, baseRevision, source, onDirty, onOpenLibrary }: { card: PipelineCard; stage: string; productionId: string; featureId?: string; companion?: { cardId: string; revision: string }; adopted?: boolean; baseRevision: number; source: NoteDraftSource<ReturnType<typeof cardEditorValue>>; onDirty: (dirty: boolean) => void; onOpenLibrary?: () => void }) {
+  const { actions, useQuery, host: workbench, metadata, scopeGeneration } = useProductionNote();
   const effect = cardBoostEffect(card);
   const canEditBoost = Boolean(effect);
-  const [busy, setBusy] = useState('');
-  const [error, setError] = useState('');
+  const operation=useAction(),busy=operation.pending,error=operation.error?.message;
   const [feedback, setFeedback] = useState('');
-  const draft = useNoteDraft({ key: `card:${projectId}:${productionId}:${card.definition.id}`, source,
+  const draft = useNoteDraft({ key: `card:${metadata.id}:${scopeGeneration}:${productionId}:${card.definition.id}`, source,
     save: async (value, context) => {
       const { name, description, attack, health, artBrief, boost } = value;
       if (!name.trim() || !description.trim()) throw new Error('名称和说明不能为空');
       const unit = card.definition.kind === 'unit';
       if (unit && (!Number.isInteger(Number(attack)) || !Number.isInteger(Number(health)) || Number(attack) < 0 || Number(health) < 1 || Number(attack) > 999 || Number(health) > 999)) throw new Error('攻防需要有效整数');
       if (canEditBoost && (!Number.isInteger(Number(boost)) || Number(boost) < 1 || Number(boost) > 9)) throw new Error('攻击增益需要 1–9 的整数');
-      const rule = canEditBoost ? `使一个带有「${effect.target.requiredLabelsAllOf[0]}」标签的己方单位本回合攻击 +${Number(boost)}。` : undefined;
-      const boostPatch = canEditBoost ? { description: rule, effects: [{ ...effect, text: rule, actions: [{ ...effect.actions[0], value: Number(boost) }] }] } : {};
-      const result = await actions.cardWorkflow({ projectId, productionId, cardId: card.definition.id, baseRevision: context.revision, requestId: context.requestId, operation: 'saveCardDraft', definition: { ...card.definition, name, description, ...(unit ? { attack: Number(attack), health: Number(health) } : {}), ...boostPatch }, artBrief }, context);
+      const rule = canEditBoost ? `使一个带有「${effect!.target!.requiredLabelsAllOf![0]}」标签的己方单位本回合攻击 +${Number(boost)}。` : undefined;
+      const boostPatch = canEditBoost ? { description: rule, effects: [{ ...effect, text: rule, actions: [{ ...effect!.actions![0], value: Number(boost) }] }] } : {};
+      const result = await actions.cardWorkflow({ productionId, cardId: card.definition.id, baseRevision: Number(context.revision), requestId: context.requestId, operation: 'saveCardDraft', definition: { ...card.definition, name, description, ...(unit ? { attack: Number(attack), health: Number(health) } : {}), ...boostPatch }, artBrief }, context);
       return { revision: result.production?.revision };
     } });
   const { name, description, attack, health, artBrief, boost } = draft.value;
   const dirty = draft.dirty;
   const [chosenFeatureId, setChosenFeatureId] = useState(featureId ?? '');
-  const features = useResource<{ items: Array<{ id: string; title: string }> }>('featureChoices', {}, { enabled: !featureId });
+  const features = useQuery('featureChoices', {}, { enabled: !featureId });
   const [reuseSourceId, setReuseSourceId] = useState(companion?.cardId ?? '');
-  const reuseChoices = useResource<any>('companionChoices', { projectId }, { enabled: stage === 'review' || stage === 'art' });
-  const reuseSource = useResource<any>('sourceCard', { projectId, id: reuseSourceId }, { enabled: Boolean(reuseSourceId) });
+  const reuseChoices = useQuery('companionChoices', {}, { enabled: stage === 'review' || stage === 'art' });
+  const reuseSource = useQuery('sourceCard', { id: reuseSourceId }, { enabled: Boolean(reuseSourceId) });
   useEffect(() => { onDirty(dirty || draft.saving); return () => onDirty(false); }, [dirty, draft.saving, onDirty]);
   function edit(field: keyof typeof draft.value, value: string) { draft.set(previous => ({ ...previous, [field]: value })); }
-  const args = { projectId, productionId, cardId: card.definition.id, baseRevision };
+  const args = { productionId, cardId: card.definition.id, baseRevision };
   const previewId = stage === 'art' ? undefined : ['integrate', 'done'].includes(stage) ? card.assembly?.variants?.[card.presentation.themeId]?.previewId : card.art?.id;
-  const media = useResource<any>('media', { projectId, id: previewId, variant: 'original' }, { enabled: Boolean(previewId) });
-  async function run(operation: string, extra: Record<string, any> = {}) {
-    setBusy(operation); setError(''); setFeedback('');
-    try { const result = await actions.cardWorkflow({ ...args, operation, ...extra }); return result; }
-    catch (error) { setError((error as Error).message); return undefined; }
-    finally { setBusy(''); }
+  const media = useQuery('media', { id: previewId, variant: 'original' }, { enabled: Boolean(previewId) });
+  function run(name: CardOperation, extra: Record<string, unknown> = {}) {
+    setFeedback('');
+    return operation.run(()=>actions.cardWorkflow({...args,operation:name,...extra}));
   }
   async function requestArt() {
-    const result = await run('requestCardArt');
-    if (result?.reusedArt) { setFeedback('已沿用当前插画，可以继续组装卡面。'); return; }
-    if (result?.automaticGeneration) { setFeedback('Codex 正在生成插画；完成后会自动组装卡面并建立试玩候选。'); return; }
-    if (result?.handoff) { try { await workbench.copyText(result.handoff); setFeedback('生图任务已复制，发到 Codex 后回填图片。'); } catch (error) { setError((error as Error).message); } }
+    const result=await run('requestCardArt');
+    if(result?.reusedArt){setFeedback('已沿用当前插画，可以继续组装卡面。');return;}
+    if(result?.automaticGeneration){setFeedback('Codex 正在生成插画；完成后会自动组装卡面并建立试玩候选。');return;}
+    if(result?.handoff)await operation.run(async()=>{await workbench.copyText(result.handoff!);setFeedback('生图任务已复制，发到 Codex 后回填图片。');});
   }
-  async function upload(file?: File) {
-    if (!file) return;
-    if (file.size > 20_000_000) { setError('图片需要小于 20 MB'); return; }
-    setBusy('upload');
-    try {
-      const base64 = await new Promise<string>((resolve, reject) => { const reader = new FileReader(); reader.onload = () => resolve(String(reader.result)); reader.onerror = reject; reader.readAsDataURL(file); });
-      await run('attachCardArt', { requestId: card.artRequest?.id, base64 });
-    } catch (error) { setError((error as Error).message); } finally { setBusy(''); }
+  function upload(file?:File){
+    if(!file)return;
+    setFeedback('');
+    return operation.run(async()=>{
+      if(file.size>20_000_000)throw Error('图片需要小于 20 MB');
+      const base64=await new Promise<string>((resolve,reject)=>{const reader=new FileReader();reader.onload=()=>resolve(String(reader.result));reader.onerror=()=>reject(reader.error??Error('图片读取失败'));reader.readAsDataURL(file);});
+      await actions.cardWorkflow({...args,operation:'attachCardArt',requestId:card.artRequest?.id,base64});
+    });
   }
   const disabled = Boolean(busy) || dirty || draft.saving;
   const unit = card.definition.kind === 'unit';
@@ -169,13 +164,13 @@ function CardEditor({ card, stage, projectId, productionId, featureId, companion
       {stage === 'done' && <><div className="cw-definition-summary"><strong>{card.definition.name}</strong><span>{CARD_KIND_LABELS[card.definition.kind] ?? card.definition.kind}{unit ? ` · 攻击 ${card.definition.attack} · 生命 ${card.definition.health}` : ''}</span><p>{cardRules(card.definition)}</p></div><details className="cw-revise" open={dirty}><summary>修改卡牌定义或插画要求{dirty ? ' · 未保存' : ''}</summary>{editFields}</details><div className="cw-next"><Button isDisabled={disabled} onPress={() => void run('integrateCard')}>重新建立试玩候选</Button></div></>}
       {stage !== 'done' && <>
         {stage === 'review' || stage === 'art' ? editFields : <details className="cw-revise" open={dirty}><summary>修改卡牌定义或插画要求{dirty ? ' · 未保存' : ''}</summary>{editFields}</details>}
-        {(stage === 'review' || stage === 'art') && <div className="cw-reuse"><label>复用现有插画<select aria-label="复用插画来源" value={reuseSourceId} disabled={disabled} onChange={event => setReuseSourceId(event.target.value)}><option value="">选择已有卡牌</option>{(reuseChoices.data?.units ?? []).map((item: any) => <option key={item.id} value={item.id}>{item.name}</option>)}</select></label><Button variant="secondary" isDisabled={disabled || !reuseSource.data?.json?.cardFace?.artwork} onPress={() => void run('reuseCardArt', { sourceCardId: reuseSourceId, sourceRevision: reuseSourceId === companion?.cardId ? companion.revision : reuseSource.data?.revision })}>复用选中卡牌的插画</Button>{reuseChoices.error && <QueryFailure resource={reuseChoices} label="重试读取插画来源列表" />}{reuseSourceId && reuseSource.loading && <p role="status" className="cw-muted">正在读取来源插画…</p>}{reuseSourceId && !reuseSource.loading && !reuseSource.error && reuseSource.data && !reuseSource.data.json?.cardFace?.artwork && <p role="status" className="cw-muted">这张卡牌还没有可复用的插画，请选择其他来源，或点击“继续制作”生成插画。</p>}{reuseSource.error && <QueryFailure key={reuseSourceId} resource={reuseSource} label="重试读取来源插画" />}</div>}
+        {(stage === 'review' || stage === 'art') && <div className="cw-reuse"><label>复用现有插画<select aria-label="复用插画来源" value={reuseSourceId} disabled={disabled} onChange={event => setReuseSourceId(event.target.value)}><option value="">选择已有卡牌</option>{(reuseChoices.data?.units ?? []).map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}</select></label><Button variant="secondary" isDisabled={disabled || !reuseSource.data?.json?.cardFace?.artwork} onPress={() => void run('reuseCardArt', { sourceCardId: reuseSourceId, sourceRevision: reuseSourceId === companion?.cardId ? companion.revision : reuseSource.data?.revision })}>复用选中卡牌的插画</Button>{reuseChoices.error && <QueryFailure resource={reuseChoices} label="重试读取插画来源列表" />}{reuseSourceId && reuseSource.loading && <p role="status" className="cw-muted">正在读取来源插画…</p>}{reuseSourceId && !reuseSource.loading && !reuseSource.error && reuseSource.data && !reuseSource.data.json?.cardFace?.artwork && <p role="status" className="cw-muted">这张卡牌还没有可复用的插画，请选择其他来源，或点击“继续制作”生成插画。</p>}{reuseSource.error && <QueryFailure key={reuseSourceId} resource={reuseSource} label="重试读取来源插画" />}</div>}
         {card.art?.provider === 'existing' && <p className="cw-muted">插画复用自 {reuseSource.data?.name ?? card.art.sourceCardId}，已保存来源与版本。</p>}
         <div className="cw-next">
           {stage === 'review' && <Button isDisabled={disabled} onPress={() => void requestArt()}>继续制作</Button>}
           {stage === 'art' && <><Button isDisabled={disabled || generating} onPress={() => void requestArt()}>{generating ? 'Codex 生图中…' : generation?.status === 'unavailable' ? '复制给 Codex 的生图任务' : generation?.status === 'failed' ? '重试 Codex 生图' : '用 Codex 生成插画'}</Button>{card.artRequest && !generating && <label className="cw-file-pick">上传生成的插画<input aria-label="上传生成的插画" type="file" accept="image/png,image/jpeg,image/webp" disabled={disabled} onChange={event => { void upload(event.target.files?.[0]); event.target.value = ''; }} /></label>}</>}
           {stage === 'assemble' && <Button isDisabled={disabled} onPress={() => void run('assembleCardFaces')}>组装青玉与宣纸卡面</Button>}
-          {stage === 'integrate' && !featureId && <label className="cw-feature">所属功能<select aria-label="所属功能" value={chosenFeatureId} onChange={event => setChosenFeatureId(event.target.value)}><option value="">选择已有功能</option>{(features.data?.items ?? []).map(item => <option key={item.id} value={item.id}>{item.title}</option>)}</select><Button size="sm" isDisabled={!chosenFeatureId || disabled} onPress={() => { setBusy('feature'); setError(''); void actions.updateProduction({ projectId, productionId, baseRevision, patch: { featureId: chosenFeatureId } }).catch(error => setError(error.message)).finally(() => setBusy('')); }}>绑定功能</Button></label>}
+          {stage === 'integrate' && !featureId && <label className="cw-feature">所属功能<select aria-label="所属功能" value={chosenFeatureId} onChange={event => setChosenFeatureId(event.target.value)}><option value="">选择已有功能</option>{(features.data?.items ?? []).map(item => <option key={item.id} value={item.id}>{item.title}</option>)}</select><Button size="sm" isDisabled={!chosenFeatureId || disabled} onPress={()=>void operation.run(()=>actions.updateProduction({productionId,baseRevision,patch:{featureId:chosenFeatureId}}))}>绑定功能</Button></label>}
           {stage === 'integrate' && featureId && <Button isDisabled={disabled} onPress={() => void run('integrateCard')}>建立试玩候选</Button>}
         </div>
         {card.artRequest && (stage === 'art' || stage === 'assemble') && <details className="cw-request"><summary>查看生图提示词</summary><ScrollShadow className="cw-prompt">{card.artRequest.prompt}</ScrollShadow></details>}

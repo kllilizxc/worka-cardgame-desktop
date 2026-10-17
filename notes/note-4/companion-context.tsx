@@ -1,28 +1,26 @@
-import {useActions,useResource} from './surface';
+import {isCardBatch,type Production} from './contracts';
+import {useProductionNote} from './surface';
 import { Button } from '@heroui/react';
-import { useRef, useState } from 'react';
-export function CompanionContext({ projectId, production }: { projectId: string; production: any }) {
-  const actions = useActions<typeof import('./actions')>();
-  const context = useResource<any>('productionContext', { projectId, productionId: production.id });
-  const choices = useResource<any>('companionChoices', { projectId }, { enabled: !production.todoId || !production.batch?.companion });
+import {useState} from 'react';
+import {useAction} from '@dsh-workbench/react';
+export function CompanionContext({ production }: { production: Production }) {
+  const { actions, useQuery, host: workbench, metadata } = useProductionNote();
+  const context = useQuery('productionContext', { productionId: production.id });
+  const choices = useQuery('companionChoices', {}, { enabled: !production.todoId || !(isCardBatch(production.batch) && production.batch.companion) });
   const [todoId, setTodoId] = useState('');
   const [unitId, setUnitId] = useState('');
-  const source = useResource<any>('sourceCard', { projectId, id: unitId }, { enabled: Boolean(unitId) });
-  const [error, setError] = useState('');
-  const [busy, setBusy] = useState(false);
-  const inFlight = useRef(false);
-  async function bind() {
-    if (inFlight.current || !todoId || !source.data) return;
-    inFlight.current = true; setBusy(true); setError('');
-    try { await actions.linkCompanion({ projectId, productionId: production.id, baseRevision: production.revision, todoId, sourceCardId: unitId, sourceRevision: source.data.revision }); }
-    catch (cause) { setError(cause instanceof Error ? cause.message : String(cause)); }
-    finally { inFlight.current = false; setBusy(false); }
+  const source = useQuery('sourceCard', { id: unitId }, { enabled: Boolean(unitId) });
+  const action=useAction(),busy=action.pending,error=action.error?.message;
+  function bind(){
+    if(!todoId||!source.data)return;
+    const sourceRevision=source.data.revision;
+    return action.run(()=>actions.linkCompanion({productionId:production.id,baseRevision:production.revision,todoId,sourceCardId:unitId,sourceRevision}));
   }
   return <details className="cw-context"><summary>来源与关联</summary><div>
     <p>所属功能：{context.data?.feature?.title ?? '读取中…'}</p><p>关联待办：{context.data?.todo?.title ?? '尚未关联'}</p><p>配套单位：{context.data?.source?.name ?? '尚未选择'}</p>
-    {(!production.todoId || !production.batch?.companion) && <>
-      <label>关联已有待办<select aria-label="修复制作单待办关联" value={todoId} onChange={e => setTodoId(e.target.value)} disabled={busy}><option value="">选择待办</option>{(choices.data?.todos ?? []).map((item: any) => <option key={item.id} value={item.id}>{item.title}</option>)}</select></label>
-      <label>配套单位<select aria-label="修复制作单配套单位" value={unitId} onChange={e => setUnitId(e.target.value)} disabled={busy}><option value="">选择已有单位</option>{(choices.data?.units ?? []).map((item: any) => <option key={item.id} value={item.id}>{item.name}</option>)}</select></label>
+    {(!production.todoId || !(isCardBatch(production.batch) && production.batch.companion)) && <>
+      <label>关联已有待办<select aria-label="修复制作单待办关联" value={todoId} onChange={e => setTodoId(e.target.value)} disabled={busy}><option value="">选择待办</option>{(choices.data?.todos ?? []).map((item) => <option key={item.id} value={item.id}>{item.title}</option>)}</select></label>
+      <label>配套单位<select aria-label="修复制作单配套单位" value={unitId} onChange={e => setUnitId(e.target.value)} disabled={busy}><option value="">选择已有单位</option>{(choices.data?.units ?? []).map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}</select></label>
       <Button isDisabled={busy || !todoId || !source.data} onPress={() => void bind()}>{busy ? '保存关联…' : '保存来源关联'}</Button>
     </>}
     {(error || context.error) && <p role="alert">{error || context.error?.message}</p>}

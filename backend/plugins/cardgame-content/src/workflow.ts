@@ -159,6 +159,7 @@ export interface ProductionRequirementSnapshot {
 }
 
 export interface ProductionRound {
+  projectGeneration?: string;
   round: number;
   requestId: string;
   businessKey: string;
@@ -172,6 +173,8 @@ export interface ProductionRound {
   updatedAt: string;
   result?: ProductionResultFact;
   resultFingerprint?: string;
+  dispatchReceiptFingerprint?: string;
+  dispatchReceipt?: Record<string, unknown>;
   staleResultCount?: number;
 }
 
@@ -296,6 +299,7 @@ export interface WorkflowPage<T> {
   projectId: string;
   items: T[];
   nextCursor?: string;
+  revision?: string;
   limit: number;
   total?: number;
 }
@@ -889,13 +893,17 @@ class DurableWorkflowStore {
       const hasNext = rows.length > limit;
       const items = rows.slice(0, limit).map(row => productionListItemFromSql(row));
       const totalParams = [projectId, ...(status ? [status] : []), ...(todoId ? [todoId] : []), ...(q ? [`%${q}%`, `%${q}%`, `%${q}%`] : [])];
-      const total = Number((this.statement(`SELECT COUNT(*) AS count FROM productions WHERE ${clauses.filter(clause => !clause.startsWith("(updated_at")).join(" AND ")}`).get(...totalParams) as { count: number }).count);
-      return { projectId, items, limit, total, ...(hasNext && items.length ? { nextCursor: encodeCursor({ updatedAt: items.at(-1)!.updatedAt, id: items.at(-1)!.id }) } : {}) };
+      // Production records are never deleted and every change increases revision.
+      // Use the project-wide revision, so records crossing a filter cannot cancel
+      // one another out; only indexed integer metadata is read, never payloads.
+      const snapshot = this.statement(`SELECT COUNT(*) AS count,(SELECT COALESCE(SUM(revision),0) FROM productions WHERE project_id = ?) AS revisions FROM productions WHERE ${clauses.filter(clause => !clause.startsWith("(updated_at")).join(" AND ")}`).get(projectId,...totalParams) as { count:number; revisions:number };
+      const total=Number(snapshot.count),revision=String(snapshot.revisions);
+      return { projectId, items, limit, total, revision, ...(hasNext && items.length ? { nextCursor: encodeCursor({ updatedAt: items.at(-1)!.updatedAt, id: items.at(-1)!.id }) } : {}) };
     }
-    const items = this.listProductions(projectId)
-      .filter(item => (!status || item.status === status) && (!todoId || item.todoId === todoId) && (!q || `${item.brief}\n${item.id}\n${item.todoId ?? ""}`.toLocaleLowerCase().includes(q)))
+    const all = this.listProductions(projectId);
+    const items = all.filter(item => (!status || item.status === status) && (!todoId || item.todoId === todoId) && (!q || `${item.brief}\n${item.id}\n${item.todoId ?? ""}`.toLocaleLowerCase().includes(q)))
       .map(productionListItemFromRecord);
-    return pageRecords(items, input);
+    return {...pageRecords(items,input),revision:String(all.reduce((sum,item)=>sum+item.revision,0))};
   }
 
   countProductions(projectId: string): number {
@@ -1648,6 +1656,13 @@ export function createWorkflowService(options: WorkflowServiceOptions): Workflow
     return current.rounds.at(-1);
   }
 
+  function assertRoundScope(round: ProductionRound, input: Record<string,unknown>) {
+    if(input.projectGeneration===undefined)return; // Standalone service API has no desktop binding.
+    if(round.projectGeneration===input.projectGeneration)return;
+    if(!round.projectGeneration&&input.allowLegacyReconciliation===true)return;
+    throw new WorkflowError('conflict','原轮次属于旧项目绑定，不能重试或写回；请核对历史后明确新建一轮');
+  }
+
   function requirementForRound(current: ProductionRecord): ProductionRequirementSnapshot {
     return {
       brief: current.brief,
@@ -1677,7 +1692,7 @@ export function createWorkflowService(options: WorkflowServiceOptions): Workflow
       scope: [...round.scope],
       ...(round.requirement.outputDirectory ? { outputDirectory: round.requirement.outputDirectory } : {}),
       ...(round.cwd ? { cwd: round.cwd } : {}),
-      ...(production.todoId ? { todoId: production.todoId } : {}),
+      ...(round.requirement.todoId ? { todoId: round.requirement.todoId } : {}),
     };
   }
 
@@ -1695,6 +1710,7 @@ export function createWorkflowService(options: WorkflowServiceOptions): Workflow
       if ((current.batch as { kind?: string } | undefined)?.kind === 'card-generation') throw new WorkflowError('invalid-input', '卡牌批次请使用分阶段工作流，插画由 Codex 回填');
       const isNewRound = input.newRound === true || (!previous && input.round !== undefined);
       if (previous && !isNewRound) {
+        assertRoundScope(previous,input);
         if (previous.requirement.outputDirectory) await mkdir(previous.requirement.outputDirectory, { recursive: true });
         const expectedRequest = requestId(input.requestId, previous.requestId);
         if (expectedRequest !== previous.requestId) throw new WorkflowError("invalid-input", "当前轮次 requestId 不一致");
@@ -1723,7 +1739,7 @@ export function createWorkflowService(options: WorkflowServiceOptions): Workflow
       }
       const at = iso(now());
       await mkdir(outputDirectory, { recursive: true });
-      const round: ProductionRound = { round: roundNumber, requestId: rid, businessKey, requirementRevision: current.requirementRevision, dispatchRevision, requirement, scope, ...(cwd ? { cwd } : {}), status: "reserved", createdAt: at, updatedAt: at };
+      const round: ProductionRound = { ...(typeof input.projectGeneration==='string'?{projectGeneration:input.projectGeneration}:{}), round: roundNumber, requestId: rid, businessKey, requirementRevision: current.requirementRevision, dispatchRevision, requirement, scope, ...(cwd ? { cwd } : {}), status: "reserved", createdAt: at, updatedAt: at };
       const next = clone(current);
       next.rounds.push(round);
       next.status = "reserved";
@@ -1746,19 +1762,36 @@ export function createWorkflowService(options: WorkflowServiceOptions): Workflow
       if (!current) throw new WorkflowError("not-found", `找不到制作请求：${id}`);
       const round = productionRound(input, current);
       if (!round) throw new WorkflowError("not-found", "找不到制作轮次");
+      assertRoundScope(round,input);
       const receipt = input.receipt && typeof input.receipt === "object" ? asRecord(input.receipt) : input;
       const receiptStatus = optionalText(receipt.status) ?? "accepted";
       const taskStatus = taskStatusFromReceipt(receipt);
       const boundStatus = taskStatus && ["queued", "running", "failed", "needs-input", "stale", "cancelled", "paused", "interrupted"].includes(taskStatus)
         ? taskStatus
         : statusFromReceipt({ status: receiptStatus });
+      // Transport receipts belong to their round; they cannot replace result evidence.
+      const fingerprint=digest(receipt);
+      if(round.dispatchReceiptFingerprint===fingerprint)return {production:clone(current),revision:current.revision};
+      const newest=current.rounds.at(-1)!;
+      const terminal=Boolean(round.result)||current.status==='adopted';
+      if(round.requestId!==newest.requestId||round.requirementRevision!==current.requirementRevision||terminal){
+        const next=clone(current),at=iso(now()),target=next.rounds.find(value=>value.requestId===round.requestId)!;
+        target.dispatchReceiptFingerprint=fingerprint;target.dispatchReceipt=clone(receipt);
+        next.revision+=1;next.updatedAt=at;
+        touchProduction(store,next,'late-binding-receipt',{requestId:round.requestId,round:round.round,receipt:clone(receipt)},at);
+        emit({projectId,kind:'production',id,revision:next.revision});
+        return {production:clone(next),revision:next.revision};
+      }
+      const binding=executionBindingFromReceipt(receipt as Record<string,unknown>);
+      const nextExecution={...(current.execution??{}),requestId:round.requestId,status:boundStatus,transportStatus:receiptStatus,...binding};
       const at = iso(now());
       const next = clone(current);
       const targetRound = next.rounds.find(item => item.requestId === round.requestId)!;
+      targetRound.dispatchReceiptFingerprint=fingerprint;
+      targetRound.dispatchReceipt=clone(receipt);
       targetRound.status = boundStatus as ProductionRound["status"];
       targetRound.updatedAt = at;
-      const binding = executionBindingFromReceipt(receipt as unknown as Record<string, unknown>);
-      next.execution = { ...(next.execution ?? {}), requestId: round.requestId, status: boundStatus, transportStatus: receiptStatus, ...binding };
+      next.execution = nextExecution;
       next.generation = { ...(next.generation ?? { status: targetRound.status, updatedAt: at }), status: boundStatus, requestId: round.requestId, round: targetRound.round, updatedAt: at };
       next.status = targetRound.status as ProductionStatus;
       next.revision += 1;
@@ -1779,6 +1812,7 @@ export function createWorkflowService(options: WorkflowServiceOptions): Workflow
       if (!current) throw new WorkflowError("not-found", `找不到制作请求：${id}`);
       const rid = text(input.requestId, "requestId");
       const round = current.rounds.find(item => item.requestId === rid && (input.round === undefined || item.round === integer(input.round)));
+      if(round)assertRoundScope(round,input);
       const prior = store.getRequest(projectId, rid);
       const resultStatus = optionalText(input.status ?? (input.result && typeof input.result === "object" ? (input.result as Record<string, unknown>).status : undefined)) ?? "completed";
       const resultPayload = input.result && typeof input.result === "object" && !Array.isArray(input.result) ? asRecord(input.result) : input;
@@ -1916,7 +1950,8 @@ export function createWorkflowService(options: WorkflowServiceOptions): Workflow
     const current = await enqueue(store => {
       const production = store.getProduction(projectId, productionId);
       if (!production) throw new WorkflowError("not-found", `找不到制作请求：${productionId}`);
-      const round = productionRound(input, production);
+      const round = productionRound({requestId:input.sourceRequestId,round:input.round}, production);
+      if (!round) throw new WorkflowError("not-found", "找不到候选所属轮次");
       return { production, round };
     });
     const round = current.round;
@@ -1928,12 +1963,16 @@ export function createWorkflowService(options: WorkflowServiceOptions): Workflow
     let external: unknown;
     if (suppliedReceipt) external = suppliedReceipt;
     else if (context?.assets?.registerCandidates) external = await context.assets.registerCandidates(payload);
+    if(!external)throw new WorkflowError("delivery-pending","缺少资源服务的真实回执");
     if (external && typeof external === "object" && !Array.isArray(external) && "status" in external && !connectionCompleted(external as WorkflowConnectionReceipt)) {
       throw new WorkflowError("delivery-pending", `候选登记尚未完成：${String((external as WorkflowConnectionReceipt).status)}`, external);
     }
     return enqueue(store => {
       const production = store.getProduction(projectId, productionId);
       if (!production) throw new WorkflowError("not-found", `找不到制作请求：${productionId}`);
+      const latest=production.rounds.at(-1);
+      if(round&&(latest?.requestId!==round.requestId||production.requirementRevision!==round.requirementRevision))throw new WorkflowError('conflict','候选回执属于旧轮次');
+      if(production.candidateRegistration?.requestId===rid&&production.candidateRegistration.status==='completed')return {production:clone(production),candidates:clone(candidates),requestId:rid,result:external};
       const at = iso(now());
       const next = clone(production);
       next.candidateRefs = mergeCandidates(next.candidateRefs, candidates);
@@ -1975,6 +2014,7 @@ export function createWorkflowService(options: WorkflowServiceOptions): Workflow
     let external: unknown;
     if (suppliedReceipt) external = suppliedReceipt;
     else if (context?.assets?.adoptVersion) external = await context.assets.adoptVersion(payload);
+    if(!external)throw new WorkflowError("delivery-pending","缺少资源服务的真实回执");
     if (external && typeof external === "object" && !Array.isArray(external) && "status" in external && !connectionCompleted(external as WorkflowConnectionReceipt)) {
       throw new WorkflowError("delivery-pending", `资源采用尚未完成：${String((external as WorkflowConnectionReceipt).status)}`, external);
     }
@@ -1987,6 +2027,8 @@ export function createWorkflowService(options: WorkflowServiceOptions): Workflow
     return enqueue(store => {
       const current = store.getProduction(projectId, productionId);
       if (!current) throw new WorkflowError("not-found", `找不到制作请求：${productionId}`);
+      if(current.candidateRefs.find(candidate=>(candidate.id??candidate.key??candidate.assetId)===candidateId)?.rejectedAt)throw new WorkflowError('conflict','候选已被否决；资源回执已保留，请人工核对实际采用结果',{candidateId,assetId:adoptedAssetId,versionId:adoptedVersionId,receipt:external});
+      if(current.adoption?.candidateId===candidateId&&current.adoption.assetId===adoptedAssetId&&current.adoption.version===adoptedVersionId)return {production:clone(current),candidateId,requestId:rid,result:external};
       const at = iso(now());
       const next = clone(current);
       next.adoption = { status: "adopted", candidateId, ...(adoptedAssetId ? { assetId: adoptedAssetId } : {}), ...(adoptedVersionId ? { version: adoptedVersionId } : {}), updatedAt: at, result: clone(external) };
@@ -2082,6 +2124,15 @@ export function createWorkflowService(options: WorkflowServiceOptions): Workflow
       }
       const page = store.listProductionsPage(projectId, input);
       return { ...page, items: page.items.map(item => projectGameChange(store.getProduction(projectId, item.id)!)) };
+    }
+    if(op==='productionDispatch'){
+      const production=store.getProduction(projectId,text(input.productionId,'productionId'));
+      if(!production)throw new WorkflowError('not-found','找不到制作单');
+      const round=production.rounds.at(-1);
+      if(!round||round.requestId!==input.requestId||round.round!==input.round||round.requirementRevision!==production.requirementRevision)throw new WorkflowError('conflict','制作轮次或需求已变化，未交办执行');
+      assertRoundScope(round,input);
+      if(round.result||production.status==='adopted')return {completed:true,production:clone(production)};
+      return {production:clone(production),round:clone(round),submit:dispatchInput(production,round),legacyReconciliation:!round.projectGeneration};
     }
     if (op === "production") {
       const id = text(input.id ?? input.productionId, "productionId");

@@ -1,3 +1,4 @@
+import {CARD_OPERATIONS} from '../../../../notes/note-4/card-operations';
 import { createHash, randomUUID } from 'node:crypto';
 import { readFile, realpath, stat } from 'node:fs/promises';
 import { homedir } from 'node:os';
@@ -9,7 +10,7 @@ import { inspectDeck, normalizeDeckPlan, type DeckPlan } from './deck-plan';
 import type { ContentService, CardItem } from './types';
 import type { WorkflowService, ProductionRecord, GameCandidateRecord } from './workflow';
 import type { CardImageGenerator } from './codex-imagegen';
-import { CARD_FACE_THEMES, CARD_FACE_VERSION, DEFAULT_FACE, normalizeFace, renderCardFace, type FacePresentation } from '../../../templates/cardgame-production/card-face';
+import { CARD_FACE_THEMES, CARD_FACE_VERSION, DEFAULT_FACE, normalizeFace, renderCardFace, type FacePresentation } from '../../../../notes/note-4/card-face';
 
 export interface PipelineCard {
   definition: Record<string, any>;
@@ -218,6 +219,16 @@ export function createCardPipeline(content: ContentService, workflow: WorkflowSe
       batch.draftSource = batch.draftOrigin === 'agent' ? input._draftSource : undefined;
       return save(production, batch);
     }
+    if(method==='linkCardCompanion'){
+      const source=await content.query({projectId:input.projectId,op:'card',id:text(input.sourceCardId,'配套单位')}) as CardItem;
+      const {item:todo}=await workflow.query({projectId:input.projectId,op:'todo',id:text(input.todoId,'待办')}) as {item:import('./workflow').TodoRecord};
+      if(source.kind!=='unit'||source.revision!==input.sourceRevision)throw Error('配套单位已变化，请刷新后重试');
+      if(todo.productionId&&todo.productionId!==production.id)throw Error('待办已关联另一制作单');
+      batch.companion={cardId:source.id,revision:source.revision};
+      const saved=await save(production,batch) as {production:ProductionRecord;revision:number};
+      // These are two existing CAS writes; a retry can finish a failed bind.
+      return workflow.command('bindTodo',{projectId:input.projectId,productionId:production.id,todoId:todo.id,todoBaseRevision:todo.revision,productionBaseRevision:saved.revision});
+    }
     if (method === 'saveDeckPlan') {
       batch.deck = normalizeDeckPlan(input.deckPlan, production.brief, batch.deck);
       return save(production, batch);
@@ -366,4 +377,4 @@ export function createCardPipeline(content: ContentService, workflow: WorkflowSe
     async close() { for (const job of generationJobs.values()) job.controller.abort(); await Promise.allSettled([...generationJobs.values()].map(job => job.done)); await queue; },
   };
 }
-export const CARD_PIPELINE_COMMANDS = new Set(['createCardBatch', 'setCardDrafts', 'saveCardDraft', 'approveCardDrafts', 'requestCardArt', 'reuseCardArt', 'attachCardArt', 'assembleCardFaces', 'integrateCard', 'saveDeckPlan', 'confirmDeckDraft', 'prepareDeckArt', 'stageDeckCandidate']);
+export const CARD_PIPELINE_COMMANDS = new Set<string>([...CARD_OPERATIONS,'linkCardCompanion']);

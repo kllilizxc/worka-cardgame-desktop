@@ -1,34 +1,29 @@
-import {useActions,useResource} from './surface';
+import type {CardBatchDetail,PipelineCard} from './contracts';
+import {useProductionNote} from './surface';
 import { Button } from '@heroui/react';
 import { useState } from 'react';
+import {useAction} from '@dsh-workbench/react';
 import { CARD_FACE_THEMES, CARD_KIND_LABELS, cardRules } from './card-face';
 
 const STATES: Record<string,string> = { adopted:'已加入正式游戏', 'basis-changed':'简报已变化', incomplete:'方案待补齐', 'needs-review':'待确认草案', candidate:'候选已建立', stale:'候选待更新', ready:'草案已确认' };
 
 /** Readable outcomes, native conversation/annotation editing, one explicit approval. */
-export function DeckOutcome({ projectId, value }: { projectId: string; value: any }) {
-  const actions=useActions<typeof import('./actions')>();
-  const [busy,setBusy]=useState(false), [error,setError]=useState('');
-  const { batch, production, deckInspection: report }=value;
-  const plan=batch.deck;
+export function DeckOutcome({ value }: { value: CardBatchDetail }) {
+  const { actions, useQuery, host: workbench, metadata } = useProductionNote();
+  const action=useAction(),busy=action.pending,error=action.error?.message;
+  const { batch, production, deckInspection: inspection }=value;
+  const plan=batch.deck!, report=inspection!;
   const [theme,setTheme]=useState('jade');
-  const ready=batch.cards.filter((card:any)=>['integrate','done'].includes(value.stages[card.definition.id])).length;
-  const artworkStarted=batch.cards.some((card:any)=>card.artRequest||card.art);
-  const current=production.gameCandidates?.find((item:any)=>item.id===report.candidateId);
+  const ready=batch.cards.filter((card)=>['integrate','done'].includes(value.stages[card.definition.id])).length;
+  const artworkStarted=batch.cards.some((card)=>card.artRequest||card.art);
+  const current=production.gameCandidates?.find((item)=>item.id===report.candidateId);
   const artCandidate=Boolean(current?.deckArtFingerprints);
-  const artAdopted=artCandidate&&current.status==='adopted';
-  async function confirm() {
-    setBusy(true);setError('');
-    try {
-      const approved=await actions.cardWorkflow({operation:'confirmDeckDraft',projectId,productionId:production.id,baseRevision:production.revision});
-      await actions.cardWorkflow({operation:'stageDeckCandidate',projectId,productionId:production.id,baseRevision:approved.production.revision});
-    } catch(cause) {setError((cause as Error).message);} finally {setBusy(false);}
-  }
-  async function stage() {
-    setBusy(true);setError('');
-    try {await actions.cardWorkflow({operation:'stageDeckCandidate',projectId,productionId:production.id,baseRevision:production.revision});}
-    catch(cause){setError((cause as Error).message);}finally{setBusy(false);}
-  }
+  const artAdopted=artCandidate&&current?.status==='adopted';
+  function confirm(){return action.run(async()=>{
+    const approved=await actions.cardWorkflow({operation:'confirmDeckDraft',productionId:production.id,baseRevision:production.revision});
+    await actions.cardWorkflow({operation:'stageDeckCandidate',productionId:production.id,baseRevision:approved.production.revision});
+  });}
+  function stage(){return action.run(()=>actions.cardWorkflow({operation:'stageDeckCandidate',productionId:production.id,baseRevision:production.revision}));}
   return <section className="deck-outcome" aria-label="独立牌组成果"><style>{STYLE}</style>
     <header><span>独立牌组 · {STATES[report.status]}</span><h2>{plan.title}</h2><strong>{report.distinctCards} 种 · {report.totalCopies}/{plan.targetSize} 张</strong></header>
     <p className="deck-brief">{production.brief}</p>
@@ -40,11 +35,11 @@ export function DeckOutcome({ projectId, value }: { projectId: string; value: an
     {report.errors.length>0 && <ul aria-label="待补齐项">{report.errors.map((text:string)=><li key={text}>{text}</li>)}</ul>}
     {report.warnings.length>0 && <ul aria-label="组合提示">{report.warnings.map((text:string)=><li key={text}>{text}</li>)}</ul>}
     {artworkStarted&&<section className="deck-art-status" aria-label="插画交付进度"><strong>{artAdopted?'原创卡面已加入正式游戏':`两套卡面已组装 ${ready}/${batch.cards.length} 种`}</strong><p>{artAdopted?'全部插画和青玉、宣纸主题已随整套牌组交付。':ready===batch.cards.length?'查看每张卡面后，建立整套素材试玩候选。':'插画完成后自动组装两套卡面；在原生对话中调整主体或裁切。'}</p><div className="deck-themes" aria-label="预览卡面主题">{CARD_FACE_THEMES.map(item=><Button key={item.id} size="sm" variant={theme===item.id?'primary':'tertiary'} onPress={()=>setTheme(item.id)}>{item.name}</Button>)}</div></section>}
-    <div className="deck-cards" aria-label="牌组卡牌与副本">{plan.entries.map((entry:any)=>{
-      const item=batch.cards.find((item:any)=>item.definition.id===entry.cardId);
+    <div className="deck-cards" aria-label="牌组卡牌与副本">{plan.entries.map((entry)=>{
+      const item=batch.cards.find((item)=>item.definition.id===entry.cardId);
       const card=item?.definition;
-      return <article key={entry.cardId} id={`deck-card-${entry.cardId}`} data-card-id={entry.cardId}><details><summary><span><strong>{card?.name??entry.cardId}</strong><small>{CARD_KIND_LABELS[card?.kind]??'草稿未就绪'}</small></span><b>×{entry.count}</b></summary>
-        {item&&artworkStarted&&<DeckCardArtwork projectId={projectId} card={item} stage={value.stages[entry.cardId]} theme={theme}/>}
+      return <article key={entry.cardId} id={`deck-card-${entry.cardId}`} data-card-id={entry.cardId}><details><summary><span><strong>{card?.name??entry.cardId}</strong><small>{CARD_KIND_LABELS[card?.kind??'']??'草稿未就绪'}</small></span><b>×{entry.count}</b></summary>
+        {item&&artworkStarted&&<DeckCardArtwork card={item} stage={value.stages[entry.cardId]} theme={theme}/>}
         {card&&<><p>{cardRules(card)}</p>{card.kind==='unit'&&<p>攻击 {card.attack} · 生命 {card.health}</p>}<small>卡牌对象 · {card.id}</small></>}
       </details></article>;
     })}</div>
@@ -55,10 +50,11 @@ export function DeckOutcome({ projectId, value }: { projectId: string; value: an
     {error&&<p role="alert">{error}</p>}
   </section>;
 }
-function DeckCardArtwork({projectId,card,stage,theme}:{projectId:string;card:any;stage:string;theme:string}) {
+function DeckCardArtwork({card,stage,theme}:{card:PipelineCard;stage:string;theme:string}) {
+  const {useQuery}=useProductionNote();
   const assembled=['integrate','done'].includes(stage);
   const id=assembled?card.assembly?.variants?.[theme]?.previewId:card.art?.id;
-  const media=useResource<any>('media',{projectId,id,variant:'original'},{enabled:Boolean(id)});
+  const media=useQuery('media',{id,variant:'original'},{enabled:Boolean(id)});
   const generation=card.artGeneration;
   return <div className="deck-card-art">{media.data?.url?<img src={media.data.url} alt={`${card.definition.name} · ${assembled?theme==='jade'?'青玉卡面':'宣纸卡面':'原创插画'}`} loading="lazy"/>:<p>{media.loading?'读取卡面…':generation?.status==='running'?'插画正在生成…':generation?.status==='failed'?'插画需要重试':'等待原创插画'}</p>}{generation?.status==='failed'&&<p role="status">{generation.error}</p>}{media.error&&<p role="alert">{media.error.message}</p>}</div>;
 }

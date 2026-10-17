@@ -567,7 +567,8 @@
           "nodeKey": "note-4",
           "queries": [
             "production",
-            "productions"
+            "productions",
+            "productionDispatch"
           ],
           "actions": [
             "upsertRequest",

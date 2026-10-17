@@ -1,6 +1,6 @@
 ---
 name: worka-cardgame-production-assets
-description: Register production candidates and adopt an explicitly selected version with exact receipts.
+description: Register real production candidates and keep legacy adoption requests pending for explicit review.
 eventScripts:
   cardgame.production.candidatesRequested: scripts/candidates.ts
   cardgame.production.adoptionRequested: scripts/adopt.ts
@@ -8,6 +8,8 @@ eventScripts:
 
 # CardGame 制作与资源库
 
-制作结果只登记为候选，保留实际文件路径、候选 ID 和技术元数据。资源库的 `registerCandidates` 回执是候选身份的来源；回填制作记录后才完成联动。采用是独立的用户操作：先核对制作单已有候选，再调用资源库 `adoptVersion`，把实际资源 ID 和版本 ID 写回制作记录。重试沿用同一请求和连线操作 ID，不重复登记或采用。候选登记、采用和进入正式游戏是三个不同事实。
+制作结果只登记为候选，保留实际文件路径、候选 ID 和技术元数据。资源库的 registerCandidates 回执是候选身份来源；回填制作记录后才完成联动。重试沿用同一请求和连线操作 ID，不重复登记。
 
-未采用候选保存在 Worka 项目数据中。采用时由资源库把选中的明确版本写入 CardGame 正式文件和清单，并保留历史；不改动剧情或卡牌的使用位置，也不启动新执行任务。
+通用素材当前只支持查看、复制真实候选引用或否决，不支持直接采用。不要调用资源库 adoptVersion，也不能以文件工具绕过正式项目保护。卡牌与牌组回原制作单建立隔离试玩候选，试玩后由用户在功能进展确认。
+
+旧 adoptionRequested 事件保留核对入口，返回待人工处理而不执行采用、回填成功或新增采用关联。若原操作可能已有副作用，先核对资源实际版本、原候选与真实回执；不要用新请求 ID 重放。历史采用事实仍保留且必须以真实资源服务回执核对。

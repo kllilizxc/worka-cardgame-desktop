@@ -1,221 +1,181 @@
-import {useViewProps} from './surface';
-import {NoteIcon} from '@dsh-workbench/react';
-import {useActions,useNoteConfig,useResource,useWorkbench,type WidgetProps} from './surface';
-import { Button, Input, Label, ScrollShadow, SearchField, Spinner, TextField } from "@heroui/react";
-import type { JsonValue } from "@dsh-workbench/runtime";
-import { useEffect, useMemo, useState } from "react";
-import type { ProductionState } from "./actions";
+import {ProductionScope,useProductionNote} from './surface';
+import {NoteIcon,useNoteDraft,useAction} from '@dsh-workbench/react';
+import { Button, Input, Label, ScrollShadow, SearchField, Spinner, TextField } from '@heroui/react';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import type { ProductionState } from './actions';
+import { isCardBatch,type Production,type Candidate } from './contracts';
+import {requirementFields,requirementPatch} from './requirement-draft';
 import { CardWorkflow, CreateCardWorkflow } from './card-workflow';
 
-interface CardGameConfig { projectId?: string; projectRoot?: string; notes?: Record<string, string> }
-interface Production { id: string; projectId: string; brief: string; status: string; revision: number; targetAsset?: Record<string, unknown>; pinnedRefs?: Array<Record<string, unknown> | string>; batch?: unknown; roundCount?: number; currentRound?: number; candidateCount?: number; gameCandidateCount?: number; rounds?: any[]; candidateRefs?: any[]; todoId?: string; adoption?: any; generation?: any }
-interface ProductionPage { items: Production[]; nextCursor?: string; total?: number }
 const PAGE_SIZE = 100;
-const MAX_PAGE_CACHE = 500;
-const VIRTUAL_WINDOW = 50;
-const VIRTUAL_ROW_HEIGHT = 96;
 
-export default function View(){
- const { data, mode, metadata, updateData }=useViewProps<ProductionState>();
-  const config = useNoteConfig<CardGameConfig>();
-  const actions = useActions<typeof import("./actions")>();
-  const workbench = useWorkbench();
-  const projectId = config?.projectId || data?.projectId || "";
+export default function View(){return <ProductionScope><ProductionView/></ProductionScope>}
+function ProductionView(){
+  const api=useProductionNote();
+  const { state:data, mode, metadata, config, actions, host:workbench, useQuery, usePagedQuery, projectId, scopeGeneration }=api;
+  const updateData=(patch:Partial<ProductionState>)=>actions.setViewState({patch,expectedRevision:api.stateRevision});
+  const navigation=useAction();
+  const [cardDirty,setCardDirty]=useState(false);
   const [query, setQuery] = useState(data?.query ?? "");
-  const [cursor, setCursor] = useState<string | undefined>();
-  const [items, setItems] = useState<Production[]>([]);
-  const [nextCursor, setNextCursor] = useState<string>();
   const [selectedId, setSelectedId] = useState(data?.selectedId);
-  const [brief, setBrief] = useState("");
-  const [targetAssetText, setTargetAssetText] = useState("");
-  const [pinnedRefsText, setPinnedRefsText] = useState("");
-  const [batchText, setBatchText] = useState("");
-  const [editBrief, setEditBrief] = useState("");
-  const [editTargetAssetText, setEditTargetAssetText] = useState("");
-  const [editPinnedRefsText, setEditPinnedRefsText] = useState("");
-  const [editBatchText, setEditBatchText] = useState("");
-  const [busy, setBusy] = useState<string>();
-  const [error, setError] = useState<string>();
   const [candidateOffset, setCandidateOffset] = useState(0);
-  const page = useResource<ProductionPage>("productions", { projectId, cursor, q: query, limit: PAGE_SIZE } as unknown as JsonValue, { enabled: Boolean(projectId) });
-  const selected = useResource<any>("production", selectedId ? { projectId, productionId: selectedId, historyLimit: 20 } : {}, { enabled: Boolean(projectId && selectedId) });
+  const page = usePagedQuery("productions", { q: query, limit: PAGE_SIZE });
+  const items=page.items;
+  const selected = useQuery("production", { productionId: selectedId || '', historyLimit: 20 }, { enabled: Boolean(selectedId) });
   const focusItem = typeof location !== "undefined" ? new URLSearchParams(location.search).get("focus") : null;
   const focusContext = useMemo(() => decodeCardGameFocus(focusItem), [focusItem]);
-  const [scrollTop, setScrollTop] = useState(0);
-  const virtualStart = Math.min(Math.floor(scrollTop / VIRTUAL_ROW_HEIGHT), Math.max(0, items.length - VIRTUAL_WINDOW));
-  const virtualItems = items.slice(virtualStart, virtualStart + VIRTUAL_WINDOW);
-
-  useEffect(() => {
-    const incoming = page.data?.items ?? [];
-    setItems(cursor ? previous => [...previous, ...incoming.filter(item => !previous.some(existing => existing.id === item.id))].slice(-MAX_PAGE_CACHE) : incoming.slice(0, MAX_PAGE_CACHE));
-    setNextCursor(page.data?.nextCursor);
-  }, [cursor, page.data]);
-
   useEffect(() => {
     if (focusContext?.projectId === projectId && focusContext.kind === "production" && focusContext.id) setSelectedId(focusContext.id);
   }, [focusContext, projectId]);
 
-  const detail: Production | undefined = selected.data?.production;
-  const isCardProduction = Boolean(selectedId && detail?.id === selectedId && (detail.batch as any)?.kind === "card-generation");
-  useEffect(() => {
-    if (!detail) return;
-    setEditBrief(detail.brief ?? "");
-    setEditTargetAssetText(detail.targetAsset ? JSON.stringify(detail.targetAsset) : "");
-    setEditPinnedRefsText((detail.pinnedRefs ?? []).map((ref: any) => typeof ref === "string" ? ref : JSON.stringify(ref)).join("\n"));
-    setEditBatchText(detail.batch === undefined ? "" : JSON.stringify(detail.batch));
-    setCandidateOffset(0);
-  }, [detail?.id, detail?.revision]);
+  const detail=selected.data?.production;
+  const isCardProduction=Boolean(selectedId&&detail?.id===selectedId&&isCardBatch(detail.batch));
+  const requirement=useNoteDraft({key:`requirement:${metadata.id}:${scopeGeneration}:${selectedId??''}`,
+    source:selected.draftSource(value=>({value:requirementFields(value?.production),revision:value?.production.revision})),
+    save:async(value,context)=>{
+      if(!selectedId||typeof context.revision!=='number')throw new Error('请先读取制作单');
+      const result=await actions.updateProduction({productionId:selectedId,baseRevision:context.revision,requestId:context.requestId,patch:requirementPatch(value)},context);
+      return {revision:result.revision??result.production.revision};
+    }});
+  const edit=(key:keyof typeof requirement.value,value:string)=>requirement.set(previous=>({...previous,[key]:value}));
+  useEffect(()=>setCandidateOffset(0),[detail?.id]);
 
+  function selectProduction(id:string){
+    if(requirement.saving)return false;
+    if((requirement.dirty||cardDirty)&&!window.confirm('切换制作单会关闭未保存的编辑，确定继续吗？'))return false;
+    setSelectedId(id);void navigation.run(()=>saveState({selectedId:id}));return true;
+  }
   async function saveState(patch: Partial<ProductionState>) { await updateData(patch); }
 
-  async function saveDraft() {
-    if (!brief.trim()) return;
-    setBusy("draft"); setError(undefined);
-    try {
-      const targetValue = parseJsonField(targetAssetText, "目标资源");
-      const targetAsset = targetValue && typeof targetValue === "object" && !Array.isArray(targetValue) ? targetValue as Record<string, unknown> : undefined;
-      const batch = parseJsonField(batchText, "批次");
-      const pinnedRefs = parseRefs(pinnedRefsText);
-      const result = await actions.upsertRequest({ projectId, brief: brief.trim(), ...(targetAsset === undefined ? {} : { targetAsset }), ...(batch === undefined ? {} : { batch }), ...(pinnedRefs.length ? { pinnedRefs } : {}) });
-      setBrief(""); setTargetAssetText(""); setPinnedRefsText(""); setBatchText(""); setCursor(undefined); setSelectedId(result.production?.id); await saveState({ projectId, selectedId: result.production?.id });
+  const created=useRef<string|undefined>(undefined);
+  const newRequest=useNoteDraft({key:`create-production:${metadata.id}:${scopeGeneration}`,value:requirementFields(),save:async(value,context)=>{
+    const result=await actions.upsertRequest(requirementPatch(value),context);
+    if(!context.signal.aborted)created.current=result.production.id;
+    return {value:requirementFields()};
+  }});
+  const createField=(key:keyof typeof newRequest.value,value:string)=>newRequest.set(previous=>({...previous,[key]:value}));
+  async function saveDraft(){
+    if(await newRequest.save()){
+      page.reset();
+      if(created.current)selectProduction(created.current);
     }
-    catch (cause) { setError(cause instanceof Error ? cause.message : String(cause)); }
-    finally { setBusy(undefined); }
-  }
-
-  async function saveRequirement() {
-    if (!detail || !editBrief.trim()) return;
-    setBusy(`edit:${detail.id}`); setError(undefined);
-    try {
-      const targetValue = parseJsonField(editTargetAssetText, "目标资源");
-      const targetAsset = targetValue && typeof targetValue === "object" && !Array.isArray(targetValue) ? targetValue as Record<string, unknown> : undefined;
-      const batch = parseJsonField(editBatchText, "批次");
-      const pinnedRefs = parseRefs(editPinnedRefsText);
-      await actions.updateProduction({ projectId, productionId: detail.id, baseRevision: detail.revision, patch: { brief: editBrief.trim(), targetAsset, batch, pinnedRefs } });
-      setCursor(undefined);
-    } catch (cause) { setError(cause instanceof Error ? cause.message : String(cause)); }
-    finally { setBusy(undefined); }
   }
 
   async function run(item: Production, newRound = false) {
-    setBusy(item.id); setError(undefined);
-    try {
-      if (newRound) await actions.newRound({ projectId, productionId: item.id });
-      else if ((item.roundCount ?? item.rounds?.length ?? 0) > 0 && ["queued", "running", "reserved"].includes(item.status)) await actions.retry({ projectId, productionId: item.id });
-      else await actions.generate({ projectId, productionId: item.id });
-      setCursor(undefined);
-    } catch (cause) { setError(cause instanceof Error ? cause.message : String(cause)); }
-    finally { setBusy(undefined); }
+    if (newRound) await actions.newRound({ productionId: item.id });
+    else if ((item.roundCount ?? item.rounds?.length ?? 0) > 0 && ["queued", "running", "reserved"].includes(item.status)) await actions.retry({ productionId: item.id });
+    else await actions.generate({ productionId: item.id });
+    page.reset();
   }
-
-  async function adopt(production: Production, candidate: any) {
+  async function reject(production: Production, candidate: Candidate, reason?: string) {
     const candidateId = candidate.id ?? candidate.key ?? candidate.assetId;
-    if (!candidateId) return;
-    setBusy(`adopt:${candidateId}`); setError(undefined);
-    try { await actions.adoptAsset({ projectId, productionId: production.id, candidateId }); setCursor(undefined); }
-    catch (cause) { setError(cause instanceof Error ? cause.message : String(cause)); }
-    finally { setBusy(undefined); }
+    if (!candidateId) throw new Error('候选还没有登记身份');
+    await actions.rejectCandidate({ productionId: production.id, candidateId, baseRevision: production.revision, ...(reason ? { reason } : {}) });
+    page.reset();
   }
 
-  async function reject(production: Production, candidate: any, reason?: string) {
-    const candidateId = candidate.id ?? candidate.key ?? candidate.assetId;
-    if (!candidateId) return;
-    setBusy(`reject:${candidateId}`); setError(undefined);
-    try { await actions.rejectCandidate({ projectId, productionId: production.id, candidateId, baseRevision: production.revision, ...(reason ? { reason } : {}) }); setCursor(undefined); }
-    catch (cause) { setError(cause instanceof Error ? cause.message : String(cause)); }
-    finally { setBusy(undefined); }
-  }
-
-  if (!projectId) return <section className="cg-production cg-empty"><style>{STYLES}</style><NoteIcon icon={metadata.icon} size={18} /><strong>AI 资源生产</strong><span>请先配置 projectId 和 projectRoot。</span></section>;
-
-  if (mode === "compact") return <section className="cg-production cg-compact"><style>{STYLES}</style><header><span className="cg-brand"><NoteIcon icon={metadata.icon} size={14} /><strong>AI 生产</strong></span><span>{page.data?.total ?? items.length} 请求</span></header><ScrollShadow className="cg-list" style={{ maxHeight: 120 }}>{page.loading && <Spinner size="sm" />}{items.slice(0, 3).map(item => <button className="cg-row" type="button" key={item.id} onClick={() => { setSelectedId(item.id); void saveState({ selectedId: item.id }); void workbench.openNote(metadata.id); }}><span className={`cg-status-dot status-${item.status}`} /><span className="cg-title">{item.brief}</span><span className="cg-status">{((item as any).deckProgress ? `${(item as any).deckProgress.distinctCards} 种 · ${(item as any).deckProgress.totalCopies}/${(item as any).deckProgress.targetSize} 张` : (item as any).workflowKind === "card-generation" ? `${(item as any).cardProgress?.done ?? 0}/${(item as any).cardProgress?.total ?? 0} 制卡进度` : productionLabel(item.status))}</span></button>)}{!page.loading && items.length === 0 && <span className="cg-muted">暂无制作请求</span>}</ScrollShadow>{page.error && <span className="cg-error">{page.error.message}</span>}</section>;
+  if (mode === "compact") return <section className="cg-production cg-compact"><style>{STYLES}</style><header><span className="cg-brand"><NoteIcon icon={metadata.icon} size={14} /><strong>AI 生产</strong></span><span>{page.total ?? items.length} 请求</span></header><ScrollShadow className="cg-list" style={{ maxHeight: 120 }}>{page.loading && <Spinner size="sm" />}{items.slice(0, 3).map(item => <button className="cg-row" type="button" key={item.id} onClick={() => { if(selectProduction(item.id))void workbench.openNote(metadata.id); }}><span className={`cg-status-dot status-${item.status}`} /><span className="cg-title">{item.brief}</span><span className="cg-status">{(item.deckProgress ? `${item.deckProgress.distinctCards} 种 · ${item.deckProgress.totalCopies}/${item.deckProgress.targetSize} 张` : item.workflowKind === "card-generation" ? `${item.cardProgress?.done ?? 0}/${item.cardProgress?.total ?? 0} 制卡进度` : productionLabel(item.status))}</span></button>)}{!page.loading && items.length === 0 && <span className="cg-muted">暂无制作请求</span>}</ScrollShadow>{page.error && <span className="cg-error">{page.error.message}</span>}</section>;
 
   return (
     <section className="cg-production">
       <style>{STYLES}</style>
       <header className="cg-header">
-        <div className="cg-brand"><span className="cg-icon"><NoteIcon icon={metadata.icon} size={16} /></span><div><strong>AI 资源生产</strong><small>{projectId}</small></div></div>
-        <span className="cg-muted">{page.data?.total ?? items.length} 请求</span>
+        <div className="cg-brand"><span className="cg-icon"><NoteIcon icon={metadata.icon} size={16} /></span><div><strong>AI 资源生产</strong><small>{"当前已连接项目"}</small></div></div>
+        <span className="cg-muted">{page.total ?? items.length} 请求</span>
       </header>
-      {isCardProduction ? <div className="cg-card-route"><Button size="sm" variant="tertiary" style={{ color: 'var(--wb-accent)', background: 'transparent' }} onPress={() => { setSelectedId(''); void saveState({ selectedId: '' }); }}>← 返回</Button></div> : <div className="cg-toolbar">
-        <SearchField aria-label="搜索制作请求" value={query} onChange={value => { setQuery(value); setCursor(undefined); void saveState({ query: value }); }} onSubmit={() => setCursor(undefined)} fullWidth>
+      {isCardProduction ? <div className="cg-card-route"><Button size="sm" variant="tertiary" style={{ color: 'var(--wb-accent)', background: 'transparent' }} onPress={() => { selectProduction(''); }}>← 返回</Button></div> : <div className="cg-toolbar">
+        <SearchField aria-label="搜索制作请求" value={query} onChange={value => { setQuery(value); page.reset(); void navigation.run(()=>saveState({ query: value })); }} onSubmit={() => page.reset()} fullWidth>
           <SearchField.Group><SearchField.SearchIcon /><SearchField.Input placeholder="搜索 brief 或请求 ID" /><SearchField.ClearButton aria-label="清空搜索" /></SearchField.Group>
         </SearchField>
       </div>}
-      {isCardProduction ? <CardWorkflow projectId={projectId} productionId={detail!.id} libraryNoteId={config?.notes?.cards} /> : <>
-      <CreateCardWorkflow projectId={projectId} onCreated={id => { setSelectedId(id); setCursor(undefined); void saveState({ selectedId: id }); }} />
+      {isCardProduction ? <CardWorkflow productionId={detail!.id} libraryNoteId={config?.notes?.cards} onEditing={setCardDirty} /> : <>
+      <CreateCardWorkflow onCreated={id => { page.reset(); selectProduction(id); }} />
       <details><summary className="cg-muted">其他素材制作请求</summary>
       <form className="cg-create" onSubmit={event => { event.preventDefault(); void saveDraft(); }}>
-        <TextField value={brief} onChange={setBrief} fullWidth aria-label="新建制作草稿"><Label>新建制作草稿</Label><Input placeholder="描述要制作的素材和验收目标…" /></TextField>
-        <label className="cg-field">目标资源 JSON<textarea value={targetAssetText} onChange={event => setTargetAssetText(event.target.value)} placeholder="{&quot;kind&quot;:&quot;asset&quot;,&quot;id&quot;:&quot;…&quot;}" /></label>
-        <label className="cg-field">固定参考（每行一条）<textarea value={pinnedRefsText} onChange={event => setPinnedRefsText(event.target.value)} placeholder="cards/hero.md / asset:portrait" /></label>
-        <label className="cg-field">批次 JSON<textarea value={batchText} onChange={event => setBatchText(event.target.value)} placeholder="{&quot;count&quot;:4}" /></label>
-        <Button type="submit" variant="primary" isDisabled={!brief.trim() || busy === "draft"}>{busy === "draft" ? "保存中…" : "保存草稿"}</Button>
-      </form>
+        <TextField value={newRequest.value.brief} onChange={value=>createField('brief',value)} fullWidth aria-label="新建制作草稿"><Label>新建制作草稿</Label><Input placeholder="描述要制作的素材和验收目标…" /></TextField>
+        <label className="cg-field">目标资源 JSON<textarea value={newRequest.value.targetAsset} onChange={event=>createField('targetAsset',event.target.value)} placeholder="{&quot;kind&quot;:&quot;asset&quot;,&quot;id&quot;:&quot;…&quot;}" /></label>
+        <label className="cg-field">固定参考（每行一条）<textarea value={newRequest.value.pinnedRefs} onChange={event=>createField('pinnedRefs',event.target.value)} placeholder="cards/hero.md / asset:portrait" /></label>
+        <label className="cg-field">批次 JSON<textarea value={newRequest.value.batch} onChange={event=>createField('batch',event.target.value)} placeholder="{&quot;count&quot;:4}" /></label>
+        <Button type="submit" variant="primary" isDisabled={!newRequest.value.brief.trim() || newRequest.saving}>{newRequest.saving ? "保存中…" : "保存草稿"}</Button>
+      {newRequest.error&&<p role="alert">{newRequest.error.message}</p>}</form>
       </details>
       <div className="cg-body">
-        <ScrollShadow className="cg-list cg-expanded-list" onScroll={event => setScrollTop((event.currentTarget as HTMLElement).scrollTop)}>
+        <ScrollShadow key={`${query}:${page.pageIndex}`} className="cg-list cg-expanded-list">
           {page.loading && items.length === 0 && <div className="cg-loading"><Spinner />正在读取…</div>}
-          <div style={{ height: virtualStart * VIRTUAL_ROW_HEIGHT }} aria-hidden="true" />
-          {virtualItems.map(item => {
+          {items.map(item => {
             const roundCount = item.roundCount ?? item.rounds?.length ?? 0;
             const candidateCount = item.candidateCount ?? item.candidateRefs?.length ?? 0;
-            const running = ["running", "queued", "reserved"].includes(item.status);
-            return <article className={`cg-item ${selectedId === item.id ? "selected" : ""}`} key={item.id} onClick={() => { setSelectedId(item.id); void saveState({ selectedId: item.id }); }}>
-              <div className="cg-item-head"><span className={`cg-status-dot status-${item.status}`} /><strong>{item.brief}</strong><span className="cg-pill">{((item as any).deckProgress ? `${(item as any).deckProgress.distinctCards} 种 · ${(item as any).deckProgress.totalCopies}/${(item as any).deckProgress.targetSize} 张` : (item as any).workflowKind === "card-generation" ? `${(item as any).cardProgress?.done ?? 0}/${(item as any).cardProgress?.total ?? 0} 制卡进度` : productionLabel(item.status))}</span></div>
+            return <article className={`cg-item ${selectedId === item.id ? "selected" : ""}`} key={item.id} onClick={() => { selectProduction(item.id); }}>
+              <div className="cg-item-head"><span className={`cg-status-dot status-${item.status}`} /><strong>{item.brief}</strong><span className="cg-pill">{(item.deckProgress ? `${item.deckProgress.distinctCards} 种 · ${item.deckProgress.totalCopies}/${item.deckProgress.targetSize} 张` : item.workflowKind === "card-generation" ? `${item.cardProgress?.done ?? 0}/${item.cardProgress?.total ?? 0} 制卡进度` : productionLabel(item.status))}</span></div>
               <div className="cg-item-meta"><span>{item.id}</span><span>rev {item.revision}</span><span>{candidateCount} 资源候选</span>{item.gameCandidateCount !== undefined && <span>{item.gameCandidateCount} 游戏版本（含历史）</span>}<span>{roundCount} 轮</span></div>
-              <div className="cg-item-actions">
-                {(item as any).workflowKind === 'card-generation' ? <span className="cg-muted">卡牌工作流 · 选择继续</span> : <Button size="sm" variant="primary" isDisabled={busy === item.id || running} onPress={() => void run(item)}>{running ? "执行中" : "生成"}</Button>}
-                {roundCount > 0 && <Button size="sm" variant="tertiary" isDisabled={busy === item.id} onPress={() => void run(item, true)}>新一轮</Button>}
-              </div>
+              <ProductionCommands item={item} disabled={selectedId===item.id&&(requirement.dirty||requirement.saving)} run={run}/>
+
             </article>;
           })}
-          <div style={{ height: Math.max(0, (items.length - virtualStart - virtualItems.length) * VIRTUAL_ROW_HEIGHT) }} aria-hidden="true" />
           {!page.loading && items.length === 0 && <div className="cg-empty"><strong>暂无制作请求</strong><span>先保存一个草稿，再明确生成。</span></div>}
-          {nextCursor && <Button variant="tertiary" onPress={() => setCursor(nextCursor)}>加载下一页（最多 {PAGE_SIZE} 项）</Button>}
+          <div className="cg-detail-actions"><Button variant="tertiary" isDisabled={!page.hasPrevious||page.loading} onPress={page.previous}>上一页</Button><span>第 {page.pageIndex+1} 页</span><Button variant="tertiary" isDisabled={!page.hasNext||page.loading} onPress={page.next}>下一页（最多 {PAGE_SIZE} 项）</Button></div>
         </ScrollShadow>
         <aside className="cg-detail">
-          {(detail?.batch as any)?.kind === 'card-generation' ? <p className="cg-muted">卡牌制作步骤、模板预览和生图回填位于上方。选择其他制作单可继续素材生产。</p> : detail ? <>
+          {isCardBatch(detail?.batch) ? <p className="cg-muted">卡牌制作步骤、模板预览和生图回填位于上方。选择其他制作单可继续素材生产。</p> : detail ? <>
             <span className="cg-eyebrow">制作请求 · {detail.id}</span>
             <h2>{detail.brief}</h2>
             <div className="cg-requirement-editor">
-              <TextField value={editBrief} onChange={setEditBrief} fullWidth aria-label="编辑需求"><Label>需求</Label><Input /></TextField>
-              <label className="cg-field">目标资源 JSON<textarea value={editTargetAssetText} onChange={event => setEditTargetAssetText(event.target.value)} /></label>
-              <label className="cg-field">固定参考<textarea value={editPinnedRefsText} onChange={event => setEditPinnedRefsText(event.target.value)} /></label>
-              <label className="cg-field">批次 JSON<textarea value={editBatchText} onChange={event => setEditBatchText(event.target.value)} /></label>
-              <Button size="sm" variant="tertiary" isDisabled={busy === `edit:${detail.id}`} onPress={() => void saveRequirement()}>保存需求</Button>
+              <TextField value={requirement.value.brief} onChange={value=>edit('brief',value)} fullWidth aria-label="编辑需求"><Label>需求</Label><Input /></TextField>
+              <label className="cg-field">目标资源 JSON<textarea value={requirement.value.targetAsset} onChange={event=>edit('targetAsset',event.target.value)} /></label>
+              <label className="cg-field">固定参考<textarea value={requirement.value.pinnedRefs} onChange={event=>edit('pinnedRefs',event.target.value)} /></label>
+              <label className="cg-field">批次 JSON<textarea value={requirement.value.batch} onChange={event=>edit('batch',event.target.value)} /></label>
+              <Button size="sm" variant="tertiary" isDisabled={requirement.saving||!requirement.dirty} onPress={()=>void requirement.save()}>{requirement.saving?"保存中…":"保存需求"}</Button>{requirement.dirty&&<span role="status">未保存的需求</span>}{requirement.error&&<p role="alert">{requirement.error.message}</p>}{requirement.conflicted&&<Button variant="tertiary" onPress={()=>{if(window.confirm("放弃当前未保存编辑，重新载入服务器需求？"))requirement.reset();}}>放弃编辑并重载</Button>}
             </div>
             <div className="cg-detail-status"><span>{productionLabel(detail.status)}</span><span>rev {detail.revision}</span><span>{detail.rounds?.length ?? detail.roundCount ?? 0} 轮</span></div>
             {selected.data?.execution && <div className="cg-execution"><h3>执行进度</h3><div className="cg-detail-status"><span>{selected.data.execution.status === 'completed' ? '执行完成' : productionLabel(selected.data.execution.status || '未知')}</span>{selected.data.execution.id && <span>{selected.data.execution.id}</span>}{selected.data.execution.updatedAt && <span>{selected.data.execution.updatedAt}</span>}</div>{selected.data.execution.outcome?.summary && <p>{selected.data.execution.outcome.summary}</p>}{selected.data.execution.delivery?.status && <span className="cg-muted">交付：{selected.data.execution.delivery.status}</span>}</div>}
-            <div className="cg-detail-actions"><Button size="sm" variant="primary" isDisabled={busy === detail.id || ["running", "queued", "reserved"].includes(detail.status)} onPress={() => void run(detail)}>{["running", "queued", "reserved"].includes(detail.status) ? "执行中" : "明确生成"}</Button><Button size="sm" variant="tertiary" isDisabled={busy === detail.id} onPress={() => void run(detail, true)}>新一轮</Button></div>
-            <h3>资源候选（每页比较 3 个）</h3>
-            <ScrollShadow className="cg-candidates" style={{ maxHeight: 390 }}>{(detail.candidateRefs ?? []).slice(candidateOffset, candidateOffset + 3).map((candidate: any) => <CandidateMedia key={candidate.id ?? candidate.key ?? candidate.assetId} projectId={projectId} candidate={candidate} busy={busy} adopted={detail.adoption?.candidateId !== undefined && detail.adoption?.candidateId === (candidate.id ?? candidate.key ?? candidate.assetId)} onAdopt={() => void adopt(detail, candidate)} onReject={reason => void reject(detail, candidate, reason)} />)}{!detail.candidateRefs?.length && <span className="cg-muted">尚无资源候选；生成完成后由资源后端登记。</span>}</ScrollShadow>
+            <ProductionCommands item={detail} disabled={requirement.dirty||requirement.saving} run={run}/>
+
+            <h3>资源候选（每页比较 3 个）</h3><p className="cg-muted">可查看、复制候选引用或否决。通用素材尚不支持直接写入正式游戏；卡牌与牌组请在原制作单建立试玩候选，再到功能进展确认。</p>
+            <ScrollShadow className="cg-candidates" style={{ maxHeight: 390 }}>{(detail.candidateRefs ?? []).slice(candidateOffset, candidateOffset + 3).map((candidate: Candidate) => <CandidateMedia key={candidate.id ?? candidate.key ?? candidate.assetId} candidate={candidate} adopted={detail.adoption?.candidateId !== undefined && detail.adoption?.candidateId === (candidate.id ?? candidate.key ?? candidate.assetId)} onReject={reason => reject(detail, candidate, reason)} />)}{!detail.candidateRefs?.length && <span className="cg-muted">尚无资源候选；生成完成后由资源后端登记。</span>}</ScrollShadow>
             {(detail.candidateRefs?.length ?? 0) > 3 && <div className="cg-detail-actions"><Button size="sm" variant="tertiary" isDisabled={candidateOffset === 0} onPress={() => setCandidateOffset(Math.max(0, candidateOffset - 3))}>上一组</Button><span className="cg-muted">{candidateOffset + 1}–{Math.min(candidateOffset + 3, detail.candidateRefs!.length)} / {detail.candidateRefs!.length}</span><Button size="sm" variant="tertiary" isDisabled={candidateOffset + 3 >= detail.candidateRefs!.length} onPress={() => setCandidateOffset(candidateOffset + 3)}>下一组</Button></div>}
             <h3>轮次与结果</h3>
-            <ScrollShadow className="cg-history" style={{ maxHeight: 170 }}>{detail.rounds?.slice().reverse().map((round: any) => <div className="cg-history-row" key={round.requestId}><strong>第 {round.round} 轮 · {productionLabel(round.status)}</strong><span>{round.result?.conclusion || round.result?.error || round.requestId}</span><small>{round.updatedAt}</small></div>)}</ScrollShadow>
+            <ScrollShadow className="cg-history" style={{ maxHeight: 170 }}>{detail.rounds?.slice().reverse().map((round) => <div className="cg-history-row" key={round.requestId}><strong>第 {round.round} 轮 · {productionLabel(round.status)}</strong><span>{round.result?.conclusion || round.result?.error || round.requestId}</span><small>{round.updatedAt}</small></div>)}</ScrollShadow>
           </> : <div className="cg-empty"><strong>选择一个制作请求</strong><span>生成状态、候选和轮次结果会按需读取。</span></div>}
         </aside>
       </div>
       </>}
-      {(error || page.error || selected.error) && <p className="cg-error" role="alert">{error || page.error?.message || selected.error?.message}</p>}
+      {(navigation.error || page.error || selected.error) && <p className="cg-error" role="alert">{navigation.error?.message || page.error?.message || selected.error?.message}</p>}
     </section>
   );
 }
 
-function CandidateMedia({ projectId, candidate, busy, adopted, onAdopt, onReject }: { projectId: string; candidate: any; busy?: string; adopted?: boolean; onAdopt: () => void; onReject: (reason?: string) => void }) {
-  const [rejecting, setRejecting] = useState(false);
-  const [reason, setReason] = useState("");
-  const path = typeof candidate.sourcePath === "string" ? candidate.sourcePath : typeof candidate.path === "string" ? candidate.path : undefined;
-  const candidateId = typeof candidate.id === "string" ? candidate.id : typeof candidate.assetId === "string" ? candidate.assetId : undefined;
-  const media = useResource<any>("media", path || candidateId ? { projectId, ...(path ? { path } : { id: candidateId }), variant: "original" } : {}, { enabled: Boolean(path || candidateId) });
-  const mediaValue = media.data && typeof media.data === "object" && !Array.isArray(media.data) ? media.data as Record<string, any> : {};
-  const resolved = { ...candidate, ...mediaValue };
-  const src = typeof mediaValue.url === "string" ? mediaValue.url : typeof mediaValue.src === "string" ? mediaValue.src : typeof mediaValue.data === "string" ? mediaValue.data : undefined;
-  const mimeType = typeof resolved.mimeType === "string" ? resolved.mimeType : "";
-  const id = candidate.id ?? candidate.key ?? candidate.assetId;
-  const rejected = typeof candidate.rejectedAt === "string";
-  const confirmReject = () => { setRejecting(false); const value = reason.trim(); setReason(""); onReject(value || undefined); };
-  return <div className={`cg-candidate${rejected ? " rejected" : ""}`}><div className="cg-media-preview">{src && mimeType.startsWith("audio/") ? <audio controls preload="metadata" src={src} onPlay={event => { const current = event.currentTarget; if (typeof document !== "undefined") document.querySelectorAll("audio").forEach(audio => { if (audio !== current) audio.pause(); }); }} /> : src && mimeType.startsWith("video/") ? <video controls preload="metadata" src={src} /> : src ? <img src={src} alt="候选预览" loading="lazy" /> : <span className="cg-muted">{media.loading ? "媒体读取中…" : "暂无预览"}</span>}</div><div className="cg-candidate-info"><strong>{id}</strong><small>{mimeType || candidate.version || "候选引用"}</small><small>{candidate.width || resolved.width ? `${candidate.width ?? resolved.width} × ${candidate.height ?? resolved.height ?? "?"}` : ""}{candidate.durationMs || resolved.durationMs ? ` · ${Math.round((candidate.durationMs ?? resolved.durationMs) / 1000)}s` : ""}{resolved.revision ? ` · rev ${resolved.revision}` : ""}</small>{rejected && <small className="cg-rejected-label">已否决{typeof candidate.rejectReason === "string" && candidate.rejectReason ? `：${candidate.rejectReason}` : ""}</small>}</div>{rejecting ? <span className="cg-reject-prompt"><input value={reason} onChange={event => { setReason(event.target.value); }} onKeyDown={event => { if (event.key === "Enter") confirmReject(); }} placeholder="原因（可选）" aria-label="否决原因" autoFocus /><Button size="sm" variant="primary" isDisabled={busy === `reject:${id}`} onPress={confirmReject}>确认</Button><Button size="sm" variant="tertiary" onPress={() => { setRejecting(false); setReason(""); }}>取消</Button></span> : <><Button size="sm" variant="tertiary" isDisabled={busy === `adopt:${id}` || adopted || rejected} onPress={onAdopt}>采用</Button>{!adopted && !rejected && <Button size="sm" variant="tertiary" isDisabled={busy === `reject:${id}`} onPress={() => setRejecting(true)}>否决</Button>}</>}</div>;
+/** Each production's controls have independent pending/error ownership. */
+function ProductionCommands({item,disabled,run}:{item:Production;disabled:boolean;run:(item:Production,newRound?:boolean)=>Promise<void>}){
+  const action=useAction(),roundCount=item.roundCount??item.rounds?.length??0;
+  const running=["running","queued","reserved"].includes(item.status);
+  if(item.workflowKind==='card-generation')return <span className="cg-muted">卡牌工作流 · 选择继续</span>;
+  return <div className="cg-item-actions">
+    <Button size="sm" variant="primary" isDisabled={disabled||action.pending||running} onPress={()=>void action.run(()=>run(item))}>{running?'执行中':'明确生成'}</Button>
+    {roundCount>0&&<Button size="sm" variant="tertiary" isDisabled={disabled||action.pending} onPress={()=>void action.run(()=>run(item))}>重试交办</Button>}
+    <Button size="sm" variant="tertiary" isDisabled={disabled||action.pending} onPress={()=>void action.run(()=>run(item,true))}>新一轮</Button>
+    {action.error&&<p className="cg-error" role="alert">{action.error.message}</p>}
+  </div>;
+}
+function CandidateMedia({candidate,adopted,onReject}:{candidate:Candidate;adopted?:boolean;onReject:(reason?:string)=>Promise<void>}) {
+  const {useQuery,host,projectId,scopeGeneration}=useProductionNote();
+  const rejectAction=useAction(),copy=useAction();
+  const [rejecting,setRejecting]=useState(false),[reason,setReason]=useState(''),[copied,setCopied]=useState(false);
+  const id=candidate.id??candidate.key??candidate.assetId;
+  const media=useQuery('media',id?{id,variant:'original'}:{},{enabled:Boolean(id)});
+  const resolved={...candidate,...media.data},src=media.data?.url??media.data?.src??media.data?.data;
+  const mimeType=resolved.mimeType??'',rejected=typeof candidate.rejectedAt==='string';
+  const confirmReject=()=>rejectAction.run(async()=>{await onReject(reason.trim()||undefined);setRejecting(false);setReason('');});
+  const copyReference=()=>{setCopied(false);return copy.run(async()=>{
+    if(!id||!media.data||media.error||media.stale||!candidate.revision||media.data.revision!==candidate.revision)throw Error('候选资源尚未核验或版本已变化，请先核对登记回执');
+    // These are service-verified candidate facts, never an invented adopted version.
+    await host.copyText(JSON.stringify({kind:'asset',projectId,projectGeneration:scopeGeneration,id,revision:media.data.revision},null,2));
+    setCopied(true);
+  });};
+  return <div className={`cg-candidate${rejected?' rejected':''}`}>
+    <div className="cg-media-preview">{src&&mimeType.startsWith('audio/')?<audio controls preload="metadata" src={src} onPlay={event=>{document.querySelectorAll('audio').forEach(audio=>{if(audio!==event.currentTarget)audio.pause();});}}/>:src&&mimeType.startsWith('video/')?<video controls preload="metadata" src={src}/>:src?<img src={src} alt="候选预览" loading="lazy"/>:<span className="cg-muted">{media.loading?'媒体读取中…':'暂无预览'}</span>}</div>
+    <div className="cg-candidate-info"><strong>{id}</strong><small>{mimeType||candidate.version||'候选引用'}</small><small>{resolved.width?`${resolved.width} × ${resolved.height??'?'}`:''}{resolved.durationMs?` · ${Math.round(resolved.durationMs/1000)}s`:''}{resolved.revision?` · rev ${resolved.revision}`:''}</small>{rejected&&<small className="cg-rejected-label">已否决{candidate.rejectReason?`：${candidate.rejectReason}`:''}</small>}{media.error&&<p role="alert">{media.error.message}</p>}{(copy.error||rejectAction.error)&&<p role="alert">{copy.error?.message??rejectAction.error?.message}</p>}{copied&&<small role="status">候选引用已复制</small>}</div>
+    {rejecting?<span className="cg-reject-prompt"><input value={reason} disabled={rejectAction.pending} onChange={event=>setReason(event.target.value)} onKeyDown={event=>{if(event.key==='Enter')void confirmReject();}} placeholder="原因（可选）" aria-label="否决原因" autoFocus/><Button size="sm" variant="primary" isDisabled={rejectAction.pending} onPress={()=>void confirmReject()}>确认</Button><Button size="sm" variant="tertiary" isDisabled={rejectAction.pending} onPress={()=>{setRejecting(false);setReason('');}}>取消</Button></span>:<><Button size="sm" variant="tertiary" isDisabled={copy.pending} onPress={()=>void copyReference()}>复制候选引用</Button>{!adopted&&!rejected&&<Button size="sm" variant="tertiary" isDisabled={rejectAction.pending} onPress={()=>setRejecting(true)}>否决</Button>}</>}
+  </div>;
 }
 
 function decodeCardGameFocus(itemId: string | null): { projectId: string; kind: string; id?: string } | undefined {
@@ -227,23 +187,6 @@ function decodeCardGameFocus(itemId: string | null): { projectId: string; kind: 
   } catch {
     return undefined;
   }
-}
-
-function parseJsonField(value: string, label: string): unknown {
-  const trimmed = value.trim();
-  if (!trimmed) return undefined;
-  try { return JSON.parse(trimmed); } catch { throw new Error(`${label} JSON 无效`); }
-}
-
-function parseRefs(value: string): Array<Record<string, unknown> | string> {
-  return value.split(/\r?\n/).map(item => item.trim()).filter(Boolean).map(item => {
-    try {
-      const parsed = JSON.parse(item) as unknown;
-      return parsed && typeof parsed === "object" && !Array.isArray(parsed) ? parsed as Record<string, unknown> : item;
-    } catch {
-      return item;
-    }
-  });
 }
 
 function productionLabel(status: string): string {

@@ -1,4 +1,4 @@
-import { createHash } from 'node:crypto';
+import { createHash, randomUUID } from 'node:crypto';
 import { lstat, readFile, realpath } from 'node:fs/promises';
 import { isAbsolute, join, relative, sep } from 'node:path';
 import type { Caller, Extension, ResourceContext, ResourceValue, WorkaExtensionHost } from '@realiz3r/worka/host';
@@ -21,6 +21,10 @@ export interface ProjectBinding {
   projectId: string;
   root: string;
   notes: Record<string, string>;
+  /** Opaque durable binding epoch; never a user-supplied directory identity. */
+  generation?: string;
+  /** Only the first in-place upgrade may reconcile unversioned historical rounds. */
+  legacyGeneration?: string;
 }
 export type CardgameProviderFactory = (host: WorkaExtensionHost, media: Media, packageRoot: string, bunPath: string,
   projects: CardgameProject[], previewNote: (projectId: string) => Promise<string>) => Promise<Extension>;
@@ -64,6 +68,7 @@ export async function validateProjectRoot(value: unknown): Promise<string> {
 export function createProjectBindingManager(options: ProjectBindingOptions): Extension {
   const { host, media } = options;
   const bindings = host.app.records({ owner: providerName, collection: 'desktop-bindings', storagePrefix: 'cardgame-content:desktop-bindings:' });
+  const epochMigrations = new Map<string, Promise<ProjectBinding>>();
   const children = new Map<string, Promise<{ provider: Extension; resolveMedia?: MediaResolver }>>();
   const active = new Set<Promise<unknown>>();
   const setups = new Map<string, Promise<unknown>>();
@@ -73,7 +78,7 @@ export function createProjectBindingManager(options: ProjectBindingOptions): Ext
   const quarantined = new Set<string>();
   const projectWork = new Map<string, Set<Promise<void>>>();
   const suspendSubscriptions = new Map<string, Set<() => Promise<void>>>();
-  const generation = (binding: ProjectBinding) => createHash('sha256').update(binding.root).digest('hex').slice(0, 24);
+  const storageKey = (binding: ProjectBinding) => createHash('sha256').update(binding.root).digest('hex').slice(0, 24);
   async function withChild<T>(binding: ProjectBinding, operation: (entry: Awaited<ReturnType<typeof child>>) => Promise<T>): Promise<T> {
     if (quarantined.has(binding.desktopId)) throw Error('CardGame 旧项目服务未能完整关闭，请重启宿主后重试');
     if (transitions.has(binding.desktopId)) throw Error('CardGame 正在切换项目目录，请稍后重试');
@@ -83,7 +88,7 @@ export function createProjectBindingManager(options: ProjectBindingOptions): Ext
     work.add(done); projectWork.set(binding.desktopId, work);
     try {
       const current = await bindingByProject(binding.projectId);
-      if (!current || current.root !== binding.root) throw Error('CardGame 项目目录已变化，请刷新后重试');
+      if (!current || current.root !== binding.root || current.generation !== binding.generation) throw Error('CardGame 项目目录已变化，请刷新后重试');
       return await operation(await child(binding));
     } finally { release(); work.delete(done); if (!work.size) projectWork.delete(binding.desktopId); }
   }
@@ -108,6 +113,7 @@ export function createProjectBindingManager(options: ProjectBindingOptions): Ext
   function checkedBinding(value: unknown, projectId: string): ProjectBinding {
     if (!record(value) || value.schemaVersion !== 1 || typeof value.desktopId !== 'string' || !value.desktopId
       || value.projectId !== projectId || desktopProjectId(value.desktopId) !== projectId
+      || (value.generation !== undefined && (typeof value.generation !== 'string' || !value.generation.trim()))
       || typeof value.root !== 'string' || !isAbsolute(value.root) || !record(value.notes)
       || !value.notes.cards || !value.notes.preview
       || Object.entries(value.notes).some(([role, id]) => !roles.has(role) || typeof id !== 'string' || !id)
@@ -117,13 +123,33 @@ export function createProjectBindingManager(options: ProjectBindingOptions): Ext
   async function bindingByProject(projectId: string): Promise<ProjectBinding | undefined> {
     if (!/^cardgame-[a-f0-9]{32}$/.test(projectId)) throw Error('CardGame 项目身份无效');
     const saved = await bindings.read<ProjectBinding>(projectId);
-    return saved ? checkedBinding(saved.value, projectId) : undefined;
+    if (!saved) return undefined;
+    const binding = checkedBinding(saved.value, projectId);
+    if (binding.generation) return binding;
+    // Upgrade old bindings once. No event can leave before its epoch is durable.
+    let migration=epochMigrations.get(projectId);
+    if(!migration){
+      migration=(async()=>{
+        const latest=await bindings.read<ProjectBinding>(projectId);
+        if(!latest)throw Error('项目绑定已移除');
+        const current=checkedBinding(latest.value,projectId);
+        if(current.generation)return current;
+        const generation=randomUUID();
+        const migrated={...current,generation,legacyGeneration:generation};
+        try{await bindings.write(projectId,migrated,{expectedRevision:latest.revision});return migrated;}
+        catch(error){const concurrent=await bindings.read<ProjectBinding>(projectId);if(concurrent){const checked=checkedBinding(concurrent.value,projectId);if(checked.generation)return checked;}throw error;}
+      })();
+      epochMigrations.set(projectId,migration);
+      void migration.finally(()=>epochMigrations.delete(projectId)).catch(()=>undefined);
+    }
+    return migration;
   }
   async function scoped(noteId: unknown, input?: Config) {
     const scope = await trustedNote(noteId), projectId = desktopProjectId(scope.desktopId);
     if (input?.projectId !== undefined && input.projectId !== '' && input.projectId !== projectId) throw Error('不能访问另一桌面的 CardGame 项目');
     const binding = await bindingByProject(projectId);
     if (binding && (binding.desktopId !== scope.desktopId || binding.notes[scope.role] !== scope.note.id)) throw Error('CardGame 角色绑定已变化，请重新配置当前桌面');
+    if(input?.projectGeneration!==undefined&&input.projectGeneration!==binding?.generation)throw Error('CardGame 项目绑定已变化，旧编辑或回执不能写入当前项目');
     return { ...scope, binding, projectId };
   }
   async function previewNote(projectId: string) {
@@ -149,11 +175,11 @@ export function createProjectBindingManager(options: ProjectBindingOptions): Ext
           },
           issue(name, input) {
             if (name !== providerName || input.projectId !== binding.projectId) throw Error('CardGame 媒体项目身份不符');
-            return media.issue(providerName, { ...input, projectGeneration: generation(binding) });
+            return media.issue(providerName, { ...input, projectGeneration: binding.generation });
           },
         };
         const childHost = Object.create(host) as WorkaExtensionHost;
-        Object.defineProperty(childHost, 'dataRoot', { value: join(host.dataRoot, 'cardgame-desktops', binding.projectId, generation(binding)) });
+        Object.defineProperty(childHost, 'dataRoot', { value: join(host.dataRoot, 'cardgame-desktops', binding.projectId, storageKey(binding)) });
         const provider = await options.createProvider(childHost, proxy, options.packageRoot, options.bunPath,
           [{ id: binding.projectId, root }], previewNote);
         return { provider, get resolveMedia() { return resolveMedia; } };
@@ -167,7 +193,7 @@ export function createProjectBindingManager(options: ProjectBindingOptions): Ext
     if (typeof input.projectId !== 'string') throw Error('CardGame 媒体缺少项目身份');
     const binding = await bindingByProject(input.projectId);
     if (!binding) throw Error('CardGame 项目尚未配置');
-    if (input.projectGeneration !== generation(binding)) throw Error('CardGame 媒体引用属于旧项目目录，请刷新后重试');
+    if (input.projectGeneration !== binding.generation) throw Error('CardGame 媒体引用属于旧项目目录，请刷新后重试');
     return withChild(binding, async entry => {
       if (!entry.resolveMedia) throw Error('CardGame 媒体服务不可用');
       return entry.resolveMedia(input);
@@ -205,7 +231,9 @@ export function createProjectBindingManager(options: ProjectBindingOptions): Ext
       const existing = saved ? checkedBinding(saved.value, projectId) : undefined;
       if (caller.kind === 'agent' && (!caller.approve || !await caller.approve(`允许 CardGame 桌面读取并绑定项目目录 ${String(input.root)}？`, 'cardgame.configureProject'))) throw Error('项目目录需要原生确认；请由用户在内容库选择目录');
       const root = await validateRoot(input.root);
-      const binding: ProjectBinding = { schemaVersion: 1, desktopId: scope.desktopId, projectId, root, notes };
+      const generation=existing?.root===root&&existing.generation?existing.generation:randomUUID();
+      const legacyGeneration=existing?.root===root?(existing.generation?existing.legacyGeneration:generation):undefined;
+      const binding: ProjectBinding = { schemaVersion: 1, desktopId: scope.desktopId, projectId, root, notes, generation, ...(legacyGeneration?{legacyGeneration}:{}) };
       const changing = existing && existing.root !== root;
       const written: Array<{ noteId: string; before: Config }> = [];
       transitions.add(scope.desktopId);
@@ -262,16 +290,17 @@ export function createProjectBindingManager(options: ProjectBindingOptions): Ext
   }
   const query = {
     version: '1',
-    load(value: ResourceValue, context: ResourceContext) { return tracked(async () => {
+    load(value: ResourceValue, context: ResourceContext): Promise<ResourceValue> { return tracked<ResourceValue>(async ():Promise<ResourceValue> => {
       if (!record(value)) throw Error('CardGame 查询无效');
       const scope = await scoped(context.scope.noteId, value);
       if (value.op === 'projectBinding') return scope.binding
-        ? { configured: true, projectId: scope.projectId, projectRoot: scope.binding.root, notes: { ...scope.binding.notes } }
+        ? { configured: true, projectId: scope.projectId, projectGeneration:scope.binding!.generation!, projectRoot: scope.binding.root, notes: { ...scope.binding.notes } }
         : { configured: false, projectId: scope.projectId, setupRequired: true };
       if (!scope.binding) throw Error('CardGame 项目尚未配置，请先从当前桌面选择项目目录');
       return withChild(scope.binding, async ({ provider }) => {
         if (!provider.resources?.query) throw Error('CardGame 查询服务不可用');
-        return provider.resources.query.load({ ...value, projectId: scope.projectId }, context);
+        const result=await provider.resources.query.load({ ...value, projectId: scope.projectId, projectGeneration:scope.binding!.generation!, allowLegacyReconciliation:scope.binding!.legacyGeneration===scope.binding!.generation }, context);
+        return record(result)?{...result,projectGeneration:scope.binding!.generation!}:result;
       });
     }); },
     async subscribe(value: ResourceValue, invalidate: (error?: unknown) => void, context: Omit<ResourceContext, 'read'>) {
@@ -287,7 +316,7 @@ export function createProjectBindingManager(options: ProjectBindingOptions): Ext
           const current = await scoped(context.scope.noteId, value);
           if (current.desktopId !== scope.desktopId) throw Error('便笺已移出当前桌面');
           if (current.binding && value.op !== 'projectBinding') {
-            const next = await withChild(current.binding, ({ provider }) => Promise.resolve(provider.resources?.query?.subscribe?.({ ...value, projectId: current.projectId }, invalidate, context)));
+            const next = await withChild(current.binding, ({ provider }) => Promise.resolve(provider.resources?.query?.subscribe?.({ ...value, projectId: current.projectId, projectGeneration:current.binding!.generation!, allowLegacyReconciliation:current.binding!.legacyGeneration===current.binding!.generation }, invalidate, context)));
             if (disposed || closing) await next?.(); else release = next;
           }
         }).catch(error => { if (!disposed && !closing) invalidate(error); });
@@ -320,9 +349,10 @@ export function createProjectBindingManager(options: ProjectBindingOptions): Ext
     }),
     invoke: (method, input, caller) => tracked(async () => {
       if (method === 'configureProject') return configure(input, caller);
+      if(['bindProduction','productionResult','receiveResult','recordCandidates','recordAdoption'].includes(method)&&typeof input.projectGeneration!=='string')throw Error('旧回执缺少项目代次；请在当前制作单重新核对原轮次并重试，不要重建桌面');
       const scope = await scoped(caller.noteId, input);
       if (!scope.binding) throw Error('CardGame 项目尚未配置，请先从当前桌面选择项目目录');
-      return withChild(scope.binding, ({ provider }) => provider.invoke(method, { ...input, projectId: scope.projectId }, caller));
+      return withChild(scope.binding, ({ provider }) => provider.invoke(method, { ...input, projectId: scope.projectId, projectGeneration:scope.binding!.generation!, allowLegacyReconciliation:scope.binding!.legacyGeneration===scope.binding!.generation }, caller));
     }),
     async beginClose() {
       closing = true;

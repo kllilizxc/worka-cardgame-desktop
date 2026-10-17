@@ -21,7 +21,6 @@
     "plugin.ts",
     "project-binding.ts",
     "plugins/cardgame-content/src/**/*.ts",
-    "templates/**/*.ts",
     "scripts/**/*.ts"
   ],
   "exclude": [

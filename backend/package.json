@@ -7,7 +7,6 @@
   "files": [
     "dist",
     "plugins/cardgame-content",
-    "templates/cardgame-production/card-face.ts",
     "LICENSE"
   ],
   "engines": {

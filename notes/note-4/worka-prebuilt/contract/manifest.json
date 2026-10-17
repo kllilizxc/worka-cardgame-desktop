@@ -6,6 +6,9 @@
     "SKILL.md",
     "references/api.d.ts",
     "references/types/actions.d.ts",
+    "references/types/card-face.d.ts",
+    "references/types/card-operations.d.ts",
+    "references/types/contracts.d.ts",
     "references/types/note-model.d.ts"
   ],
   "diagnostics": [
@@ -13,6 +16,6 @@
   ],
   "skill": {
     "name": "cardgame-production",
-    "description": "管理 CardGame AI 资源制作请求、轮次、候选和采用。"
+    "description": "管理 CardGame AI 资源制作请求、轮次、候选与卡牌试玩交付。"
   }
 }

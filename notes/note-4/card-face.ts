@@ -15,8 +15,12 @@ export function normalizeFace(value: Partial<FacePresentation> = {}): FacePresen
   return face;
 }
 const escape = (value: unknown) => String(value ?? '').replace(/[&<>"']/g, ch => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&apos;' })[ch]!);
-export function cardRules(card: Record<string, any>): string {
-  const rules = (card.effects ?? []).map((effect: any) => effect.text).filter(Boolean).join('\n');
+export interface CardFaceDefinition {
+  id?:string;name?:string;kind?:string;description?:string;effects?:Array<{text?:string}>;
+  race?:string;linggen?:string[];rarity?:string;attack?:number;health?:number;
+}
+export function cardRules(card: CardFaceDefinition): string {
+  const rules = (card.effects ?? []).map(effect => effect.text).filter(Boolean).join('\n');
   return rules || String(card.description ?? '');
 }
 function lines(value: string, units: number): string[] {
@@ -32,14 +36,14 @@ function lines(value: string, units: number): string[] {
   }
   return result;
 }
-export function faceDiagnostics(card: Record<string, any>): string[] {
+export function faceDiagnostics(card: CardFaceDefinition): string[] {
   const errors: string[] = [];
   if (!String(card.name ?? '').trim() || [...String(card.name)].length > 12) errors.push('卡名需要 1–12 个字');
   if (lines(cardRules(card), 19).length > 5) errors.push('效果文案超过五行，请精简后组装');
   return errors;
 }
 /** art is a bounded PNG data URL supplied by the asset service, never an arbitrary URL. */
-export function renderCardFace(card: Record<string, any>, art: string, presentation: FacePresentation, includeStats = true, fontFamily = 'KaiTi, Noto Serif CJK SC, Noto Serif SC, serif'): string {
+export function renderCardFace(card: CardFaceDefinition, art: string, presentation: FacePresentation, includeStats = true, fontFamily = 'KaiTi, Noto Serif CJK SC, Noto Serif SC, serif'): string {
   const face = normalizeFace(presentation);
   const diagnostics = faceDiagnostics(card);
   if (diagnostics.length) throw Error(diagnostics.join('；'));
@@ -52,7 +56,7 @@ export function renderCardFace(card: Record<string, any>, art: string, presentat
   const ruleLines = lines(cardRules(card), 19);
   const text = (x: number, y: number, value: unknown, size: number, color: string, anchor = 'middle') => `<text x="${x}" y="${y}" font-size="${size}" fill="${color}" text-anchor="${anchor}">${escape(value)}</text>`;
   const rarity: Record<string, string> = { common: '普通', uncommon: '精良', rare: '稀有', epic: '史诗', legendary: '传说' };
-  const meta = [card.race ?? CARD_KIND_LABELS[card.kind] ?? card.kind, (card.linggen ?? []).join('·'), rarity[card.rarity] ?? card.rarity].filter(Boolean).join(' · ');
+  const meta = [card.race ?? CARD_KIND_LABELS[card.kind??''] ?? card.kind, (card.linggen ?? []).join('·'), rarity[card.rarity??''] ?? card.rarity].filter(Boolean).join(' · ');
   return `<svg xmlns="http://www.w3.org/2000/svg" width="540" height="780" viewBox="0 0 540 780">
   <defs><clipPath id="art"><rect x="${x}" y="${y}" width="${w}" height="${h}" rx="${scroll ? 2 : 3}"/></clipPath></defs>
   <rect x="3" y="3" width="534" height="774" rx="${scroll ? 5 : 20}" fill="${shell}" stroke="${gold}" stroke-width="4"/>
@@ -66,7 +70,7 @@ export function renderCardFace(card: Record<string, any>, art: string, presentat
   ${text(270, scroll ? 512 : 538, meta, 20, scroll ? '#655f4c' : '#465741')}
   ${ruleLines.map((line, index) => text(52, 566 + index * 23, line, 22, '#2f3829', 'start')).join('')}
   <path d="M54 692H486" stroke="${gold}" stroke-width="1"/>
-  ${card.kind === 'unit' ? `<rect x="45" y="707" width="132" height="43" rx="7" fill="#553426"/><rect x="363" y="707" width="132" height="43" rx="7" fill="#254936"/>${includeStats ? text(111, 738, `攻 ${card.attack}`, 29, '#f3cd9b') + text(429, 738, `命 ${card.health}`, 29, '#d7e6b4') : ''}` : text(270, 725, CARD_KIND_LABELS[card.kind] ?? card.kind, 23, ink)}
+  ${card.kind === 'unit' ? `<rect x="45" y="707" width="132" height="43" rx="7" fill="#553426"/><rect x="363" y="707" width="132" height="43" rx="7" fill="#254936"/>${includeStats ? text(111, 738, `攻 ${card.attack}`, 29, '#f3cd9b') + text(429, 738, `命 ${card.health}`, 29, '#d7e6b4') : ''}` : text(270, 725, CARD_KIND_LABELS[card.kind??''] ?? card.kind, 23, ink)}
   ${text(270, card.kind === 'unit' ? 735 : 751, card.id, 14, scroll ? '#756e5c' : '#a0b5a2')}
   </g></svg>`;
 }

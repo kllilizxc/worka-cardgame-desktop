@@ -1,6 +1,6 @@
 ---
 name: cardgame-production
-description: 管理 CardGame AI 资源制作请求、轮次、候选和采用。
+description: 管理 CardGame AI 资源制作请求、轮次、候选与卡牌试玩交付。
 ---
 
 ## 独立牌组：一句意图到整套草案
@@ -17,7 +17,7 @@ confirmDeckDraft 只能由用户操作确认当前整套指纹，Agent不能代�
 
 用户已选择 **Codex 内置 imagegen** 作为插画生成方式。默认不调用 PixelLab、FLUX、Meshy 或其他收费 API。Worka 保存需求、人工修改、图片版本、模板及交付状态；没有内置生图能力的宿主必须停在可复制的生图交接，不把请求复制说成已生成。
 
-六类卡牌流程：AI 草稿 → 可选微调 → Codex 插画 → 两套模板组装 → 独立试玩候选。所有动作使用 `cardWorkflow({operation, productionId, cardId?, baseRevision, ...})`，projectId 来自便笺配置。先查询 `cardBatch` 获取最新 production.revision 和各卡 stages。制作便笺 cwd 仍指向已登记的正式项目，不能在该目录用文件工具修改或提交；候选目录只能由 `integrateCard` 建立。禁止直接改便笺 state 保存卡牌；正式项目只能由功能进展的确切候选确认采用。
+六类卡牌流程：AI 草稿 → 可选微调 → Codex 插画 → 两套模板组装 → 独立试玩候选。所有动作使用 `cardWorkflow({operation, productionId, cardId?, baseRevision, ...})`，项目范围由服务从当前便笺的持久绑定确定，无需在普通动作传 projectId。先查询 `cardBatch` 获取最新 production.revision 和各卡 stages。制作便笺 cwd 仍指向已登记的正式项目，不能在该目录用文件工具修改或提交；候选目录只能由 `integrateCard` 建立。禁止直接改便笺 state 保存卡牌；正式项目只能由功能进展的确切候选确认采用。
 
 - `createCardBatch`：brief 与已有功能项 featureId；可传 cardIds 从现有卡牌库复制，或 cards 写入新卡定义。空批次等待 AI 草稿。用户在原生对话提出新 idea 时，先查询制作单和功能项，若批次为空就用 `setCardDrafts` 写入草稿，随后按当前 revision 调 `requestCardArt`；不要只回复一段卡牌文字而留下空批次。
 - `setCardDrafts`：cards；只允许尚未人工确认的批次。支持 unit、artifact、talisman、field、pill、skill 六类。先查询同类现有卡与效果结构，再写入合法定义；新 ID 不得撞已有卡牌。丹药和技能在战斗初始配置中分别占一个槽位，最多各 3 个，满槽时建立候选会给出明确错误。
@@ -30,15 +30,14 @@ confirmDeckDraft 只能由用户操作确认当前整套指纹，Agent不能代�
 
 模板是 `card-face.ts` 中的独立布局。presentation.themeId 只切换外观；zoom / focus 改变裁切并使旧组装过期。改数值使人工确认与组装过期，但保留插画；改 artBrief 需要新生图回执。两套已组装主题切换不重新生成插画。每张卡的状态单独派生，不能把批次请求的完成状态代替游戏交付。
 
-现有资源制作工作流继续沿用下述协议；卡牌批次不能交给通用 `generate`。通用资源采用至正式游戏的旧入口已被拦截，需先扩展候选闭包，不得借执行台文件工具绕过确认。
+现有资源制作工作流继续沿用下述协议；卡牌批次不能交给通用 `generate`。通用素材只支持查看、复制真实候选引用或否决，不支持直接采用；不要调用旧 adoptAsset/adoptVersion 入口或借执行台文件工具绕过确认。卡牌与牌组应在原制作单建立试玩候选，再由用户在功能进展确认。
 
 先用 `upsertRequest` 保存草稿；草稿创建不调用模型。明确生成时提交
-`businessKey`、不可变 requirement snapshot、scope、cwd 和稳定 requestId 给已有
-`production` 关联。传输重试复用同一个 requestId；新轮次使用新 requestId，但保留
+业务输入给服务，由服务预留不可变轮次并填充项目代次、冻结快照与稳定 requestId；关系读取该冻结快照后交给已有执行台。传输重试复用同一个 requestId；新轮次使用新 requestId，但保留
 同一 businessKey 和 owner task。
 
 `receiveResult` 校验 requestId、round 和 requirement revision；旧结果只能记录为
-stale，不能覆盖新轮次。制作与资源库 Skill 连线只登记尚未采用的素材；`adoptAsset` 需要用户明确选择候选，采用资源版本也不等于将其加入正式游戏。不要把运行完成、试玩候选、用户确认或进入游戏混为一个状态。
+stale，不能覆盖新轮次。制作与资源库 Skill 连线只登记尚未采用的素材；复制引用必须来自已登记且通过媒体解析的实际候选身份和版本；不写采用事实。旧采用事件仅保留核对入口，不自动重放或报成功。不要把运行完成、试玩候选、用户确认或进入游戏混为一个状态。
 
 否决与新一轮的区别：否决（`rejectCandidate`）是质量问题返修——标记该候选
 （保留可见、不删除）并自动建一条高优先级、category 为"返修"的 Todo，context 深链接
@@ -52,3 +51,9 @@ stale，不能覆盖新轮次。制作与资源库 Skill 连线只登记尚未�
 用户明确要求继续卡面制作时，保留本制作单和所有卡牌规则、数值、副本。逐张 saveCardDraft 仅调整 artBrief；用户已授权生图后才逐张 requestCardArt。整套牌组的自动生图完成后只组装两套主题，不调用单卡 integrateCard，不向默认牌组追加卡牌。可查询 cardBatch 跟踪每张插画与组装状态，失败如实报告。没有可用的内置生图能力时可由用户授权的 Codex 会话实际生成，再按当前回执 attachCardArt；不得以几何占位或脚本绘制伪称生成插画。
 
 已采用牌组在建立素材更新候选前调用 prepareDeckArt，验证正式卡牌与当前草稿规则完全一致并绑定来源版本。所有当前插画和两套卡面完成后 stageDeckCandidate 建立整套含素材的隔离候选。已有规则确认保持有效；整套素材候选仍需真实试玩和功能进展对确切候选的采用动作。卡面展示与素材依赖由同一制作单保存，原默认牌组保持原字节；规则或副本来源已变更时先核对，不能绕过版本校验。
+
+## 项目重绑和旧事件
+
+编辑界面统一使用服务签发的项目代次，重绑后原草稿保持可读，旧保存和回执被拒绝。不要把最新代次贴到未经核对的旧结果上。旧版无代次事件停在核对入口。只有原地升级且未重绑时，“重试交办”只读核对已有任务的完整冻结快照与原请求回执，补绑定而不重新执行；未知或归档任务需人工核对。跨重绑旧轮次拒绝重试/写回，明确“新一轮”才建立新意图。不得删除旧历史或要求用户重建桌面。原生会话需要补回已完成结果时，先读取 production，核对当前项目与原请求及真实输出目录，再使用返回的 projectGeneration。
+
+执行台只有明确结构化 productionResult（productionId、requestId、round、requirementRevision、completed、真实 candidates.sourcePath）与当前执行版本一致时才自动回填；服务还会核对文件存在、大小和本轮输出目录。只有叙述或证据不足时继续交给 Agent 核对。登记/采用事实必须来自资源服务真实回执；运行完成不代表采用。

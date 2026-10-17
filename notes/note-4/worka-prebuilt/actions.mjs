@@ -1,4 +1,4 @@
-// ../../../worka-phone-pairing/node_modules/.cache/zod@4.6.1@@@1/v4/core/util.js
+// ../../../worka-authoring-desktop-latest-20261017/node_modules/.bun/zod@4.6.1/node_modules/zod/v4/core/util.js
 function getEnumValues(entries) {
   const numericValues = Object.values(entries).filter((v) => typeof v === "number");
   const values = Object.entries(entries).filter(([k, _]) => numericValues.indexOf(+k) === -1).map(([_, v]) => v);
@@ -566,7 +566,7 @@ function constantCatch(value) {
   return fn;
 }
 
-// ../../../worka-phone-pairing/node_modules/.cache/zod@4.6.1@@@1/v4/core/core.js
+// ../../../worka-authoring-desktop-latest-20261017/node_modules/.bun/zod@4.6.1/node_modules/zod/v4/core/core.js
 var _a;
 var _zodDesc = { value: undefined, enumerable: false };
 var _E = "captureStackTrace" in Error ? Error : null;
@@ -685,7 +685,7 @@ function config(newConfig) {
     Object.assign(globalConfig, newConfig);
   return globalConfig;
 }
-// ../../../worka-phone-pairing/node_modules/.cache/zod@4.6.1@@@1/v4/core/errors.js
+// ../../../worka-authoring-desktop-latest-20261017/node_modules/.bun/zod@4.6.1/node_modules/zod/v4/core/errors.js
 function _getMessage() {
   const internals = this._zod;
   internals.message ?? (internals.message = JSON.stringify(internals.def, jsonStringifyReplacer, 2));
@@ -800,7 +800,7 @@ function formatError(error, mapper = (issue) => issue.message) {
   return fieldErrors;
 }
 
-// ../../../worka-phone-pairing/node_modules/.cache/zod@4.6.1@@@1/v4/core/parse.js
+// ../../../worka-authoring-desktop-latest-20261017/node_modules/.bun/zod@4.6.1/node_modules/zod/v4/core/parse.js
 function finalizeParams(callee, params) {
   return { callee: params?.callee ?? callee, Err: params?.Err };
 }
@@ -947,7 +947,7 @@ var _safeEncodeAsync = (_Err) => async (schema, value, _ctx) => {
 var _safeDecodeAsync = (_Err) => async (schema, value, _ctx) => {
   return _safeParseAsync(_Err)(schema, value, _ctx);
 };
-// ../../../worka-phone-pairing/node_modules/.cache/zod@4.6.1@@@1/v4/core/regexes.js
+// ../../../worka-authoring-desktop-latest-20261017/node_modules/.bun/zod@4.6.1/node_modules/zod/v4/core/regexes.js
 var cuid = /^[cC][0-9a-z]{6,}$/;
 var cuid2 = /^[0-9a-z]+$/;
 var ulid = /^[0-7][0-9A-HJKMNP-TV-Za-hjkmnp-tv-z]{25}$/;
@@ -1006,7 +1006,7 @@ var _null = /^null$/i;
 var lowercase = /^[^A-Z]*$/;
 var uppercase = /^[^a-z]*$/;
 
-// ../../../worka-phone-pairing/node_modules/.cache/zod@4.6.1@@@1/v4/core/checks.js
+// ../../../worka-authoring-desktop-latest-20261017/node_modules/.bun/zod@4.6.1/node_modules/zod/v4/core/checks.js
 var $ZodCheck = /* @__PURE__ */ $constructor("$ZodCheck", (inst, def) => {
   var _a;
   inst._zod ?? (inst._zod = {});
@@ -1322,7 +1322,7 @@ var $ZodCheckOverwrite = /* @__PURE__ */ $constructor("$ZodCheckOverwrite", (ins
   };
 });
 
-// ../../../worka-phone-pairing/node_modules/.cache/zod@4.6.1@@@1/v4/core/doc.js
+// ../../../worka-authoring-desktop-latest-20261017/node_modules/.bun/zod@4.6.1/node_modules/zod/v4/core/doc.js
 class Doc {
   constructor(args = [], closed = {}) {
     this.content = [];
@@ -1364,14 +1364,14 @@ ${content.join(`
   }
 }
 
-// ../../../worka-phone-pairing/node_modules/.cache/zod@4.6.1@@@1/v4/core/versions.js
+// ../../../worka-authoring-desktop-latest-20261017/node_modules/.bun/zod@4.6.1/node_modules/zod/v4/core/versions.js
 var version = {
   major: 4,
   minor: 6,
   patch: 1
 };
 
-// ../../../worka-phone-pairing/node_modules/.cache/zod@4.6.1@@@1/v4/core/schemas.js
+// ../../../worka-authoring-desktop-latest-20261017/node_modules/.bun/zod@4.6.1/node_modules/zod/v4/core/schemas.js
 var $ZodType = /* @__PURE__ */ $constructor("$ZodType", (inst, def) => {
   var _a;
   inst ?? (inst = {});
@@ -2969,7 +2969,7 @@ var $ZodProperties = /* @__PURE__ */ $constructor("$ZodProperties", (inst, def) 
     yield this;
   }
 });
-// ../../../worka-phone-pairing/node_modules/.cache/zod@4.6.1@@@1/v4/core/memoizer.js
+// ../../../worka-authoring-desktop-latest-20261017/node_modules/.bun/zod@4.6.1/node_modules/zod/v4/core/memoizer.js
 class $ZodCyclicError extends Error {
   constructor() {
     super(`Cannot parse a reference cycle that closes through a transform`);
@@ -3241,7 +3241,7 @@ function isBackEdge(ctx, value) {
   const backEdges = ctx[STATE]?.backEdges;
   return backEdges !== undefined && isRef(value) && backEdges.has(value);
 }
-// ../../../worka-phone-pairing/node_modules/.cache/zod@4.6.1@@@1/v4/locales/en.js
+// ../../../worka-authoring-desktop-latest-20261017/node_modules/.bun/zod@4.6.1/node_modules/zod/v4/locales/en.js
 var error = () => {
   const Sizable = {
     string: { unit: "characters", verb: "to have" },
@@ -3362,7 +3362,7 @@ function en_default() {
     localeError: error()
   };
 }
-// ../../../worka-phone-pairing/node_modules/.cache/zod@4.6.1@@@1/v4/core/registries.js
+// ../../../worka-authoring-desktop-latest-20261017/node_modules/.bun/zod@4.6.1/node_modules/zod/v4/core/registries.js
 var _a2;
 class $ZodRegistry {
   constructor() {
@@ -3409,7 +3409,7 @@ function registry() {
 }
 (_a2 = globalThis).__zod_globalRegistry ?? (_a2.__zod_globalRegistry = registry());
 var globalRegistry = globalThis.__zod_globalRegistry;
-// ../../../worka-phone-pairing/node_modules/.cache/zod@4.6.1@@@1/v4/core/api.js
+// ../../../worka-authoring-desktop-latest-20261017/node_modules/.bun/zod@4.6.1/node_modules/zod/v4/core/api.js
 function _string(Class, params) {
   return new Class({
     type: "string",
@@ -3865,7 +3865,7 @@ function _check(fn, params) {
   ch._zod.check = fn;
   return ch;
 }
-// ../../../worka-phone-pairing/node_modules/.cache/zod@4.6.1@@@1/v4/core/to-json-schema.js
+// ../../../worka-authoring-desktop-latest-20261017/node_modules/.bun/zod@4.6.1/node_modules/zod/v4/core/to-json-schema.js
 function assignProps(target, ...sources) {
   for (const source of sources) {
     for (const key of Reflect.ownKeys(source)) {
@@ -4388,7 +4388,7 @@ var createStandardJSONSchemaMethod = (schema, io, processors = {}) => (params) =
   extractDefs(ctx, schema);
   return finalize(ctx, schema);
 };
-// ../../../worka-phone-pairing/node_modules/.cache/zod@4.6.1@@@1/v4/core/json-schema-processors.js
+// ../../../worka-authoring-desktop-latest-20261017/node_modules/.bun/zod@4.6.1/node_modules/zod/v4/core/json-schema-processors.js
 var narrowMin = (agg, key, value) => {
   if (agg[key] === undefined || value > agg[key])
     agg[key] = value;
@@ -5159,7 +5159,7 @@ function toJSONSchema(input, params) {
   extractDefs(ctx, input);
   return finalize(ctx, input);
 }
-// ../../../worka-phone-pairing/node_modules/.cache/zod@4.6.1@@@1/v4/classic/errors.js
+// ../../../worka-authoring-desktop-latest-20261017/node_modules/.bun/zod@4.6.1/node_modules/zod/v4/classic/errors.js
 var _installedErrorProtos = /* @__PURE__ */ new WeakSet([Object.prototype, Error.prototype]);
 function _lazyMethod(proto, key, make) {
   Object.defineProperty(proto, key, {
@@ -5204,7 +5204,7 @@ var ZodRealError = /* @__PURE__ */ $constructor("ZodError", initializer2, undefi
   Parent: Error
 });
 
-// ../../../worka-phone-pairing/node_modules/.cache/zod@4.6.1@@@1/v4/classic/parse.js
+// ../../../worka-authoring-desktop-latest-20261017/node_modules/.bun/zod@4.6.1/node_modules/zod/v4/classic/parse.js
 var parse2 = /* @__PURE__ */ _parse(ZodRealError);
 var parseAsync = /* @__PURE__ */ _parseAsync(ZodRealError);
 var safeParse = /* @__PURE__ */ _safeParse(ZodRealError);
@@ -5218,7 +5218,7 @@ var safeDecode = /* @__PURE__ */ _safeDecode(ZodRealError);
 var safeEncodeAsync = /* @__PURE__ */ _safeEncodeAsync(ZodRealError);
 var safeDecodeAsync = /* @__PURE__ */ _safeDecodeAsync(ZodRealError);
 
-// ../../../worka-phone-pairing/node_modules/.cache/zod@4.6.1@@@1/v4/classic/schemas.js
+// ../../../worka-authoring-desktop-latest-20261017/node_modules/.bun/zod@4.6.1/node_modules/zod/v4/classic/schemas.js
 function _ensureDefaultLocale() {
   if (!globalConfig.localeError)
     config(en_default());
@@ -6148,574 +6148,478 @@ function json(params) {
   });
   return jsonSchema;
 }
-// .sdk/runtime/src/capabilities.ts
-var definitionKey = Symbol.for("worka.note-capability");
-function operation(kind, definition, handler, contextFirst = false) {
-  const execute = async (input, context) => {
-    const result = await handler(input, context);
-    const output = captured.output.safeParse(result);
-    if (!output.success)
-      throw new Error(`Capability output is invalid after execution; inspect effects before retrying: ${output.error.message}`);
-    return output.data;
-  };
-  const captured = Object.freeze({ ...definition, kind, execute });
-  const callable = contextFirst ? async (context, input) => execute(captured.input.parse(input), context) : async (input, context) => execute(captured.input.parse(input), context);
-  Object.defineProperty(callable, definitionKey, { value: captured });
-  return callable;
-}
-function createEvent(definition) {
-  const captured = Object.freeze({ ...definition, kind: "event", output: definition.payload });
-  const event = {
-    name: definition.name,
-    publish(context, payload, options) {
-      return context.events.publish(captured.name, captured.output.parse(payload), options);
-    }
-  };
-  Object.defineProperty(event, definitionKey, { value: captured });
-  return Object.freeze(event);
-}
-
-// .sdk/runtime/src/collections.ts
-var identifier = /^[A-Za-z][A-Za-z\d_-]*$/;
-var collectionPageInput = strictObject({ cursor: string2().max(32768).optional(), limit: number2().int().min(1).max(100).optional(), maxBytes: number2().int().min(256).max(1024 * 1024).optional() });
-var collectionFieldInput = strictObject({ key: string2().min(1).max(512), field: string2().min(1).max(2048), revision: string2().min(1) });
-var collectionDetailInput = strictObject({ key: string2().min(1).max(512), revision: string2().optional() });
-var lazySchema = strictObject({ kind: literal("collection-field"), collection: string2(), key: string2(), field: string2(), revision: string2() });
-function unwrap(schema) {
-  while (schema instanceof ZodOptional || schema instanceof ZodDefault || schema instanceof ZodNullable)
-    schema = schema.unwrap();
-  return schema;
-}
-function lazyAt(schema, parts) {
-  if (schema instanceof ZodOptional)
-    return lazyAt(schema.unwrap(), parts).optional();
-  if (schema instanceof ZodDefault)
-    return lazyAt(schema.unwrap(), parts).optional();
-  if (schema instanceof ZodNullable)
-    return parts.length ? lazyAt(schema.unwrap(), parts).nullable() : lazySchema;
-  if (!parts.length)
-    return lazySchema;
-  const [head, ...tail] = parts;
-  if (schema instanceof ZodRecord && head === "*")
-    return record(schema.keyType, lazyAt(schema.valueType, tail));
-  if (!(schema instanceof ZodObject) || !head || !Object.hasOwn(schema.shape, head))
-    throw new Error(`Lazy field path does not match the state schema: ${parts.join(".")}`);
-  return schema.extend({ [head]: lazyAt(schema.shape[head], tail) });
-}
-function collectionSchemas(state, declarations = {}) {
-  if (Object.keys(declarations).length > 32)
-    throw new Error("A note may declare at most 32 collections");
-  const fields = new Set;
-  return Object.entries(declarations).map(([name, definition]) => {
-    if (!identifier.test(name) || !definition || typeof definition !== "object" || Array.isArray(definition) || Object.keys(definition).some((key) => !["field", "key", "lazy"].includes(key)) || definition.lazy !== undefined && !Array.isArray(definition.lazy))
-      throw new Error("Invalid collection declaration");
-    const field = definition.field ?? name;
-    if (fields.has(field))
-      throw new Error(`Collection state field is declared twice: ${field}`);
-    fields.add(field);
-    if (!(state instanceof ZodObject) || !Object.hasOwn(state.shape, field))
-      throw new Error(`Collection ${name} needs a top-level state array: ${field}`);
-    const array = unwrap(state.shape[field]);
-    if (!(array instanceof ZodArray) || !(array.element instanceof ZodObject))
-      throw new Error(`Collection ${name} must contain objects`);
-    const item = array.element;
-    const lazy = [...definition.lazy ?? []];
-    if (!Object.hasOwn(item.shape, definition.key) || !(item.shape[definition.key] instanceof ZodString))
-      throw new Error(`Collection ${name} requires a string key field`);
-    if (lazy.length > 32 || new Set(lazy).size !== lazy.length || lazy.some((field) => typeof field !== "string" || field === definition.key || !field || field.split(".").some((part) => !part) || lazy.some((other) => other !== field && field.startsWith(other + "."))))
-      throw new Error(`Invalid lazy fields for collection ${name}`);
-    let summary = item;
-    for (const path of lazy)
-      summary = lazyAt(summary, path.split("."));
-    return { name, contract: { field, key: definition.key, lazy }, item, summary };
-  });
-}
-var generated = new WeakMap;
-
-// .sdk/runtime/src/store.ts
-function isRevisionConflict(error) {
-  if (!error || typeof error !== "object")
+// .sdk/runtime/dist/chunk-x51asrwd.mjs
+function p(E) {
+  if (!E || typeof E !== "object")
     return false;
-  if (error.code === "revision-conflict")
+  if (E.code === "revision-conflict")
     return true;
-  const message = error instanceof Error ? error.message : String(error);
-  return /revision conflict/i.test(message);
+  let z = E instanceof Error ? E.message : String(E);
+  return /revision conflict/i.test(z);
 }
-
-// .sdk/runtime/src/operation-error.ts
-class OperationRejectedError extends Error {
+class t extends Error {
   code = "operation-rejected";
-  constructor(message) {
-    super(message);
+  constructor(E) {
+    super(E);
     this.name = "OperationRejectedError";
   }
 }
-
-// .sdk/runtime/src/config.ts
-function noteConfigRef(noteId) {
-  return `${noteId}:config`;
+function o(E) {
+  return `${E}:config`;
 }
-
-// .sdk/runtime/src/note.ts
-var modelKey = Symbol.for("worka.note-model.v2");
-var backgroundKey = Symbol.for("worka.note-background.v2");
-var contextKey = Symbol.for("worka.note-contexts.v2");
-var contextGlobal = globalThis;
-var boundContexts = contextGlobal[contextKey] ?? new WeakMap;
-if (!contextGlobal[contextKey])
-  Object.defineProperty(contextGlobal, contextKey, { value: boundContexts });
-function defineNote(definition) {
-  collectionSchemas(definition.state?.schema, definition.collections);
-  const captured = Object.freeze({
-    ...definition,
-    ...definition.collections ? { collections: freezeJson(definition.collections) } : {},
-    ...definition.state ? { state: Object.freeze({ ...definition.state, initial: freezeJson(definition.state.schema.parse(definition.state.initial)) }) } : {},
-    ...definition.config ? { config: Object.freeze({ ...definition.config, defaults: freezeJson(partialConfig(definition.config.schema).parse(definition.config.defaults)) }) } : {}
-  });
-  const requiredConfig = captured.config ? (toJSONSchema(captured.config.schema, { io: "input" }).required?.length ?? 0) > 0 : false;
-  const note = {
-    [modelKey]: captured,
-    action: (metadata, run) => operation("action", { ...metadata, visibility: metadata.visibility ?? "private", model: note }, async (input, raw) => {
-      const bound = boundContexts.get(raw);
-      if (bound && (bound.note !== note || bound.kind !== "action"))
-        throw new OperationRejectedError("An action requires its own note’s writable context");
-      raw = bound?.raw ?? raw;
-      const context = bindActionContext(note, raw);
-      if (metadata.requiresConfig !== false && requiredConfig && captured.config) {
-        const configured = captured.config.schema.safeParse((await raw.store.read(noteConfigRef(raw.note.id))).value);
-        if (!configured.success)
-          throw new OperationRejectedError("Complete this note’s configuration before running this action");
-      }
-      return run(context, input);
-    }, true),
-    query: (metadata, run) => operation("query", { ...metadata, visibility: metadata.visibility ?? "public", model: note }, (input, raw) => run(bindQueryContext(note, raw), input), true),
-    event: (metadata) => createEvent({ ...metadata, visibility: metadata.visibility ?? "private", model: note }),
-    background: (background) => {
-      const bound = {
-        [backgroundKey]: note,
-        ...background.resources ? { resources: freezeJson(background.resources) } : {},
-        ...background.start ? { start: async (raw) => {
-          const result = await background.start(bindActionContext(note, raw));
-          if (result !== undefined)
-            throw new Error("Finite start must not return a cleanup closure or value");
-        } } : {},
-        ...background.state ? { state: async (raw, snapshot) => {
-          if (!captured.state)
-            throw new Error("A state handler requires a state model");
-          const value = captured.state.schema.parse(snapshot.value);
-          const result = await background.state(bindActionContext(note, raw), freezeJson({ ...snapshot, value }));
-          if (result !== undefined)
-            throw new Error("Finite state handler must not return a cleanup closure or value");
-        } } : {}
-      };
-      return Object.freeze(bound);
+var Ne = Symbol.for("worka.note-model.v2");
+var Pe = Symbol.for("worka.note-background.v2");
+var he = Symbol.for("worka.note-contexts.v2");
+var xe = globalThis;
+var me = xe[he] ?? new WeakMap;
+if (!xe[he])
+  Object.defineProperty(xe, he, { value: me });
+function g(E) {
+  s(E.state?.schema, E.collections);
+  let z = Object.freeze({ ...E, ...E.collections ? { collections: fe(E.collections) } : {}, ...E.state ? { state: Object.freeze({ ...E.state, initial: fe(E.state.schema.parse(E.state.initial)) }) } : {}, ...E.config ? { config: Object.freeze({ ...E.config, defaults: fe(ve(E.config.schema).parse(E.config.defaults)) }) } : {} }), ne = z.config ? (toJSONSchema(z.config.schema, { io: "input" }).required?.length ?? 0) > 0 : false, te = { [Ne]: z, action: (oe, se) => ye("action", { ...oe, visibility: oe.visibility ?? "private", model: te }, async (ce, re) => {
+    let ie = me.get(re);
+    if (ie && (ie.note !== te || ie.kind !== "action"))
+      throw new t("An action requires its own note’s writable context");
+    re = ie?.raw ?? re;
+    let ae = u(te, re);
+    if (oe.requiresConfig !== false && ne && z.config) {
+      if (!z.config.schema.safeParse((await re.store.read(o(re.note.id))).value).success)
+        throw new t("Complete this note’s configuration before running this action");
     }
-  };
-  return Object.freeze(note);
+    return se(ae, ce);
+  }, true), query: (oe, se) => ye("query", { ...oe, visibility: oe.visibility ?? "public", model: te }, (ce, re) => se(y(te, re), ce), true), event: (oe) => Se({ ...oe, visibility: oe.visibility ?? "private", model: te }), background: (oe) => {
+    let se = { [Pe]: te, ...oe.resources ? { resources: fe(oe.resources) } : {}, ...oe.start ? { start: async (ce) => {
+      if (await oe.start(u(te, ce)) !== undefined)
+        throw Error("Finite start must not return a cleanup closure or value");
+    } } : {}, ...oe.state ? { state: async (ce, re) => {
+      if (!z.state)
+        throw Error("A state handler requires a state model");
+      let ie = z.state.schema.parse(re.value);
+      if (await oe.state(u(te, ce), fe({ ...re, value: ie })) !== undefined)
+        throw Error("Finite state handler must not return a cleanup closure or value");
+    } } : {} };
+    return Object.freeze(se);
+  } };
+  return Object.freeze(te);
 }
-function noteDefinition(value) {
-  return value !== null && typeof value === "object" ? value[modelKey] : undefined;
+function e(E) {
+  return E !== null && typeof E === "object" ? E[Ne] : undefined;
 }
-function identity(raw) {
-  return Object.freeze({ id: raw.id, version: raw.version ?? "unknown" });
+function Oe(E) {
+  return Object.freeze({ id: E.id, version: E.version ?? "unknown" });
 }
-function partialConfig(schema) {
-  if (!(schema instanceof ZodObject))
-    throw new Error("Config schema must be a Zod object");
-  return schema.partial();
+function ve(E) {
+  if (!(E instanceof ZodObject))
+    throw Error("Config schema must be a Zod object");
+  return E.partial();
 }
-function freezeJson(value) {
-  assertJson(value);
-  const freeze = (part) => {
-    if (part && typeof part === "object" && !Object.isFrozen(part)) {
-      Object.values(part).forEach(freeze);
-      Object.freeze(part);
-    }
-  };
-  const copy = JSON.parse(JSON.stringify(value));
-  freeze(copy);
-  return copy;
+function fe(E) {
+  r(E);
+  let z = (te) => {
+    if (te && typeof te === "object" && !Object.isFrozen(te))
+      Object.values(te).forEach(z), Object.freeze(te);
+  }, ne = JSON.parse(JSON.stringify(E));
+  return z(ne), ne;
 }
-function assertJson(value) {
-  const seen = new Set;
-  const visit = (part) => {
-    if (part === null || typeof part === "string" || typeof part === "boolean" || typeof part === "number" && Number.isFinite(part))
+function r(E) {
+  let z = new Set, ne = (te) => {
+    if (te === null || typeof te === "string" || typeof te === "boolean" || typeof te === "number" && Number.isFinite(te))
       return;
-    if (!part || typeof part !== "object" || !Array.isArray(part) && Object.getPrototypeOf(part) !== Object.prototype && Object.getPrototypeOf(part) !== null)
-      throw new Error("Note data must be finite, plain JSON");
-    if (seen.has(part))
-      throw new Error("Note data cannot contain cycles");
-    seen.add(part);
-    for (const child of Object.values(part)) {
-      if (Array.isArray(part) || child !== undefined)
-        visit(child);
-    }
-    seen.delete(part);
+    if (!te || typeof te !== "object" || !Array.isArray(te) && Object.getPrototypeOf(te) !== Object.prototype && Object.getPrototypeOf(te) !== null)
+      throw Error("Note data must be finite, plain JSON");
+    if (z.has(te))
+      throw Error("Note data cannot contain cycles");
+    z.add(te);
+    for (let oe of Object.values(te))
+      if (Array.isArray(te) || oe !== undefined)
+        ne(oe);
+    z.delete(te);
   };
-  visit(value);
+  ne(E);
 }
-function writableState(schema, store, ref) {
-  if (!ref)
-    throw new Error("The declared state has no bound storage");
-  const read = async () => {
-    const snapshot = await store.read(ref);
-    return freezeJson({ ...snapshot, value: schema.parse(snapshot.value) });
+function ze(E, z, ne) {
+  if (!ne)
+    throw Error("The declared state has no bound storage");
+  let te = async () => {
+    let oe = await z.read(ne);
+    return fe({ ...oe, value: E.parse(oe.value) });
   };
-  return { read, update: async (change, options) => {
-    for (let attempt = 1;; attempt++) {
-      const current = await read();
-      if (options?.expectedRevision !== undefined && current.revision !== options.expectedRevision)
-        throw Object.assign(new Error("State revision conflict"), { code: "revision-conflict" });
-      const draft = structuredClone(current.value);
-      const result = change(draft);
-      if (result !== undefined) {
-        if (result && typeof result.then === "function")
-          Promise.resolve(result).catch(() => {
+  return { read: te, update: async (oe, se) => {
+    for (let ce = 1;; ce++) {
+      let re = await te();
+      if (se?.expectedRevision !== undefined && re.revision !== se.expectedRevision)
+        throw Object.assign(Error("State revision conflict"), { code: "revision-conflict" });
+      let ie = structuredClone(re.value), ae = oe(ie);
+      if (ae !== undefined) {
+        if (ae && typeof ae.then === "function")
+          Promise.resolve(ae).catch(() => {
             return;
           });
-        throw new Error("State update callbacks must be synchronous and return nothing");
+        throw Error("State update callbacks must be synchronous and return nothing");
       }
-      const value = schema.parse(draft);
-      assertJson(value);
-      if (JSON.stringify(value) === JSON.stringify(current.value))
-        return current;
+      let de = E.parse(ie);
+      if (r(de), JSON.stringify(de) === JSON.stringify(re.value))
+        return re;
       try {
-        const request = { baseRevision: current.revision, patch: {}, ops: [{ path: [], value }] };
-        if (!store.update)
-          throw new Error("Read-only note context cannot update state");
-        const saved = await store.update(ref, request);
-        return freezeJson({ ...saved, value: schema.parse(saved.value) });
-      } catch (error) {
-        if (options?.expectedRevision !== undefined || attempt >= 8 || !isRevisionConflict(error))
-          throw error;
+        let ue = { baseRevision: re.revision, patch: {}, ops: [{ path: [], value: de }] };
+        if (!z.update)
+          throw Error("Read-only note context cannot update state");
+        let pe = await z.update(ne, ue);
+        return fe({ ...pe, value: E.parse(pe.value) });
+      } catch (ue) {
+        if (se?.expectedRevision !== undefined || ce >= 8 || !p(ue))
+          throw ue;
       }
     }
   } };
 }
-function stateParts(note, raw, writable) {
-  const definition = noteDefinition(note);
-  if (!definition)
-    throw new Error("Missing executable note model");
-  const parts = {};
-  for (const kind of ["state", "config"]) {
-    const data = definition[kind];
-    if (!data)
+function Te(E, z, ne) {
+  let te = e(E);
+  if (!te)
+    throw Error("Missing executable note model");
+  let oe = {};
+  for (let se of ["state", "config"]) {
+    let ce = te[se];
+    if (!ce)
       continue;
-    const ref = kind === "state" ? typeof raw.note.stateRef === "string" ? raw.note.stateRef : raw.note.stateRef?.id : noteConfigRef(raw.note.id);
-    const access = writableState(kind === "state" ? data.schema : partialConfig(data.schema), raw.store, ref);
-    parts[kind] = Object.freeze(writable ? access : { read: access.read });
+    let re = se === "state" ? typeof z.note.stateRef === "string" ? z.note.stateRef : z.note.stateRef?.id : o(z.note.id), ie = ze(se === "state" ? ce.schema : ve(ce.schema), z.store, re);
+    oe[se] = Object.freeze(ne ? ie : { read: ie.read });
   }
-  return parts;
+  return oe;
 }
-function bindActionContext(note, raw) {
-  const bound = boundContexts.get(raw);
-  if (bound) {
-    if (bound.note !== note || bound.kind !== "action")
-      throw new OperationRejectedError("An action requires its own note’s writable context");
-    return raw;
+function u(E, z) {
+  let ne = me.get(z);
+  if (ne) {
+    if (ne.note !== E || ne.kind !== "action")
+      throw new t("An action requires its own note’s writable context");
+    return z;
   }
-  const { agent, schedules, notifications, previews, extensions, quip, slack, subprocess } = raw;
-  const context = Object.freeze({
-    note: identity(raw.note),
-    id: () => crypto.randomUUID(),
-    caller: raw.caller,
-    ...raw.replay ? { replay: true } : {},
-    signal: raw.signal,
-    progress: raw.progress,
-    db: raw.db,
-    files: raw.files,
-    notes: raw.notes,
-    resources: raw.resources,
-    events: raw.events,
-    host: Object.freeze({ agent, schedules, notifications, previews, extensions, quip, slack, subprocess }),
-    ...stateParts(note, raw, true)
+  let { agent: te, schedules: oe, notifications: se, previews: ce, extensions: re, quip: ie, slack: ae, subprocess: de } = z, ue = Object.freeze({ note: Oe(z.note), id: () => crypto.randomUUID(), caller: z.caller, ...z.replay ? { replay: true } : {}, signal: z.signal, progress: z.progress, db: z.db, files: z.files, notes: z.notes, resources: z.resources, events: z.events, host: Object.freeze({ agent: te, schedules: oe, notifications: se, previews: ce, extensions: re, quip: ie, slack: ae, subprocess: de }), ...Te(E, z, true) });
+  return me.set(ue, { note: E, raw: z, kind: "action" }), ue;
+}
+function y(E, z) {
+  let ne = me.get(z);
+  if (ne) {
+    if (ne.note !== E)
+      throw new t("A bound context belongs to another note model");
+    if (ne.kind === "query")
+      return z;
+    z = ne.raw;
+  }
+  let te = Object.freeze({ note: Oe(z.note), db: Object.freeze({ read: z.db?.read?.bind(z.db), list: z.db?.list?.bind(z.db), stats: z.db?.stats?.bind(z.db) }), files: z.files && Object.freeze({ info: z.files.info.bind(z.files), read: z.files.read.bind(z.files) }), notes: Object.freeze({ lookup: z.notes?.lookup?.bind(z.notes), read: z.notes?.read?.bind(z.notes), query: z.notes?.query?.bind(z.notes) }), resources: Object.freeze({ read: z.resources?.read?.bind(z.resources) }), host: Object.freeze({ previews: z.previews && Object.freeze({ get: z.previews.get?.bind(z.previews), list: z.previews.list?.bind(z.previews) }) }), ...Te(E, z, false) });
+  return me.set(te, { note: E, raw: z, kind: "query" }), te;
+}
+var De = /^[A-Za-z][A-Za-z\d_-]*$/;
+var q = strictObject({ cursor: string2().max(32768).optional(), limit: number2().int().min(1).max(100).optional(), maxBytes: number2().int().min(256).max(1048576).optional() });
+var j = strictObject({ key: string2().min(1).max(512), field: string2().min(1).max(2048), revision: string2().min(1) });
+var D = strictObject({ key: string2().min(1).max(512), revision: string2().optional() });
+var je = strictObject({ kind: literal("collection-field"), collection: string2(), key: string2(), field: string2(), revision: string2() });
+function Fe(E) {
+  while (E instanceof ZodOptional || E instanceof ZodDefault || E instanceof ZodNullable)
+    E = E.unwrap();
+  return E;
+}
+function ge(E, z) {
+  if (E instanceof ZodOptional)
+    return ge(E.unwrap(), z).optional();
+  if (E instanceof ZodDefault)
+    return ge(E.unwrap(), z).optional();
+  if (E instanceof ZodNullable)
+    return z.length ? ge(E.unwrap(), z).nullable() : je;
+  if (!z.length)
+    return je;
+  let [ne, ...te] = z;
+  if (E instanceof ZodRecord && ne === "*")
+    return record(E.keyType, ge(E.valueType, te));
+  if (!(E instanceof ZodObject) || !ne || !Object.hasOwn(E.shape, ne))
+    throw Error(`Lazy field path does not match the state schema: ${z.join(".")}`);
+  return E.extend({ [ne]: ge(E.shape[ne], te) });
+}
+function s(E, z = {}) {
+  if (Object.keys(z).length > 32)
+    throw Error("A note may declare at most 32 collections");
+  let ne = new Set;
+  return Object.entries(z).map(([te, oe]) => {
+    if (!De.test(te) || !oe || typeof oe !== "object" || Array.isArray(oe) || Object.keys(oe).some((de) => !["field", "key", "lazy"].includes(de)) || oe.lazy !== undefined && !Array.isArray(oe.lazy))
+      throw Error("Invalid collection declaration");
+    let se = oe.field ?? te;
+    if (ne.has(se))
+      throw Error(`Collection state field is declared twice: ${se}`);
+    if (ne.add(se), !(E instanceof ZodObject) || !Object.hasOwn(E.shape, se))
+      throw Error(`Collection ${te} needs a top-level state array: ${se}`);
+    let ce = Fe(E.shape[se]);
+    if (!(ce instanceof ZodArray) || !(ce.element instanceof ZodObject))
+      throw Error(`Collection ${te} must contain objects`);
+    let re = ce.element, ie = [...oe.lazy ?? []];
+    if (!Object.hasOwn(re.shape, oe.key) || !(re.shape[oe.key] instanceof ZodString))
+      throw Error(`Collection ${te} requires a string key field`);
+    if (ie.length > 32 || new Set(ie).size !== ie.length || ie.some((de) => typeof de !== "string" || de === oe.key || !de || de.split(".").some((ue) => !ue) || ie.some((ue) => ue !== de && de.startsWith(ue + "."))))
+      throw Error(`Invalid lazy fields for collection ${te}`);
+    let ae = re;
+    for (let de of ie)
+      ae = ge(ae, de.split("."));
+    return { name: te, contract: { field: se, key: oe.key, lazy: ie }, item: re, summary: ae };
   });
-  boundContexts.set(context, { note, raw, kind: "action" });
-  return context;
 }
-function bindQueryContext(note, raw) {
-  const bound = boundContexts.get(raw);
-  if (bound) {
-    if (bound.note !== note)
-      throw new OperationRejectedError("A bound context belongs to another note model");
-    if (bound.kind === "query")
-      return raw;
-    raw = bound.raw;
-  }
-  const context = Object.freeze({
-    note: identity(raw.note),
-    db: Object.freeze({ read: raw.db?.read?.bind(raw.db), list: raw.db?.list?.bind(raw.db), stats: raw.db?.stats?.bind(raw.db) }),
-    files: raw.files && Object.freeze({ info: raw.files.info.bind(raw.files), read: raw.files.read.bind(raw.files) }),
-    notes: Object.freeze({ lookup: raw.notes?.lookup?.bind(raw.notes), read: raw.notes?.read?.bind(raw.notes), query: raw.notes?.query?.bind(raw.notes) }),
-    resources: Object.freeze({ read: raw.resources?.read?.bind(raw.resources) }),
-    host: Object.freeze({ previews: raw.previews && Object.freeze({ get: raw.previews.get?.bind(raw.previews), list: raw.previews.list?.bind(raw.previews) }) }),
-    ...stateParts(note, raw, false)
-  });
-  boundContexts.set(context, { note, raw, kind: "query" });
-  return context;
+var Re = new WeakMap;
+var ke = Symbol.for("worka.note-capability");
+function ye(E, z, ne, te = false) {
+  let oe = async (re, ie) => {
+    let ae = await ne(re, ie), de = se.output.safeParse(ae);
+    if (!de.success)
+      throw Error(`Capability output is invalid after execution; inspect effects before retrying: ${de.error.message}`);
+    return de.data;
+  }, se = Object.freeze({ ...z, kind: E, execute: oe }), ce = te ? async (re, ie) => oe(se.input.parse(ie), re) : async (re, ie) => oe(se.input.parse(re), ie);
+  return Object.defineProperty(ce, ke, { value: se }), ce;
 }
-// .sdk/runtime/src/preview-project.mjs
-var compiled = Symbol.for("worka.preview.project");
-// .sdk/runtime/src/note-files.ts
-var fileRefSchema = object({ id: string2().regex(/^note-file:[a-f0-9]{64}$/) });
-var NOTE_FILE_MAX_BYTES = 4 * 1024 * 1024;
+function Se(E) {
+  let z = Object.freeze({ ...E, kind: "event", output: E.payload }), ne = { name: E.name, publish(te, oe, se) {
+    return te.events.publish(z.name, z.output.parse(oe), se);
+  } };
+  return Object.defineProperty(ne, ke, { value: z }), Object.freeze(ne);
+}
+var a = object({ id: string2().regex(/^note-file:[a-f0-9]{64}$/) });
+
+// .sdk/runtime/dist/chunk-0d9m18h4.mjs
+var m = Symbol.for("worka.preview.project");
+
 // note-model.ts
-var configSchema = looseObject({ projectId: string2().min(1), projectRoot: string2().optional(), mode: _enum(["knowledge", "cards", "assets"]).optional(), presentation: _enum(["story", "balance", "changes"]).optional(), assetScope: _enum(["art", "audio"]).optional(), notes: record(string2(), string2()).optional(), resources: array(looseObject({ path: string2(), title: string2(), root: string2().optional(), linkBase: string2().optional(), revision: string2().optional() })).optional() });
-var stateSchema = looseObject({ projectId: string2().optional(), query: string2().optional(), selectedId: string2().optional(), filter: string2().optional(), showCompleted: boolean2().optional() });
-var note = defineNote({ state: { schema: stateSchema, initial: {} }, config: { schema: configSchema, defaults: {} }, update: { dataVersion: "cardgame-production@1", compatibleFrom: ["legacy", "cardgame-production@1"] } });
+var configSchema = looseObject({ cardgameRole: string2().optional(), notes: record(string2(), string2()).optional() });
+var stateSchema = object({ query: string2().optional(), selectedId: string2().optional() });
+var note = g({ state: { schema: stateSchema, initial: {} }, config: { schema: configSchema, defaults: {} }, update: { dataVersion: "cardgame-production@2", compatibleFrom: ["legacy", "cardgame-production@1", "cardgame-production@2"] } });
+
+// card-operations.ts
+var CARD_OPERATIONS = ["createCardBatch", "setCardDrafts", "saveCardDraft", "approveCardDrafts", "requestCardArt", "reuseCardArt", "attachCardArt", "assembleCardFaces", "integrateCard", "saveDeckPlan", "confirmDeckDraft", "prepareDeckArt", "stageDeckCandidate"];
+
+// card-face.ts
+var CARD_FACE_THEMES = [
+  { id: "jade", name: "青玉", description: "青玉牌框 · 大幅插画", version: 1 },
+  { id: "scroll", name: "宣纸", description: "宣纸卷轴 · 题签与留白", version: 1 }
+];
+
+// contracts.ts
+var json2 = json();
+var record2 = record(string2(), json2);
+var id = string2().min(1);
+var scope = { projectId: id.optional(), projectGeneration: id.optional() };
+var productionInput = looseObject({ ...scope, productionId: id });
+var cardOperations = _enum(CARD_OPERATIONS);
+var actionInputs = {
+  cardWorkflow: looseObject({ ...scope, operation: cardOperations, productionId: id.optional(), cardId: id.optional(), baseRevision: number2().optional(), requestId: id.optional() }),
+  discussCardBatch: productionInput.extend({ cardId: id.optional() }),
+  upsertRequest: looseObject({ ...scope, productionId: id.optional(), id: id.optional(), brief: string2(), targetAsset: record2.optional(), pinnedRefs: array(union([record2, string2()])).optional(), batch: json2.optional(), todoId: id.optional() }),
+  updateProduction: productionInput.extend({ baseRevision: number2(), requestId: id.optional(), patch: record2 }),
+  generate: productionInput.extend({ requestId: id.optional(), newRound: boolean2().optional(), round: number2().optional(), businessKey: id.optional(), scope: array(string2()).optional(), cwd: string2().optional() }),
+  bindExecution: productionInput.extend({ requestId: id, receipt: record2 }),
+  retry: productionInput,
+  newRound: productionInput.extend({ scope: array(string2()).optional(), cwd: string2().optional() }),
+  receiveResult: productionInput.extend({ requestId: id, round: number2().optional(), revision: number2().optional(), status: string2().optional(), result: record2.optional() }),
+  registerCandidates: productionInput.extend({ round: number2().optional(), candidates: array(record2), requestId: id.optional() }),
+  recordCandidates: productionInput.extend({ round: number2().optional(), candidates: array(record2), requestId: id }),
+  adoptAsset: productionInput.extend({ candidateId: id, assetId: id.optional(), versionId: id.optional(), requestId: id.optional() }),
+  recordAdoption: productionInput.extend({ candidateId: id, assetId: id, versionId: id, requestId: id }),
+  bindTodo: productionInput.extend({ todoId: id, todoBaseRevision: number2().optional(), productionBaseRevision: number2().optional() }),
+  rejectCandidate: productionInput.extend({ candidateId: id, baseRevision: number2(), reason: string2().optional(), requestId: id.optional() }),
+  linkCompanion: productionInput.extend({ baseRevision: number2(), todoId: id, sourceCardId: id, sourceRevision: id })
+};
+var queryInputs = {
+  projectBinding: object({}),
+  productionContext: productionInput,
+  companionChoices: looseObject(scope),
+  sourceCard: looseObject({ ...scope, id }),
+  featureChoices: object({}),
+  cardBatch: productionInput,
+  cardFaceThemes: looseObject(scope),
+  productions: looseObject({ ...scope, cursor: string2().optional(), limit: number2().optional(), q: string2().optional(), status: string2().optional(), todoId: id.optional() }),
+  production: productionInput.extend({ historyCursor: string2().optional(), historyLimit: number2().optional() }),
+  media: looseObject({ ...scope, path: string2().optional(), id: id.optional(), variant: string2().optional() }),
+  workflowStatus: looseObject(scope)
+};
+var candidateSchema = looseObject({ id: id.optional(), key: id.optional(), assetId: id.optional(), version: string2().optional(), versionId: id.optional(), sourcePath: string2().optional(), path: string2().optional(), mimeType: string2().optional(), width: number2().optional(), height: number2().optional(), durationMs: number2().optional(), revision: union([string2(), number2()]).optional(), rejectedAt: string2().optional(), rejectReason: string2().optional() });
+var roundSchema = looseObject({ round: number2(), requestId: id, requirementRevision: number2(), dispatchRevision: number2(), status: string2(), updatedAt: string2(), result: looseObject({ status: string2(), conclusion: string2().optional(), error: string2().optional(), candidateRefs: array(candidateSchema).optional() }).optional() });
+var gameCandidateSchema = looseObject({ id, cardId: string2(), fingerprint: string2(), status: _enum(["candidate", "adopted", "undone"]), deckArtFingerprints: record(string2(), string2()).optional() });
+var productionSchema = looseObject({
+  id,
+  projectId: id,
+  brief: string2(),
+  status: string2(),
+  revision: number2(),
+  requirementRevision: number2().optional(),
+  targetAsset: record2.optional(),
+  pinnedRefs: array(union([record2, string2()])).optional(),
+  batch: json2.optional(),
+  todoId: id.optional(),
+  featureId: id.optional(),
+  roundCount: number2().optional(),
+  currentRound: number2().optional(),
+  candidateCount: number2().optional(),
+  gameCandidateCount: number2().optional(),
+  rounds: array(roundSchema).optional(),
+  candidateRefs: array(candidateSchema).optional(),
+  gameCandidates: array(gameCandidateSchema).optional(),
+  adoption: looseObject({ status: string2(), candidateId: id }).optional(),
+  candidateRegistration: looseObject({ status: string2() }).optional(),
+  workflowKind: string2().optional(),
+  cardProgress: object({ total: number2(), done: number2() }).optional(),
+  deckProgress: object({ distinctCards: number2(), totalCopies: number2(), targetSize: number2(), title: string2() }).optional()
+});
+var effectSchema = looseObject({ text: string2().optional() });
+var editableBoostSchema = effectSchema.extend({ timing: literal("reaction"), target: looseObject({ scope: literal("singleAlly"), requiredLabelsAllOf: array(string2()).length(1) }), actions: array(looseObject({ type: literal("modifyAttack"), value: number2(), duration: literal("turn") })).length(1) });
+var definitionSchema = looseObject({ id, name: string2(), kind: string2(), description: string2().optional(), attack: number2().optional(), health: number2().optional(), effects: array(effectSchema).optional(), labels: array(string2()).optional(), cardFace: looseObject({ artwork: json2.optional() }).optional() });
+var pipelineCardSchema = looseObject({ definition: definitionSchema, artBrief: string2(), sourceRevision: string2().optional(), presentation: object({ themeId: _enum(CARD_FACE_THEMES.map((theme) => theme.id)), zoom: number2(), focus: number2() }), artRequest: object({ id, fingerprint: string2(), prompt: string2() }).optional(), artGeneration: looseObject({ requestId: id, status: _enum(["running", "ready", "failed", "unavailable"]), startedAt: string2(), error: string2().optional() }).optional(), art: looseObject({ id, revision: string2(), fingerprint: string2(), provider: _enum(["codex", "existing"]), sourceCardId: id.optional() }).optional(), assembly: object({ fingerprint: string2(), variants: record(string2(), object({ previewId: id, runtimeId: id })) }).optional() });
+var deckPlanSchema = looseObject({ id, title: string2(), targetSize: number2(), entries: array(object({ cardId: id, count: number2() })), basisBrief: string2(), approvedFingerprint: string2().optional() });
+var batchSchema = looseObject({ kind: literal("card-generation"), schemaVersion: literal(1), provider: literal("codex"), cards: array(pipelineCardSchema), deck: deckPlanSchema.optional(), draftOrigin: _enum(["agent", "user", "unknown"]).optional(), companion: object({ cardId: id, revision: string2() }).optional() });
+var deckInspectionSchema = looseObject({ status: string2(), next: string2(), totalCopies: number2(), distinctCards: number2(), targetSize: number2(), basisChanged: boolean2(), legal: boolean2(), confirmed: boolean2(), changedCardIds: array(string2()), candidateId: id.optional(), staleCandidateId: id.optional(), errors: array(string2()), warnings: array(string2()), checkScope: string2() });
+var cardBatchSchema = object({ production: productionSchema, batch: batchSchema, stages: record(string2(), string2()), deckInspection: deckInspectionSchema.optional() });
+var featureSchema = object({ id, title: string2() });
+var todoSchema = looseObject({ id, title: string2(), revision: number2(), status: string2(), productionId: id.optional() });
+var sourceCardSchema = looseObject({ id, name: string2(), kind: string2(), revision: string2(), json: definitionSchema });
+var productionDetailSchema = looseObject({ projectGeneration: id.optional(), production: productionSchema, execution: looseObject({ id: id.optional(), status: string2().optional(), updatedAt: string2().optional(), outcome: looseObject({ summary: string2().optional() }).optional(), delivery: looseObject({ status: string2().optional() }).optional() }).optional() });
+var productionReceiptSchema = looseObject({ production: productionSchema, revision: number2().optional(), stale: boolean2().optional(), request: object({ id, fingerprint: string2(), prompt: string2() }).optional(), reusedArt: boolean2().optional(), automaticGeneration: boolean2().optional(), handoff: string2().optional() });
+var preparedEventSchema = object({ name: _enum(["cardgame.production.generationRequested", "cardgame.production.candidatesRequested", "cardgame.production.adoptionRequested"]), key: id, payload: record2, result: record2 });
+var eventReceiptSchema = looseObject({ status: string2(), requestId: id, eventId: id, duplicate: boolean2().optional() });
+var queryOutputs = {
+  projectBinding: looseObject({ configured: boolean2(), projectId: id, projectRoot: string2().optional(), projectGeneration: string2().optional() }),
+  productionContext: object({ feature: featureSchema.optional(), todo: todoSchema.optional(), source: sourceCardSchema.optional() }),
+  companionChoices: object({ features: array(featureSchema), units: array(sourceCardSchema.omit({ json: true })), todos: array(todoSchema) }),
+  sourceCard: sourceCardSchema,
+  featureChoices: object({ items: array(featureSchema) }),
+  cardBatch: cardBatchSchema,
+  cardFaceThemes: looseObject({ items: array(object({ id, name: string2(), description: string2(), version: number2() })) }),
+  productions: looseObject({ items: array(productionSchema), nextCursor: string2().optional(), next: string2().optional(), revision: string2().optional(), total: number2().optional() }),
+  production: productionDetailSchema,
+  media: looseObject({ url: string2().optional(), src: string2().optional(), data: string2().optional(), mimeType: string2().optional(), width: number2().optional(), height: number2().optional(), durationMs: number2().optional(), revision: union([string2(), number2()]).optional() }),
+  workflowStatus: record2
+};
+function isCardBatch(value) {
+  return Boolean(value && typeof value === "object" && "kind" in value && value.kind === "card-generation");
+}
 
 // actions.ts
-async function cardWorkflow(input, ctx) {
-  const allowed = new Set(["createCardBatch", "setCardDrafts", "saveCardDraft", "approveCardDrafts", "requestCardArt", "reuseCardArt", "attachCardArt", "assembleCardFaces", "integrateCard", "saveDeckPlan", "confirmDeckDraft", "prepareDeckArt", "stageDeckCandidate"]);
-  if (!allowed.has(input.operation))
-    throw new Error("未知卡牌工作流动作");
-  const { operation, ...payload } = input;
-  return command(operation, { ...payload, projectId: await project(payload, ctx) }, ctx);
+async function command(method, input, ctx, output) {
+  return output.parse(await ctx.host.extensions.request("cardgame-content", method, input));
 }
-async function project(input, ctx) {
-  const configured = await ctx.config.read().catch(() => {
-    return;
-  });
-  const projectId = typeof input.projectId === "string" && input.projectId.trim() ? input.projectId.trim() : typeof configured?.value?.projectId === "string" && configured.value.projectId.trim() ? configured.value.projectId.trim() : "";
-  if (!projectId)
-    throw new Error("CardGame 便笺尚未配置 projectId");
-  return projectId;
-}
-async function command(method, input, ctx) {
-  return ctx.host.extensions.request("cardgame-content", method, input);
-}
-async function readOp(op, input, ctx) {
-  const projectId = await project(input, ctx);
-  const snapshot = await ctx.resources.read({ name: "extension.cardgame-content.query", input: { ...input, projectId, op } });
+async function readOp(op, input, ctx, output) {
+  const snapshot = await ctx.resources.read({ name: "extension.cardgame-content.query", input: { ...input, op } });
   if (snapshot.error && snapshot.data === undefined)
     throw new Error(snapshot.error);
-  if (snapshot.data === undefined)
-    throw new Error(`CardGame 制作查询 ${op} 没有返回数据`);
-  return snapshot.data;
+  return output.parse(snapshot.data);
 }
-function resultRecord(value) {
-  return value && typeof value === "object" && !Array.isArray(value) ? value : {};
+async function publishProduction(kind, input, ctx) {
+  const prepared = await command("prepareProductionEvent", { ...input, kind }, ctx, preparedEventSchema);
+  const event = await ctx.events.publish(prepared.name, prepared.payload, { key: prepared.key, exclusive: true });
+  return { ...prepared.result, status: "queued", requestId: typeof prepared.result.requestId === "string" ? prepared.result.requestId : prepared.key, eventId: event.id, duplicate: event.duplicate };
 }
-async function registerReturnedCandidates(projectId, productionId, round, requestId, candidates, ctx) {
-  if (!candidates.length)
-    return { status: "skipped", candidates: [] };
-  try {
-    const registrationRequestId = `asset-candidates:${projectId}:${productionId}:${round}:${requestId}`;
-    const event = await ctx.events.publish("cardgame.production.candidatesRequested", { projectId, productionId, round, requestId: registrationRequestId, candidates }, { key: registrationRequestId, exclusive: true });
-    return { status: "queued", requestId: registrationRequestId, eventId: event.id, duplicate: event.duplicate };
-  } catch (cause) {
-    return { status: "failed", error: cause instanceof Error ? cause.message : String(cause) };
+var cardWorkflow = note.action({ description: "卡牌专用工作流；保持人工确认、插画指纹和候选校验。", visibility: "public", input: actionInputs.cardWorkflow, output: productionReceiptSchema }, (ctx, { operation, ...input }) => command(operation, input, ctx, productionReceiptSchema));
+var upsertRequest = note.action({ description: "按 Todo 身份幂等建立或更新制作单草稿，不启动生成。", visibility: "public", receipt: "queryable", input: actionInputs.upsertRequest, output: productionReceiptSchema }, (ctx, input) => command("upsertProduction", input, ctx, productionReceiptSchema));
+var updateProduction = note.action({ description: "按原修订保存需求，冲突时保留草稿。", visibility: "public", input: actionInputs.updateProduction, output: productionReceiptSchema }, (ctx, input) => command("updateProduction", input, ctx, productionReceiptSchema));
+var generate = note.action({ description: "仅在用户明确点击生成后预留轮次并发布执行请求。", visibility: "public", receipt: "queryable", input: actionInputs.generate, output: eventReceiptSchema }, (ctx, input) => publishProduction("generation", input, ctx));
+var retry = note.action({ description: "恢复同一冻结轮次的交办，不另建任务。", visibility: "public", input: actionInputs.retry, output: eventReceiptSchema }, (ctx, input) => publishProduction("generation", { ...input, retry: true }, ctx));
+var newRound = note.action({ description: "保留原执行任务，明确开始新一轮。", visibility: "public", input: actionInputs.newRound, output: eventReceiptSchema }, (ctx, input) => publishProduction("generation", { ...input, newRound: true }, ctx));
+var bindExecution = note.action({ description: "把执行台回执绑定到原轮次，迟到回执不回退当前状态。", visibility: "public", receipt: "queryable", input: actionInputs.bindExecution, output: productionReceiptSchema }, (ctx, input) => command("bindProduction", input, ctx, productionReceiptSchema));
+var receiveResult = note.action({ description: "按请求、轮次和修订接收结果；过期结果只记历史。", visibility: "public", receipt: "queryable", input: actionInputs.receiveResult, output: productionReceiptSchema }, async (ctx, input) => {
+  const received = await command("productionResult", input, ctx, productionReceiptSchema);
+  if (received.stale)
+    return received;
+  const round = received.production.rounds?.find((round) => round.requestId === input.requestId && (input.round === undefined || round.round === input.round));
+  if (round?.result?.status === "completed" && round.result.candidateRefs?.length) {
+    try {
+      const assetRegistration = await publishProduction("candidates", { ...input, round: round.round, candidates: round.result.candidateRefs, sourceRequestId: input.requestId }, ctx);
+      return { ...received, assetRegistration };
+    } catch (cause) {
+      return { ...received, assetRegistration: { status: "failed", error: cause instanceof Error ? cause.message : String(cause) } };
+    }
   }
-}
-async function discussCardBatch(input, ctx) {
-  const projectId = await project(input, ctx);
-  const detail = await readOp("cardBatch", { projectId, productionId: input.productionId }, ctx);
+  return received;
+});
+var registerCandidates = note.action({ description: "登记当前轮次真实文件，回填资源服务的候选身份。", visibility: "public", receipt: "queryable", input: actionInputs.registerCandidates, output: eventReceiptSchema }, (ctx, input) => publishProduction("candidates", input, ctx));
+var recordCandidates = note.action({ description: "记录资源服务已验证的当前轮次候选回执。", visibility: "public", receipt: "queryable", input: actionInputs.recordCandidates, output: productionReceiptSchema }, (ctx, input) => command("recordCandidates", input, ctx, productionReceiptSchema));
+var adoptAsset = note.action({ description: "旧接口兼容：通用素材直接采用未开放；请查看/复制候选，卡牌与牌组走试玩候选及功能进展确认。", visibility: "public", receipt: "queryable", input: actionInputs.adoptAsset, output: eventReceiptSchema }, (ctx, input) => publishProduction("adoption", input, ctx));
+var recordAdoption = note.action({ description: "记录资源服务已采用的确切版本回执。", visibility: "public", receipt: "queryable", input: actionInputs.recordAdoption, output: productionReceiptSchema }, (ctx, input) => command("recordAdoption", input, ctx, productionReceiptSchema));
+var bindTodo = note.action({ description: "持久绑定来源待办与制作单。", visibility: "public", input: actionInputs.bindTodo, output: productionReceiptSchema }, (ctx, input) => command("bindTodo", input, ctx, productionReceiptSchema));
+var rejectCandidate = note.action({ description: "否决候选并建立高优先级返工待办。", visibility: "public", input: actionInputs.rejectCandidate, output: productionReceiptSchema }, (ctx, input) => command("rejectCandidate", input, ctx, productionReceiptSchema));
+var discussCardBatch = note.action({ description: "在原生便笺会话继续设计卡牌，停在用户确认。", visibility: "public", input: actionInputs.discussCardBatch, output: object({ sessionId: string2() }).loose() }, async (ctx, input) => {
+  const detail = await readOp("cardBatch", input, ctx, queryOutputs.cardBatch);
   if (!ctx.host.agent.prepare)
     throw new Error("宿主没有提供原生会话");
   const session = await ctx.host.agent.prepare({ noteId: ctx.note.id });
   const prompt = [
-    `用户要继续卡牌工作流：${detail.production.brief}。projectId=${projectId}，productionId=${input.productionId}，baseRevision=${detail.production.revision}。`,
-    input.cardId ? `当前选中卡牌：${input.cardId}。先读取 cardBatch，再按用户要求微调。` : "请结合项目现有 units.json、效果类型和世界观生成卡组草稿，并调用 cardWorkflow(operation=setCardDrafts) 保存，不要只在对话中输出。",
-    ...detail.batch?.deck ? [`这是独立牌组制作：${detail.batch.deck.title}，目标 ${detail.batch.deck.targetSize} 张总量（不是牌种数）。先读取现有规则与同类卡，设计原创命名、合法效果和副本数量。用 setCardDrafts 同时保存 cards 与 deckPlan（保留 id=${detail.batch.deck.id}，entries=[{cardId,count}]，总量等于 targetSize）。不要写入正式默认牌组，不调用生图；停在用户确认整套草案。单张修改用 saveCardDraft，数量调整用 saveDeckPlan，保留其余卡与素材。`] : [],
-    "沿用原有执行效果结构。已确认卡牌用 saveCardDraft 逐张修改；不能覆盖人工确认。停在人工微调步骤，由用户核对。",
-    "插画由 Codex 内置 imagegen 承接；本宿主没有该生图接口时保存 requestCardArt 交接，不得假装已生成或改用收费接口。"
+    `用户要继续卡牌工作流：${detail.production.brief}。productionId=${input.productionId}，baseRevision=${detail.production.revision}。`,
+    input.cardId ? `当前选中卡牌：${input.cardId}。先读取 cardBatch，再按用户要求微调。` : "结合项目现有 units.json、效果类型和世界观生成卡组草稿，调用 cardWorkflow(operation=setCardDrafts) 保存，不要只在对话输出。",
+    ...detail.batch.deck ? [`独立牌组：${detail.batch.deck.title}，目标 ${detail.batch.deck.targetSize} 张总量。用 setCardDrafts 同时保存 cards 与 deckPlan，保留 id=${detail.batch.deck.id}，entries=[{cardId,count}] 总量等于 targetSize。不要写正式默认牌组，不调用生图，停在用户确认整套草案。单卡用 saveCardDraft，数量用 saveDeckPlan，保留其他素材。`] : [],
+    "沿用原有执行效果结构。已确认卡牌逐张修改；不能覆盖人工确认。停在人工微调步骤。",
+    "插画由 Codex 内置 imagegen 承接；不可用时保存 requestCardArt 交接，不得假装已生成或改用收费接口。"
   ].join(`
 `);
   await ctx.host.agent.run({ noteId: ctx.note.id, sessionId: session.sessionId, prompt });
   return session;
+});
+var linkCompanion = note.action({ description: "补全制作单的配套来源和待办关联。", visibility: "public", input: actionInputs.linkCompanion, output: productionReceiptSchema }, (ctx, input) => command("linkCardCompanion", input, ctx, productionReceiptSchema));
+async function featureChoices(ctx) {
+  const owner = await ctx.notes.read(ctx.note.id), notes = await ctx.notes.lookup({ desktopId: owner.desktopId });
+  const trackers = notes.filter((note2) => !note2.archived && note2.actions?.includes("setArchiveStatus") && note2.actions?.includes("confirmGameCandidate"));
+  if (trackers.length !== 1)
+    throw new Error(trackers.length ? "本桌面有多个功能进展便笺，请先确定使用哪一个" : "本桌面没有可用的功能进展便笺");
+  const snapshot = await ctx.resources.read({ name: "extension.official-feature-tracker.state", input: { targetNoteId: trackers[0].id } });
+  if (snapshot.error && snapshot.data === undefined)
+    throw new Error(snapshot.error);
+  return { items: (snapshot.data?.features ?? []).filter((item) => !item.archived).map(({ id, title }) => ({ id, title })) };
 }
-async function upsertRequest(input, ctx) {
-  const projectId = await project(input, ctx);
-  return command("upsertProduction", { ...input, projectId }, ctx);
-}
-async function updateProduction(input, ctx) {
-  return command("updateProduction", { ...input, projectId: await project(input, ctx) }, ctx);
-}
-async function generate(input, ctx) {
-  const projectId = await project(input, ctx);
-  const reserved = await command("reserveProduction", { ...input, projectId }, ctx);
-  const requestId = reserved.requestId;
-  const submit = reserved.submit ?? reserved.input;
-  const event = await ctx.events.publish("cardgame.production.generationRequested", { projectId, productionId: input.productionId, requestId, round: reserved.round?.round, submit }, { key: requestId, exclusive: true });
-  return { ...reserved, status: "queued", eventId: event.id, duplicate: event.duplicate };
-}
-async function bindExecution(input, ctx) {
-  return command("bindProduction", { ...input, projectId: await project(input, ctx) }, ctx);
-}
-async function retry(input, ctx) {
-  const projectId = await project(input, ctx);
-  const detail = await readOp("production", { projectId, productionId: input.productionId }, ctx);
-  const round = detail.production?.rounds?.at(-1);
-  if (!round?.requestId)
-    throw new Error("当前制作请求还没有可重试轮次");
-  return generate({ projectId, productionId: input.productionId, requestId: round.requestId, round: round.round }, ctx);
-}
-async function newRound(input, ctx) {
-  return generate({ ...input, newRound: true }, ctx);
-}
-async function receiveResult(input, ctx) {
-  const projectId = await project(input, ctx);
-  const received = await command("productionResult", { ...input, projectId }, ctx);
-  if (received?.stale)
-    return received;
-  const production = resultRecord(received?.production);
-  const requestId = typeof input.requestId === "string" ? input.requestId : "";
-  const roundValue = typeof input.round === "number" ? input.round : Number(input.round);
-  const round = Array.isArray(production.rounds) ? production.rounds.find((value) => value?.requestId === requestId && (Number.isNaN(roundValue) || value?.round === roundValue)) : undefined;
-  const result = resultRecord(round?.result);
-  const status = typeof result.status === "string" ? result.status : typeof input.status === "string" ? input.status : "completed";
-  const candidates = Array.isArray(result.candidateRefs) ? result.candidateRefs.filter((value) => Boolean(value && typeof value === "object" && !Array.isArray(value))) : [];
-  const registrationComplete = production.candidateRegistration?.status === "completed";
-  if (status === "completed" && !registrationComplete && typeof input.productionId === "string" && requestId && typeof round?.round === "number") {
-    const assetRegistration = await registerReturnedCandidates(input.projectId, input.productionId, round.round, requestId, candidates, ctx);
-    return { ...received, assetRegistration };
-  }
-  return received;
-}
-async function registerCandidates(input, ctx) {
-  const projectId = await project(input, ctx);
-  const requestId = input.requestId ?? `asset-candidates:${projectId}:${input.productionId}:${input.round ?? 0}`;
-  const event = await ctx.events.publish("cardgame.production.candidatesRequested", { ...input, projectId, requestId }, { key: requestId, exclusive: true });
-  return { status: "queued", requestId, eventId: event.id, duplicate: event.duplicate };
-}
-async function recordCandidates(input, ctx) {
-  return command("recordCandidates", { ...input, projectId: await project(input, ctx) }, ctx);
-}
-async function adoptAsset(input, ctx) {
-  const projectId = await project(input, ctx);
-  const requestId = input.requestId ?? `adopt-asset:${projectId}:${input.productionId}:${input.candidateId}`;
-  const event = await ctx.events.publish("cardgame.production.adoptionRequested", { ...input, projectId, requestId }, { key: requestId, exclusive: true });
-  return { status: "queued", requestId, eventId: event.id, duplicate: event.duplicate };
-}
-async function recordAdoption(input, ctx) {
-  return command("recordAdoption", { ...input, projectId: await project(input, ctx) }, ctx);
-}
-async function bindTodo(input, ctx) {
-  return command("bindTodo", { ...input, projectId: await project(input, ctx) }, ctx);
-}
-async function rejectCandidate(input, ctx) {
-  const projectId = await project(input, ctx);
-  if (!input.candidateId)
-    throw new Error("rejectCandidate 需要 candidateId");
-  const requestId = input.requestId ?? `reject-candidate:${projectId}:${input.productionId}:${input.candidateId}`;
-  return command("rejectCandidate", { ...input, projectId, requestId }, ctx);
-}
-async function linkCompanion(input, ctx) {
-  const projectId = await project(input, ctx);
-  const [detail, todo, source] = await Promise.all([readOp("production", { projectId, productionId: input.productionId }, ctx), readOp("todo", { projectId, id: input.todoId }, ctx), readOp("card", { projectId, id: input.sourceCardId }, ctx)]);
-  if (detail.production.revision !== input.baseRevision)
-    throw new Error("制作单已变化，请刷新后重试");
-  if (todo.item.productionId && todo.item.productionId !== input.productionId)
-    throw new Error("待办已关联另一制作单");
-  if (source.kind !== "unit" || source.revision !== input.sourceRevision)
-    throw new Error("配套单位已变化，请刷新后重试");
-  if (detail.production.batch?.kind !== "card-generation")
-    throw new Error("这不是卡牌制作单");
-  const companion = { cardId: source.id, revision: source.revision };
-  const result = await command("updateProduction", { projectId, productionId: input.productionId, baseRevision: input.baseRevision, patch: { batch: { ...detail.production.batch, companion } } }, ctx);
-  return command("bindTodo", { projectId, productionId: input.productionId, todoId: input.todoId, todoBaseRevision: todo.item.revision, productionBaseRevision: result.revision }, ctx);
-}
-var operationQueries = {
-  async productionContext(input, ctx) {
-    const [detail, choices] = await Promise.all([readOp("production", input, ctx), queries.featureChoices({}, ctx)]);
-    const production = detail.production;
-    const [todo, source] = await Promise.all([production.todoId ? readOp("todo", { projectId: input.projectId, id: production.todoId }, ctx) : undefined, production.batch?.companion ? readOp("card", { projectId: input.projectId, id: production.batch.companion.cardId }, ctx) : undefined]);
-    return { feature: choices.items.find((item) => item.id === production.featureId), todo: todo?.item, source };
-  },
-  async companionChoices(input, ctx) {
-    const [features, units, todos] = await Promise.all([queries.featureChoices({}, ctx), readOp("cards", { ...input, kind: "unit", limit: 200 }, ctx), readOp("todos", { ...input, limit: 200 }, ctx)]);
-    return { features: features.items, units: (units.items ?? []).filter((item) => item.kind === "unit"), todos: (todos.items ?? []).filter((item) => !item.productionId && item.status !== "done") };
-  },
-  async sourceCard(input, ctx) {
-    return readOp("card", input, ctx);
-  },
-  async featureChoices(_input, ctx) {
-    const owner = await ctx.notes.read(ctx.note.id);
-    const notes = await ctx.notes.lookup({ desktopId: owner.desktopId });
-    const trackers = notes.filter((note2) => !note2.archived && note2.actions?.includes("setArchiveStatus") && note2.actions?.includes("confirmGameCandidate"));
-    if (trackers.length !== 1)
-      throw new Error(trackers.length ? "本桌面有多个功能进展便笺，请先确定使用哪一个" : "本桌面没有可用的功能进展便笺");
-    const snapshot = await ctx.resources.read({ name: "extension.official-feature-tracker.state", input: { targetNoteId: trackers[0].id } });
-    if (snapshot.error && snapshot.data === undefined)
-      throw new Error(snapshot.error);
-    return { items: Array.isArray(snapshot.data?.features) ? snapshot.data.features.filter((item) => !item.archived).map((item) => ({ id: String(item.id), title: String(item.title) })) : [] };
-  },
-  async cardBatch(input, ctx) {
-    return readOp("cardBatch", input, ctx);
-  },
-  async cardFaceThemes(input, ctx) {
-    return readOp("cardFaceThemes", input, ctx);
-  },
-  async productions(input, ctx) {
-    return readOp("productions", input, ctx);
-  },
-  async production(input, ctx) {
-    return readOp("production", { ...input, id: input.productionId }, ctx);
-  },
-  async media(input, ctx) {
-    return readOp("media", input, ctx);
-  },
-  async workflowStatus(input, ctx) {
-    return readOp("workflowStatus", input, ctx);
-  }
-};
-function jsonResult(value) {
-  return JSON.parse(JSON.stringify(value ?? null));
-}
-var action_cardWorkflow = note.action({ ...{ description: "cardWorkflow", visibility: "public" }, input: looseObject({ operation: string2() }), output: json() }, async (ctx, input) => jsonResult(await cardWorkflow(input, ctx)));
-var action_discussCardBatch = note.action({ ...{ description: "discussCardBatch", visibility: "public" }, input: looseObject({ projectId: string2(), productionId: string2(), cardId: string2().optional() }), output: json() }, async (ctx, input) => jsonResult(await discussCardBatch(input, ctx)));
-var action_upsertRequest = note.action({ ...{ description: "按 Todo 身份幂等建立或更新制作单草稿，不启动生成。", visibility: "public", receipt: "queryable" }, input: looseObject({ projectId: string2(), productionId: string2().optional(), id: string2().optional(), brief: string2(), targetAsset: record(string2(), json()).optional(), pinnedRefs: array(union([record(string2(), json()), string2()])).optional(), batch: json().optional(), todoId: string2().optional() }), output: json() }, async (ctx, input) => jsonResult(await upsertRequest(input, ctx)));
-var action_updateProduction = note.action({ ...{ description: "updateProduction", visibility: "public" }, input: looseObject({ projectId: string2(), productionId: string2(), baseRevision: number2(), patch: record(string2(), json()) }), output: json() }, async (ctx, input) => jsonResult(await updateProduction(input, ctx)));
-var action_generate = note.action({ ...{ description: "仅在用户明确点击生成后预留轮次并发布执行请求。", visibility: "public", receipt: "queryable" }, input: looseObject({ projectId: string2(), productionId: string2(), requestId: string2().optional(), newRound: boolean2().optional(), round: number2().optional(), businessKey: string2().optional(), scope: array(string2()).optional(), cwd: string2().optional() }), output: json() }, async (ctx, input) => jsonResult(await generate(input, ctx)));
-var action_bindExecution = note.action({ ...{ description: "把执行台回执及任务 ID 记录到原制作轮次。", visibility: "public", receipt: "queryable" }, input: looseObject({ projectId: string2(), productionId: string2(), requestId: string2(), receipt: record(string2(), json()) }), output: json() }, async (ctx, input) => jsonResult(await bindExecution(input, ctx)));
-var action_retry = note.action({ ...{ description: "retry", visibility: "public" }, input: looseObject({ projectId: string2(), productionId: string2() }), output: json() }, async (ctx, input) => jsonResult(await retry(input, ctx)));
-var action_newRound = note.action({ ...{ description: "newRound", visibility: "public" }, input: looseObject({ projectId: string2(), productionId: string2(), scope: array(string2()).optional(), cwd: string2().optional() }), output: json() }, async (ctx, input) => jsonResult(await newRound(input, ctx)));
-var action_receiveResult = note.action({ ...{ description: "按请求 ID、轮次和需求修订接收执行结果；过期轮次只记历史。", visibility: "public", receipt: "queryable" }, input: record(string2(), json()), output: json() }, async (ctx, input) => jsonResult(await receiveResult(input, ctx)));
-var action_registerCandidates = note.action({ ...{ description: "发布向资源库登记候选版本的请求。", visibility: "public", receipt: "queryable" }, input: looseObject({ projectId: string2(), productionId: string2(), round: number2().optional(), candidates: array(record(string2(), json())), requestId: string2().optional() }), output: json() }, async (ctx, input) => jsonResult(await registerCandidates(input, ctx)));
-var action_recordCandidates = note.action({ ...{ description: "记录资源库回执中的候选版本身份。", visibility: "public", receipt: "queryable" }, input: looseObject({ projectId: string2(), productionId: string2(), round: number2().optional(), candidates: array(record(string2(), json())), requestId: string2() }), output: json() }, async (ctx, input) => jsonResult(await recordCandidates(input, ctx)));
-var action_adoptAsset = note.action({ ...{ description: "用户明确选择候选后发布资源采用请求。", visibility: "public", receipt: "queryable" }, input: looseObject({ projectId: string2(), productionId: string2(), candidateId: string2(), assetId: string2().optional(), versionId: string2().optional(), requestId: string2().optional() }), output: json() }, async (ctx, input) => jsonResult(await adoptAsset(input, ctx)));
-var action_recordAdoption = note.action({ ...{ description: "记录资源库回执中的采用版本身份。", visibility: "public", receipt: "queryable" }, input: looseObject({ projectId: string2(), productionId: string2(), candidateId: string2(), assetId: string2(), versionId: string2(), requestId: string2() }), output: json() }, async (ctx, input) => jsonResult(await recordAdoption(input, ctx)));
-var action_bindTodo = note.action({ ...{ description: "把制作单 ID 与来源 Todo ID 双向持久化绑定。", visibility: "public", receipt: "queryable" }, input: looseObject({ projectId: string2(), todoId: string2(), productionId: string2(), todoBaseRevision: number2().optional(), productionBaseRevision: number2().optional() }), output: json() }, async (ctx, input) => jsonResult(await bindTodo(input, ctx)));
-var action_rejectCandidate = note.action({ ...{ description: "rejectCandidate", visibility: "public" }, input: looseObject({ projectId: string2(), productionId: string2(), candidateId: string2(), baseRevision: number2(), reason: string2().optional(), requestId: string2().optional() }), output: json() }, async (ctx, input) => jsonResult(await rejectCandidate(input, ctx)));
-var action_linkCompanion = note.action({ ...{ description: "linkCompanion", visibility: "public" }, input: looseObject({ projectId: string2(), productionId: string2(), baseRevision: number2(), todoId: string2(), sourceCardId: string2(), sourceRevision: string2() }), output: json() }, async (ctx, input) => jsonResult(await linkCompanion(input, ctx)));
 var queries = {
-  productionContext: note.query({ ...{ description: "productionContext", visibility: "public" }, input: looseObject({ projectId: string2(), productionId: string2() }).nullable(), output: json() }, async (ctx, input) => jsonResult(await operationQueries["productionContext"](input ?? {}, ctx))),
-  companionChoices: note.query({ ...{ description: "companionChoices", visibility: "public" }, input: looseObject({ projectId: string2() }).nullable(), output: json() }, async (ctx, input) => jsonResult(await operationQueries["companionChoices"](input ?? {}, ctx))),
-  sourceCard: note.query({ ...{ description: "sourceCard", visibility: "public" }, input: looseObject({ projectId: string2(), id: string2() }).nullable(), output: json() }, async (ctx, input) => jsonResult(await operationQueries["sourceCard"](input ?? {}, ctx))),
-  featureChoices: note.query({ ...{ description: "featureChoices", visibility: "public" }, input: json().nullable(), output: json() }, async (ctx, input) => jsonResult(await operationQueries["featureChoices"](input ?? {}, ctx))),
-  cardBatch: note.query({ ...{ description: "cardBatch", visibility: "public" }, input: looseObject({ projectId: string2(), productionId: string2() }).nullable(), output: json() }, async (ctx, input) => jsonResult(await operationQueries["cardBatch"](input ?? {}, ctx))),
-  cardFaceThemes: note.query({ ...{ description: "cardFaceThemes", visibility: "public" }, input: looseObject({ projectId: string2() }).nullable(), output: json() }, async (ctx, input) => jsonResult(await operationQueries["cardFaceThemes"](input ?? {}, ctx))),
-  productions: note.query({ ...{ description: "按项目和 Todo ID 分页核对已有制作单。", visibility: "public" }, input: looseObject({ projectId: string2(), cursor: string2().optional(), limit: number2().optional(), q: string2().optional(), status: string2().optional(), todoId: string2().optional() }).nullable(), output: json() }, async (ctx, input) => jsonResult(await operationQueries["productions"](input ?? {}, ctx))),
-  production: note.query({ ...{ description: "按项目和制作单 ID 读取当前要求、轮次及回执。", visibility: "public" }, input: looseObject({ projectId: string2(), productionId: string2(), historyCursor: string2().optional(), historyLimit: number2().optional() }).nullable(), output: json() }, async (ctx, input) => jsonResult(await operationQueries["production"](input ?? {}, ctx))),
-  media: note.query({ ...{ description: "media", visibility: "public" }, input: looseObject({ projectId: string2(), path: string2().optional(), id: string2().optional(), variant: string2().optional() }).nullable(), output: json() }, async (ctx, input) => jsonResult(await operationQueries["media"](input ?? {}, ctx))),
-  workflowStatus: note.query({ ...{ description: "workflowStatus", visibility: "public" }, input: looseObject({ projectId: string2() }).nullable(), output: json() }, async (ctx, input) => jsonResult(await operationQueries["workflowStatus"](input ?? {}, ctx)))
+  productionDispatch: note.query({ description: "读取已有轮次的冻结交办快照，用于同请求重试和旧回执核对。", input: actionInputs.bindExecution.omit({ receipt: true }).extend({ round: number2() }), output: record2 }, (ctx, input) => readOp("productionDispatch", input, ctx, record2)),
+  projectBinding: note.query({ description: "读取宿主持久项目绑定状态与代次。", input: queryInputs.projectBinding, output: queryOutputs.projectBinding }, (ctx, input) => readOp("projectBinding", input, ctx, queryOutputs.projectBinding)),
+  productionContext: note.query({ description: "读取制作单关联的功能、待办与配套来源。", input: queryInputs.productionContext, output: queryOutputs.productionContext }, async (ctx, input) => {
+    const [detail, choices] = await Promise.all([readOp("production", input, ctx, queryOutputs.production), featureChoices(ctx)]);
+    const p = detail.production;
+    const [todo, source] = await Promise.all([p.todoId ? readOp("todo", { ...input, id: p.todoId }, ctx, object({ item: queryOutputs.companionChoices.shape.todos.element })) : undefined, isCardBatch(p.batch) && p.batch.companion ? readOp("card", { ...input, id: p.batch.companion.cardId }, ctx, queryOutputs.sourceCard) : undefined]);
+    return { feature: choices.items.find((item) => item.id === p.featureId), todo: todo?.item, source };
+  }),
+  companionChoices: note.query({ description: "读取可关联的功能、单位和未绑定待办。", input: queryInputs.companionChoices, output: queryOutputs.companionChoices }, async (ctx, input) => {
+    const [features, units, todos] = await Promise.all([featureChoices(ctx), readOp("cards", { ...input, kind: "unit", limit: 200 }, ctx, object({ items: queryOutputs.companionChoices.shape.units })), readOp("todos", { ...input, limit: 200 }, ctx, object({ items: queryOutputs.companionChoices.shape.todos }))]);
+    return { features: features.items, units: units.items.filter((item) => item.kind === "unit"), todos: todos.items.filter((item) => !item.productionId && item.status !== "done") };
+  }),
+  featureChoices: note.query({ description: "读取当前桌面的可选功能项。", input: queryInputs.featureChoices, output: queryOutputs.featureChoices }, (ctx) => featureChoices(ctx)),
+  sourceCard: note.query({ description: "读取用于配套或插画复用的真实来源卡牌。", input: queryInputs.sourceCard, output: queryOutputs.sourceCard }, (ctx, input) => readOp("card", input, ctx, queryOutputs.sourceCard)),
+  cardBatch: note.query({ description: "读取卡牌批次、逐卡阶段及牌组验收报告。", input: queryInputs.cardBatch, output: queryOutputs.cardBatch }, (ctx, input) => readOp("cardBatch", input, ctx, queryOutputs.cardBatch)),
+  cardFaceThemes: note.query({ description: "读取卡面主题及当前生图能力。", input: queryInputs.cardFaceThemes, output: queryOutputs.cardFaceThemes }, (ctx, input) => readOp("cardFaceThemes", input, ctx, queryOutputs.cardFaceThemes)),
+  productions: note.query({ description: "分页读取制作单。", input: queryInputs.productions, output: queryOutputs.productions }, async (ctx, input) => {
+    const page = await readOp("productions", input, ctx, queryOutputs.productions);
+    return { ...page, ...page.nextCursor ? { next: page.nextCursor } : {} };
+  }),
+  production: note.query({ description: "读取原需求、轮次及回执。", input: queryInputs.production, output: queryOutputs.production }, (ctx, input) => readOp("production", { ...input, id: input.productionId }, ctx, queryOutputs.production)),
+  media: note.query({ description: "解析已登记资源的只读媒体预览。", input: queryInputs.media, output: queryOutputs.media }, (ctx, input) => readOp("media", input, ctx, queryOutputs.media)),
+  workflowStatus: note.query({ description: "读取制作与待办工作流概要。", input: queryInputs.workflowStatus, output: queryOutputs.workflowStatus }, (ctx, input) => readOp("workflowStatus", input, ctx, queryOutputs.workflowStatus))
 };
-var setViewState = note.action({ description: "保存本便笺的界面选择，核对当前修订。", visibility: "private", requiresConfig: false, input: object({ patch: record(string2(), json()), expectedRevision: string2() }), output: object({ revision: string2() }) }, async (ctx, input) => {
+var setViewState = note.action({ description: "保存本便笺界面选择。", visibility: "private", requiresConfig: false, input: object({ patch: stateSchema.partial(), expectedRevision: string2() }), output: object({ revision: string2() }) }, async (ctx, input) => {
   const saved = await ctx.state.update((draft) => {
     Object.assign(draft, input.patch);
   }, { expectedRevision: input.expectedRevision });
   return { revision: saved.revision };
 });
-var events = { event0: note.event({ ...{ name: "cardgame.production.generationRequested", description: "准确的制作轮次和请求 ID 已持久化，等待执行台接收。", objectRef: "/productionId", revision: "/round", visibility: "public" }, payload: json() }), event1: note.event({ ...{ name: "cardgame.production.candidatesRequested", description: "向资源库登记制作结果的候选文件并回填实际版本 ID。", objectRef: "/productionId", visibility: "public" }, payload: json() }), event2: note.event({ ...{ name: "cardgame.production.adoptionRequested", description: "用户明确采用一个候选版本；回执须保留实际资源与版本 ID。", objectRef: "/candidateId", visibility: "public" }, payload: json() }) };
+var events = {
+  generation: note.event({ name: "cardgame.production.generationRequested", description: "准确轮次已持久化，等待执行台接收。", objectRef: "/productionId", revision: "/round", visibility: "public", payload: record2 }),
+  candidates: note.event({ name: "cardgame.production.candidatesRequested", description: "登记候选文件并回填实际版本。", objectRef: "/productionId", visibility: "public", payload: record2 }),
+  adoption: note.event({ name: "cardgame.production.adoptionRequested", description: "仅用于核对旧版采用请求，不自动采用资源。", objectRef: "/candidateId", visibility: "public", payload: record2 })
+};
 export {
-  action_adoptAsset as adoptAsset,
-  action_bindExecution as bindExecution,
-  action_bindTodo as bindTodo,
-  action_cardWorkflow as cardWorkflow,
-  action_discussCardBatch as discussCardBatch,
+  adoptAsset,
+  bindExecution,
+  bindTodo,
+  cardWorkflow,
+  discussCardBatch,
   events,
-  action_generate as generate,
-  action_linkCompanion as linkCompanion,
-  action_newRound as newRound,
+  generate,
+  linkCompanion,
+  newRound,
   note,
   queries,
-  action_receiveResult as receiveResult,
-  action_recordAdoption as recordAdoption,
-  action_recordCandidates as recordCandidates,
-  action_registerCandidates as registerCandidates,
-  action_rejectCandidate as rejectCandidate,
-  action_retry as retry,
+  receiveResult,
+  recordAdoption,
+  recordCandidates,
+  registerCandidates,
+  rejectCandidate,
+  retry,
   setViewState,
-  action_updateProduction as updateProduction,
-  action_upsertRequest as upsertRequest
+  updateProduction,
+  upsertRequest
 };

@@ -9,9 +9,9 @@
   "files": {
     ".gitattributes": "d6504560a89539dfc9e0a7d9d0b37e48d526efd4b5d52f12d836704ba5545256",
     "LICENSE": "b51593dd875fcde7a5af0c84ca7b67b96ed5c2d174d9f5ca178d8bd07a2a6a50",
-    "README.md": "680cf8f6f6f80dd1eaa546c0449e3bafa18519aa2e888ef240777f62956031e9",
-    "dist/plugin.js": "f790023e45d9024cf1dae972414a1cb5d1f23b9121bad1b639843a427554d44b",
-    "package.json": "e8d18f0dd9bcef6ef442f9d13fca3a7e41a723bf30b75672c5336c01cf5ed19f",
+    "README.md": "da5c2b207efb28ff1783b346d1fe487ee40b3b050e7c3920858d4b7ad03c58f0",
+    "dist/plugin.js": "1ffa14d446992f7f87d95073c65f7382e6b232b349731c3a32a0de82cb2ab2e9",
+    "package.json": "2164bc24e83999dfffdfad2e839e6b037934d5cc4b098cade6e324b623f2ce34",
     "plugins/cardgame-content/analysis/battle-browser-adapter.ts": "73f0ef40e256fa6ffc5c7e17d3066a290206a3d7b06e8310893c73bf7bfe950c",
     "plugins/cardgame-content/analysis/battle-server.ts": "e0e5fcec36215a41ca86767da390a8cbc0c449e55a9d7b18f09a9758e7762cbe",
     "plugins/cardgame-content/analysis/story-runner.ts": "5ddee2e997417affb9712bdd4b9553f3c9b49c51c703809ab55a7c46238ad411",
@@ -21,7 +21,7 @@
     "plugins/cardgame-content/src/battle-experiment.ts": "6d46fe49dcf37f2ff92927554ea6fd3427967eee60c2e8492c4620f048eb3111",
     "plugins/cardgame-content/src/battle-snapshot.ts": "9179eb743dc3478d79641986eb41c88be379e09d47b6e7542c9dc8e4bbd64ff2",
     "plugins/cardgame-content/src/card-collections.ts": "5bbb26f3cf63f73b860bce9b2f50b6aad50aa622f9e86c35777de7b67fb14579",
-    "plugins/cardgame-content/src/card-pipeline.ts": "5da3fa2a0d9612facbe92027bd66bd8d75a8fcfc9337c5b59e95431ae14bba6f",
+    "plugins/cardgame-content/src/card-pipeline.ts": "8e71b13cd688f7022de1c14aaea4aa7da5a0b293f236a5ed56461eee064a2501",
     "plugins/cardgame-content/src/changes.ts": "1f92f1745b1098c7a35e2da3bc6c115459ae7846fc367874b5fdc9484136128e",
     "plugins/cardgame-content/src/codex-imagegen.ts": "ccf2c6928275519063c3780958ff678d7c56fcfc1de876e1b6e6f08120b4c041",
     "plugins/cardgame-content/src/content.ts": "a978f9ce531ab80006f4a2d19eca52d29c44e2760b7d4217e5fc8957c55c83c2",
@@ -29,20 +29,20 @@
     "plugins/cardgame-content/src/deck-plan.ts": "12362d606db6b380be8b8c1fa8d08ee613f2468f0529a1186bece1fcdc166929",
     "plugins/cardgame-content/src/formal-preview.ts": "0f55cfebf48d3788f4c28c229dbd5c5c46e65165391fa7a3c11d37d0a00a385b",
     "plugins/cardgame-content/src/game-adoption.ts": "827b583d285613f8d492e9c21f4452ab8016ff0b6dd6daa8e0d8d598a1bb6883",
-    "plugins/cardgame-content/src/game-candidates.ts": "64c752afe076194ddce2cf005705a423346692d0639c3fb10aa0749c2aa1d88b",
+    "plugins/cardgame-content/src/game-candidates.ts": "4705d390443813c0e8295955ed35bd19abd1daf66f9278289b6301661429bd8b",
     "plugins/cardgame-content/src/media.ts": "5ad87de291e081b53464c34721b8e727cd159e873c0c786859e615f31c3ae021",
     "plugins/cardgame-content/src/native-guard.ts": "6eb37a361310a18c72f94e1e0bd598cf355767ff1244ef43459a0dbaf684edbb",
     "plugins/cardgame-content/src/path-safety.ts": "d6b83f8e93def9a32f3cccadf1c52be157747da4179b16151262f0928ad8567f",
     "plugins/cardgame-content/src/pinned-references.ts": "efd12e066fa201e1676725f6ccf7c4a7775b13dc2d226cbffbeb12e2285f2967",
-    "plugins/cardgame-content/src/registration.ts": "120165a5f71082c2169b56df15dd8ca7483c7df7bb9e15ea0f59ec471cfc4023",
+    "plugins/cardgame-content/src/production-events.ts": "5e76810e0a47b45a66c60881c482c6290ba0a1f962937bc462420a97e73b0d0d",
+    "plugins/cardgame-content/src/registration.ts": "a354bd155a4f48e443d29d02048f1b0110311ab55e41f230ea4a5d110b31ea77",
     "plugins/cardgame-content/src/story-analysis.ts": "b0f17afb48e19c0161d2f054436b568fe75bb01ce45046241173b91f9b9bff12",
     "plugins/cardgame-content/src/story-copy-edits.ts": "169e2216ba9918312cb169108c81d621d1304c0044b7f5ed50dabe5fef55ebcf",
     "plugins/cardgame-content/src/story-execution-service.ts": "6799e1b737ddc50c95255dc5faa3744571e212c15518bcea1967ebc85531a7b6",
     "plugins/cardgame-content/src/story-execution.ts": "e8121b37fc453db7badbf81ce04dd19e6b96d434964770de835d607a06b4f2e2",
     "plugins/cardgame-content/src/story-rules.ts": "2d3bf72deb1ae587f3a791e4b111272b77074a55a867b1a1045d9273846e76c2",
     "plugins/cardgame-content/src/types.ts": "a2723d2173358c4dafa29f1156d21ca19bf9366fbcbb71387b6d1af09d13a4f7",
-    "plugins/cardgame-content/src/workflow.ts": "155e21d53209b4b7d3a5b3cc50a0b1c2d1c3153ef36babfc0e1bde693e0ea198",
-    "templates/cardgame-production/card-face.ts": "2f4b9d46773634fd3d0477ae26c97bcc0e61d0fdd033f898cb4bff1c8eaba20f"
+    "plugins/cardgame-content/src/workflow.ts": "68474db0403acf1979ad8168b8fb9ecd9b740c8c643b365d9ed6d7040ee9f83a"
   },
-  "integrity": "sha256-72afdc9decee5f9652dd49c79be5347c085cbd441665e9d42331748ee25c00f4"
+  "integrity": "sha256-dfd2778e4e0ee4a04b4dabad4cb5759712bc700dd65300db01f4f45b6d33bd33"
 }

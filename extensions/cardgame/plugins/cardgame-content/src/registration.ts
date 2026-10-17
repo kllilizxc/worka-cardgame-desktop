@@ -1,3 +1,4 @@
+import {createProductionEvents} from './production-events';
 import { cardgameSelectionLines } from './context';
 import { createPinnedReferenceService, pinnedReferenceLines } from './pinned-references';
 import { createBattleExecutionService } from './battle-execution-service';
@@ -37,7 +38,7 @@ export async function verifiedCardDraftSource(app: Pick<WorkaExtensionHost['app'
 }
 
 export interface CardgameProject { id: string; root: string; title?: string; battlePhaserModule?: string; cardFaceFont?: { file: string; family: string } }
-const workflowQueries = new Set(['todos', 'todo', 'productions', 'production', 'workflowStatus', 'gameCandidates', 'changes']);
+const workflowQueries = new Set(['todos', 'todo', 'productions', 'production', 'productionDispatch', 'workflowStatus', 'gameCandidates', 'changes']);
 const contentCommands = new Set(['saveDocument', 'moveDocument', 'updateCard', 'updateAsset', 'registerCandidates', 'adoptVersion', 'compileStory']);
 const formalMutations = new Set(['saveDocument', 'moveDocument', 'updateCard', 'updateAsset', 'adoptVersion', 'compileStory', 'adoptAsset']);
 const internalWorkflowCommands = new Set(['recordGameCandidate', 'recordGameAdoption']);
@@ -86,6 +87,7 @@ export async function createCardgameProvider(host: WorkaExtensionHost, media: Pi
   } });
   const storyExecution = createStoryExecutionService({ ...options, packageRoot, content, subprocess: host.runtime.subprocess, bunPath });
   const workflows = await Promise.resolve().then(() => createWorkflowService(options)).catch(async error => { await Promise.allSettled([battleExecution.close(), storyExecution.close(), content.close()]); throw error; });
+  const productionEvents=createProductionEvents(workflows,content);
   const pinnedReferences = createPinnedReferenceService(host.app.core, input => input.op === 'battleComparison' ? battleExecution.compare(String(input.projectId), input.before as any, input.after as any) : input.op === 'production' ? workflows.query(input) : content.query(input as any));
   const previewNote = async (candidate: Pick<GameCandidateRecord, 'projectId'>) => {
     const noteId = await resolvePreviewNote(candidate.projectId);
@@ -290,6 +292,10 @@ export async function createCardgameProvider(host: WorkaExtensionHost, media: Pi
       } },
       async invoke(method, input, caller) {
         await assertProject(input, caller.noteId, method === 'confirmGameCandidate' || method === 'undoGameCandidate');
+        if(method==='prepareProductionEvent')return productionEvents.prepare(input);
+        if(method==='productionResult'||method==='receiveResult')return productionEvents.receiveResult(input);
+        if(method==='recordCandidates')return productionEvents.recordCandidates(input);
+        if(method==='recordAdoption')return productionEvents.recordAdoption(input);
         if (method === 'pinReference' || method === 'removePinnedReference') {
           if (!caller.noteId || caller.dryRun || caller.replay) throw Error('请从项目便笺操作固定引用');
           return method === 'pinReference' ? pinnedReferences.pin(String(input.projectId), input) : pinnedReferences.remove(String(input.projectId), input.key);

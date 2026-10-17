@@ -10,6 +10,6 @@ eventScripts:
 
 仅用户点击生成后处理已预留的制作轮次。按项目、制作单 ID、轮次和 `requestId` 核对冻结的需求，再用 `acceptRequirement` 交给执行台。同一制作单复用原任务；发现旧任务来源不一致时停止自动派发，先核对旧绑定。执行回执写回同一轮次，不将“接收交办”写成“生成完成”。
 
-任务变化后只处理来源为本制作便笺的任务。到达终态时，核对执行证据和轮次、需求修订，再调用 `receiveResult`；回写 `{projectId,productionId,requestId,round,requirementRevision,status,conclusion,candidates}`。候选只引用指定输出目录中的实际文件，不能凭叙述编造路径或候选 ID。过期轮次只留历史，不覆盖当前轮次。失败仅记录事实，不自动开启新一轮。
+任务变化后只处理来源为本制作便笺的任务。到达终态时，核对执行证据和轮次、需求修订，再调用 `receiveResult`；回写 `{projectId,projectGeneration,productionId,requestId,round,requirementRevision,status,conclusion,candidates}`；projectGeneration 由当前 production 查询返回。旧事件无代次时停止自动执行。原地升级且未重绑时，在制作单“重试交办”仅查询原任务的完整冻结快照与原 updateId 回执，补绑定而不调用 acceptRequirement。未找到或不符时核对执行台（包括归档任务），不能改 updateId 重放；跨重绑旧轮次拒绝重试，只有明确新一轮才是新意图。候选只引用指定输出目录中的实际文件，不能凭叙述编造路径或候选 ID。过期轮次只留历史，不覆盖当前轮次。失败仅记录事实，不自动开启新一轮。
 
 资源生成、加工和导出由执行任务及其工具完成，不要求用户手工修图或补帧。产物写入该轮需求指定的输出目录，回执中的 `sourcePath` 指向可核验的真实文件。
