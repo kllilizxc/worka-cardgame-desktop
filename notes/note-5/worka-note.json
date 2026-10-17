@@ -1,0 +1,52 @@
+{
+  "onboarding": {
+    "title": "选择你的城市",
+    "description": "选好城市就能看到当地天气。",
+    "steps": [
+      "打开便笺，搜索你的城市，从结果里选一个。",
+      "也可以点“按网络定位”自动选择，之后随时能换。"
+    ],
+    "locales": {
+      "en": {
+        "title": "Choose your city",
+        "description": "Select a city to view its local weather.",
+        "steps": [
+          "Open the note, search for a city, and select the correct location.",
+          "Retry if the first request fails. Saving the city does not change whether background work is paused."
+        ]
+      }
+    }
+  },
+  "schemaVersion": 1,
+  "name": "天气",
+  "scenarios": "通勤、出差或安排户外活动前，想顺手看一眼天气的人。",
+  "icon": {
+    "type": "svg",
+    "path": "icon.svg",
+    "monochrome": false
+  },
+  "files": [
+    "README.md",
+    "SKILL.md",
+    "actions.ts",
+    "forecast.ts",
+    "icon.svg",
+    "messages.ts",
+    "model.ts",
+    "package.json",
+    "view.tsx",
+    "worka-prebuilt/actions.mjs",
+    "worka-prebuilt/contract/SKILL.md",
+    "worka-prebuilt/contract/manifest.json",
+    "worka-prebuilt/contract/references/api.d.ts",
+    "worka-prebuilt/contract/references/types/forecast.d.ts",
+    "worka-prebuilt/contract/references/types/model.d.ts",
+    "worka-prebuilt/entry-638qv20q.js",
+    "worka-prebuilt/entry-bundle.css",
+    "worka-prebuilt/entry-bundle.js",
+    "worka-prebuilt/entry-bundle.tailwind.css",
+    "worka-prebuilt/index.html",
+    "worka-prebuilt/view-6aaj0spe.js",
+    "worka-prebuilt/manifest.json"
+  ]
+}

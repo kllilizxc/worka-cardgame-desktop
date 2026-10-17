@@ -1,0 +1,476 @@
+import {z} from '@dsh-workbench/runtime';
+
+import { realpath, stat, readFile } from 'node:fs/promises';
+import { basename, extname, isAbsolute, relative, resolve, sep } from 'node:path';
+import type { NoteActionContext, NoteQueryContext, JsonValue } from "@dsh-workbench/runtime";
+import { note } from "./note-model";
+export { note } from "./note-model";
+type ActionContext = NoteActionContext<typeof note>;
+type QueryContext = NoteQueryContext<typeof note>;
+import { encodeContentRef } from "./content-model";
+import type {
+  CardGameConfig,
+  CardData,
+  ContentList,
+  DocumentData,
+  DocumentMeta,
+  GraphData,
+  MediaData,
+  MovePreviewData,
+  ReferenceResource,
+  StatusData,
+} from "./content-model";
+
+export type {
+  AssetData,
+  AssetFilters,
+  AssetItem,
+  BacklinkItem,
+  CardData,
+  CardItem,
+  CardGameConfig,
+  CardGameNotes,
+  ContentKind,
+  ContentList,
+  ContentRef,
+  DirectoryItem,
+  DocumentData,
+  DocumentMeta,
+  DocumentItem,
+  GraphData,
+  LibraryItem,
+  LibraryMode,
+  LibraryState,
+  MediaData,
+  MovePreviewData,
+  RecentChangeItem,
+  RecentChangesData,
+  ReferenceResource,
+  StatusData,
+  VersionItem,
+} from "./content-model";
+
+type QueryInput = Record<string, unknown> & { projectId?: string };
+type CommandInput = Record<string, unknown>;
+ async function pinReference(input: { kind: string; id: string; anchor?: string; context?: Record<string, unknown>; revision: string }, ctx: ActionContext) {
+  return ctx.host.extensions.request('cardgame-content', 'pinReference', { ...input, projectId: await projectFor(ctx) });
+}
+ async function removePinnedReference(input: { key: string }, ctx: ActionContext) {
+  return ctx.host.extensions.request('cardgame-content', 'removePinnedReference', { ...input, projectId: await projectFor(ctx) });
+}
+
+/** Prepare this note's native conversation; opening it never submits a prompt. */
+ async function discussAudio(_input: {}, ctx: ActionContext) {
+  await projectFor(ctx);
+  if (!ctx.host.agent.prepare) throw Error('宿主没有提供原生会话，请检查工作台连接。');
+  return ctx.host.agent.prepare({ noteId: ctx.note.id });
+}
+
+/** Retain the local desktop's selection entry without sending an automatic prompt. */
+ async function discussSelection(input: { itemIds?: string[] }, ctx: ActionContext) {
+  const config = await ctx.config.read();
+  const kind = config.value?.mode === 'cards' ? 'card' : config.value?.mode === 'assets' ? 'asset' : undefined;
+  const ids = [...new Set(input.itemIds?.filter(id => typeof id === 'string' && id.trim()) ?? [])].slice(0, 3);
+  if (!kind || !ids.length) throw Error('请先选择卡牌或资源。');
+  if (!ctx.host.agent.prepare) throw Error('宿主没有提供原生会话。');
+  for (const id of ids) {
+    const target = await readOp<any>('pinnedReferenceTarget', { kind, id }, ctx as QueryContext);
+    await pinReference({ kind, id, revision: target.revision }, ctx);
+  }
+  return ctx.host.agent.prepare({ noteId: ctx.note.id });
+}
+
+/** Keep the existing registered local document sources and compare-and-save contract. */
+ async function addResource(input: { path: string; title?: string }, ctx: ActionContext) {
+  if (!input.path?.trim() || !isAbsolute(input.path.trim())) throw Error('请填写本机文件或资料目录的绝对路径。');
+  const path = await realpath(input.path.trim());
+  const info = await stat(path);
+  if (!info.isFile() && !info.isDirectory()) throw Error('请选择普通文件或资料目录。');
+  const entry = info.isDirectory() ? await realpath(resolve(path, 'index.md')) : path;
+  const local = relative(path, entry);
+  if (info.isDirectory() && (local === '..' || local.startsWith(`..${sep}`) || isAbsolute(local))) throw Error('资料入口不在登记目录内。');
+  if (!['.md', '.markdown', '.txt', '.json'].includes(extname(entry).toLowerCase())) throw Error('阅读器支持 Markdown、JSON 和文本。');
+  if ((await stat(entry)).size > 2 * 1024 * 1024) throw Error('文件超过 2 MB，请选择较小的阅读入口。');
+  await readFile(entry);
+  const resource = { path, title: input.title?.trim() || basename(path), ...(info.isDirectory() ? { root: path } : {}) };
+  const snapshot = await ctx.config.read();
+  if (snapshot.value.resources?.some(item => item.path === path)) throw Error('这份资料已经登记。');
+  await ctx.config.update(draft => { draft.resources = [...(snapshot.value.resources ?? []), resource]; }, { expectedRevision: snapshot.revision });
+  return resource;
+}
+
+ async function prepareBattleExperiment(input: { fresh?: boolean; candidate?: { productionId: string; candidateId: string; candidateHash: string } }, ctx: ActionContext) { return ctx.host.extensions.request('cardgame-content', 'prepareBattleExperiment', { fresh: input.fresh === true, ...(input.candidate ? { candidate: input.candidate } : {}), projectId: await projectFor(ctx) }); }
+ async function stopBattleExperiment(_input: {}, ctx: ActionContext) { return ctx.host.extensions.request('cardgame-content', 'stopBattleExperiment', { projectId: await projectFor(ctx) }); }
+
+ async function analyzeStoryPaths(input: { id: string; expectedRevision: string }, ctx: ActionContext) {
+  return ctx.host.extensions.request('cardgame-content', 'analyzeStoryPaths', { ...input, projectId: await projectFor(ctx) });
+}
+
+/** Read the current instance config; the project ID is never inferred from content rows. */
+async function projectFor(ctx: QueryContext | ActionContext, input: Record<string, unknown> = {}): Promise<string> {
+  const config = await ctx.config.read();
+  const configured = typeof config.value?.projectId === "string" ? config.value.projectId.trim() : "";
+  const supplied = typeof input.projectId === "string" ? input.projectId.trim() : "";
+  const projectId = configured || supplied;
+  if (!projectId) throw new Error("CardGame 便笺尚未配置 projectId");
+  return projectId;
+}
+
+/**
+ * All display reads go through the single content extension query resource.
+ * `snapshot.data` is the backend payload; the snapshot envelope is never exposed.
+ */
+async function readOp<T>(op: string, rawInput: unknown, ctx: QueryContext): Promise<T> {
+  const input = rawInput && typeof rawInput === "object" && !Array.isArray(rawInput)
+    ? rawInput as QueryInput
+    : {};
+  const projectId = await projectFor(ctx, input);
+  const { query, targetPath, parentPath, id, limit, ...rest } = input;
+  const normalized: Record<string, unknown> = {
+    ...rest,
+    ...(query !== undefined && rest.q === undefined ? { q: query } : {}),
+    ...(limit !== undefined ? { limit } : {}),
+    ...(op === "directories" && parentPath !== undefined && rest.directory === undefined ? { directory: parentPath } : {}),
+    ...(op === "movePreview" && targetPath !== undefined && rest.toPath === undefined ? { toPath: targetPath } : {}),
+    ...(op === "graph" && limit !== undefined && rest.maxNodes === undefined ? { maxNodes: limit } : {}),
+    ...(op === "versions" && id !== undefined && rest.assetId === undefined ? { assetId: id } : {}),
+    ...(op !== "versions" && id !== undefined ? { id } : {}),
+    projectId,
+    op,
+  };
+  if (op === 'assets') {
+    const config = await ctx.config.read();
+    if (config.value?.assetScope) normalized.assetScope = config.value.assetScope;
+  }
+  const resourceInput = normalized as unknown as JsonValue;
+  const snapshot = await ctx.resources.read<T>({ name: "extension.cardgame-content.query", input: resourceInput });
+  if (snapshot.error && snapshot.data === undefined) throw new Error(snapshot.error);
+  if (snapshot.data === undefined) throw new Error(`CardGame 内容查询 ${op} 没有返回数据`);
+  return snapshot.data;
+}
+
+ const operationQueries = {
+  async pinnedReferenceTarget(input: QueryInput = {}, ctx: QueryContext) { return readOp<any>('pinnedReferenceTarget', input, ctx); },
+  async pinnedReferences(input: QueryInput = {}, ctx: QueryContext) { return readOp<any>('pinnedReferences', input, ctx); },
+  async battleExperiments(input: QueryInput = {}, ctx: QueryContext) { return readOp<any>('battleExperiments', input, ctx); },
+  async battleSources(input: QueryInput = {}, ctx: QueryContext) { return readOp<any>('battleSources', input, ctx); },
+  async battleComparison(input: QueryInput, ctx: QueryContext) { return readOp<any>('battleComparison', input, ctx); },
+  async storyExecutionReport(input: QueryInput = {}, ctx: QueryContext) { return readOp<any>('storyExecutionReport', input, ctx); },
+  async candidateDiff(input: QueryInput = {}, ctx: QueryContext) {
+    return readOp<any>('gameCandidateDiff', input, ctx);
+  },
+  async balanceOverview(input: QueryInput = {}, ctx: QueryContext) {
+    return readOp<any>('balanceOverview', input, ctx);
+  },
+  async gameDeck(input: QueryInput = {}, ctx: QueryContext) { return readOp<any>('gameDeck', input, ctx); },
+  async gameCatalog(input: QueryInput = {}, ctx: QueryContext) {
+    return readOp<any>('gameCatalog', input, ctx);
+  },
+  async storyAnalysis(input: QueryInput = {}, ctx: QueryContext) {
+    return readOp<any>('storyAnalysis', input, ctx);
+  },
+  async featureChoices(_input: QueryInput = {}, ctx: QueryContext) {
+    const owner = await ctx.notes.read(ctx.note.id);
+    const notes = await ctx.notes.lookup({ desktopId: owner.desktopId });
+    const trackers = notes.filter(note => !note.archived && note.actions?.includes('setArchiveStatus') && note.actions?.includes('confirmGameCandidate'));
+    if (trackers.length !== 1) throw new Error(trackers.length ? '本桌面有多个功能进展便笺，请先确定使用哪一个' : '本桌面没有可用的功能进展便笺');
+    const snapshot = await ctx.resources.read<any>({ name: 'extension.official-feature-tracker.state', input: { targetNoteId: trackers[0]!.id } });
+    if (snapshot.error && snapshot.data === undefined) throw new Error(snapshot.error);
+    return { items: Array.isArray(snapshot.data?.features) ? snapshot.data.features.filter((item: any) => !item.archived).map((item: any) => ({ id: String(item.id), title: String(item.title) })) : [] };
+  },
+  async status(input: QueryInput = {}, ctx: QueryContext): Promise<StatusData> {
+    return readOp<StatusData>("status", input, ctx);
+  },
+  async documents(input: QueryInput = {}, ctx: QueryContext): Promise<ContentList> {
+    return readOp<ContentList>("documents", input, ctx);
+  },
+  async directories(input: QueryInput = {}, ctx: QueryContext): Promise<ContentList> {
+    return readOp<ContentList>("directories", input, ctx);
+  },
+  async document(input: QueryInput = {}, ctx: QueryContext): Promise<DocumentData> {
+    // Keep the pre-CardGame registered-reference reader compatible for design
+    // notes and memory files that remain in the instance config after upgrade.
+    if (typeof input.resourcePath === "string") return readReferenceDocument(input, ctx) as Promise<DocumentData>;
+    return readOp<DocumentData>("document", input, ctx);
+  },
+  async documentMeta(input: QueryInput = {}, ctx: QueryContext): Promise<DocumentMeta> {
+    return readOp<DocumentMeta>("documentMeta", input, ctx);
+  },
+  async referenceDocument(input: QueryInput = {}, ctx: QueryContext): Promise<DocumentData> {
+    return readReferenceDocument(input, ctx) as Promise<DocumentData>;
+  },
+  async backlinks(input: QueryInput = {}, ctx: QueryContext): Promise<ContentList> {
+    return readOp<ContentList>("backlinks", input, ctx);
+  },
+  async graph(input: QueryInput = {}, ctx: QueryContext): Promise<GraphData> {
+    return readOp<GraphData>("graph", input, ctx);
+  },
+  async movePreview(input: QueryInput = {}, ctx: QueryContext): Promise<MovePreviewData> {
+    return readOp<MovePreviewData>("movePreview", input, ctx);
+  },
+  async cards(input: QueryInput = {}, ctx: QueryContext): Promise<ContentList> {
+    return readOp<ContentList>("cards", input, ctx);
+  },
+  async card(input: QueryInput = {}, ctx: QueryContext): Promise<CardData> {
+    return readOp<CardData>("card", input, ctx);
+  },
+  async assets(input: QueryInput = {}, ctx: QueryContext): Promise<ContentList> {
+    return readOp<ContentList>("assets", input, ctx);
+  },
+  async asset(input: QueryInput = {}, ctx: QueryContext): Promise<Record<string, unknown>> {
+    return readOp<Record<string, unknown>>("asset", input, ctx);
+  },
+  async versions(input: QueryInput = {}, ctx: QueryContext): Promise<ContentList> {
+    return readOp<ContentList>("versions", input, ctx);
+  },
+  async inspection(input: QueryInput = {}, ctx: QueryContext): Promise<Record<string, unknown>> {
+    return readOp<Record<string, unknown>>("inspection", input, ctx);
+  },
+  async recentChanges(input: QueryInput = {}, ctx: QueryContext): Promise<Record<string, unknown>> {
+    return readOp<Record<string, unknown>>("recentChanges", input, ctx);
+  },
+  async storyBuilds(input: QueryInput = {}, ctx: QueryContext): Promise<Record<string, unknown>> {
+    return readOp<Record<string, unknown>>("storyBuilds", input, ctx);
+  },
+  async storyScenePage(input: QueryInput = {}, ctx: QueryContext): Promise<Record<string, unknown>> {
+    return readOp<Record<string, unknown>>("storyScenePage", input, ctx);
+  },
+  async media(input: QueryInput = {}, ctx: QueryContext): Promise<MediaData> {
+    return readOp<MediaData>("media", input, ctx);
+  },
+};
+
+async function readReferenceDocument(input: QueryInput, ctx: QueryContext): Promise<Record<string, unknown>> {
+  const resourceInput = { ...input } as unknown as JsonValue;
+  const snapshot = await ctx.resources.read<Record<string, unknown>>({ name: "extension.reference.file", input: resourceInput });
+  if (snapshot.error && snapshot.data === undefined) throw new Error(snapshot.error);
+  if (!snapshot.data) throw new Error("注册资料没有返回内容");
+  return snapshot.data;
+}
+
+async function requestContent(method: string, rawInput: CommandInput, ctx: ActionContext, required: string[] = []) {
+  const input = rawInput && typeof rawInput === "object" ? rawInput : {};
+  const projectId = await projectFor(ctx, input);
+  for (const field of required) {
+    const value = input[field];
+    if (typeof value !== "string" || value.trim().length === 0) throw new Error(`${method} 缺少 ${field}`);
+  }
+  return ctx.host.extensions.request("cardgame-content", method, { ...input, projectId });
+}
+
+/** Save one Markdown document using the backend revision for compare-and-save. */
+ async function saveDocument(input: CommandInput, ctx: ActionContext) {
+  if (typeof input?.content !== "string") throw new Error("saveDocument 需要 content");
+  const { revision, ...rest } = input;
+  return requestContent("saveDocument", { ...rest, ...(rest.expectedRevision === undefined && revision !== undefined ? { expectedRevision: revision } : {}) }, ctx);
+}
+
+/** Previewed document moves are applied by the backend as one link-aware operation. */
+ async function moveDocument(input: CommandInput, ctx: ActionContext) {
+  const { from, to, targetPath, revision, ...rest } = input;
+  return requestContent("moveDocument", {
+    ...rest,
+    ...(rest.path === undefined && typeof from === "string" ? { path: from } : {}),
+    ...(rest.toPath === undefined && typeof (to ?? targetPath) === "string" ? { toPath: to ?? targetPath } : {}),
+    ...(rest.expectedRevision === undefined && revision !== undefined ? { expectedRevision: revision } : {}),
+    updateLinks: rest.updateLinks ?? true,
+  }, ctx);
+}
+
+/** Update a card definition; the backend enforces the supplied revision/CAS token. */
+ async function updateCard(input: CommandInput, ctx: ActionContext) {
+  const { value, definition, revision, ...rest } = input;
+  return requestContent("updateCard", {
+    ...rest,
+    ...(rest.card === undefined && (value !== undefined || definition !== undefined) ? { card: value ?? definition } : {}),
+    ...(rest.expectedRevision === undefined && revision !== undefined ? { expectedRevision: revision } : {}),
+  }, ctx, ["id"]);
+}
+
+/** Update only asset metadata; media bytes and version revisions remain backend-owned. */
+ async function updateAsset(input: CommandInput, ctx: ActionContext) {
+  const { metadataRevision, ...rest } = input;
+  return requestContent("updateAsset", {
+    ...rest,
+    ...(rest.expectedMetadataRevision === undefined && metadataRevision !== undefined ? { expectedMetadataRevision: metadataRevision } : {}),
+  }, ctx, ["id"]);
+}
+
+/** Register generated asset candidates without copying candidate payload into note state. */
+ async function registerCandidates(input: CommandInput, ctx: ActionContext) {
+  return requestContent("registerCandidates", input, ctx);
+}
+
+/** Adopt one asset version after the backend has validated its provenance. */
+ async function adoptVersion(input: CommandInput, ctx: ActionContext) {
+  const { revision: _revision, ...rest } = input;
+  return requestContent("adoptVersion", rest, ctx);
+}
+
+/**
+ * Compile the scene graph reachable from one entry document into the game's
+ * StoryState JSON. Diagnostics come back in the result; error diagnostics mean
+ * nothing was written.
+ */
+ async function compileStory(input: CommandInput, ctx: ActionContext) {
+  return requestContent("compileStory", input, ctx, ["entry"]);
+}
+
+/** Compile supplied Markdown in an isolated playable game candidate. */
+ async function stageStoryCandidate(input: CommandInput, ctx: ActionContext) {
+  const projectId = await projectFor(ctx, input);
+  return ctx.host.extensions.request('cardgame-content', 'stageStoryCandidate', { ...input, projectId });
+}
+
+/** Stage ordinary Markdown documents without binding them to a playable story. */
+ async function stageDocumentsCandidate(input: CommandInput, ctx: ActionContext) {
+  const projectId = await projectFor(ctx, input);
+  return ctx.host.extensions.request('cardgame-content', 'stageDocumentsCandidate', { ...input, projectId });
+}
+
+/**
+ * Reject the current asset version. When an earlier adopted version exists the
+ * asset is reverted to it; either way a high-priority rework Todo is opened
+ * with a deep link back to the asset.
+ */
+ async function rejectAssetVersion(input: { assetId: string; reason?: string }, ctx: ActionContext) {
+  if (typeof input?.assetId !== "string" || !input.assetId.trim()) throw new Error("rejectAssetVersion 需要 assetId");
+  const projectId = await projectFor(ctx, input as Record<string, unknown>);
+  const reason = typeof input.reason === "string" && input.reason.trim() ? input.reason.trim() : undefined;
+  const asset = await readOp<Record<string, unknown>>("asset", { id: input.assetId }, ctx as unknown as QueryContext);
+  const currentVersionId = typeof asset.currentVersionId === "string" ? asset.currentVersionId : typeof asset.versionId === "string" ? asset.versionId : undefined;
+  const versions = await readOp<ContentList>("versions", { id: input.assetId, limit: 100 }, ctx as unknown as QueryContext);
+  const previous = versions.items
+    .filter(version => Boolean(version.adopted) && (version.versionId ?? version.id) !== currentVersionId)
+    .sort((a, b) => String(b.createdAt ?? "").localeCompare(String(a.createdAt ?? "")))[0];
+  const previousVersionId = previous ? String(previous.versionId ?? previous.id) : undefined;
+  if (previousVersionId) await requestContent("adoptVersion", { assetId: input.assetId, versionId: previousVersionId }, ctx);
+  const assetName = [asset.name, asset.title].find((value): value is string => typeof value === "string" && Boolean(value.trim()));
+  const todo = await requestContent("createTodo", {
+    title: `返修：${assetName ?? input.assetId}`,
+    description: [`资源 ${input.assetId} 当前版本${currentVersionId ? ` ${currentVersionId}` : ""} 被否决`, previousVersionId ? `已回退到版本 ${previousVersionId}` : "没有可回退的历史版本，未回退", ...(reason ? [`原因：${reason}`] : [])].join("；"),
+    priority: "high",
+    category: "返修",
+    context: { projectId, kind: "asset", id: input.assetId },
+  }, ctx);
+  const todoRecord = todo && typeof todo === "object" && !Array.isArray(todo) ? (todo as Record<string, unknown>).item : undefined;
+  const todoId = todoRecord && typeof todoRecord === "object" && typeof (todoRecord as Record<string, unknown>).id === "string" ? (todoRecord as Record<string, unknown>).id as string : undefined;
+  return { reverted: Boolean(previousVersionId), ...(previousVersionId ? { versionId: previousVersionId } : {}), todoId };
+}
+
+ async function createCardWorkflow(input: { itemIds: string[]; featureId: string; draft?: Record<string, unknown>; expectedRevision?: string; requestId?: string }, ctx: ActionContext) {
+  const config = await ctx.config.read();
+  const projectId = await projectFor(ctx, input);
+  const noteId = config.value?.notes?.production;
+  if (!noteId) throw new Error('尚未关联卡牌制作便笺');
+  if (!input.itemIds?.length) throw new Error('请先选中卡牌');
+  if (!input.featureId?.trim()) throw new Error('请先选择所属功能');
+  if (input.draft && input.itemIds.length !== 1) throw new Error('原始数据编辑只能针对一张卡');
+  let draftDefinition: Record<string, unknown> | undefined;
+  let draftPresentation: Record<string, unknown> | undefined;
+  if (input.draft) {
+    const source = await readOp<CardData>('card', { id: input.itemIds[0] }, ctx as unknown as QueryContext);
+    const originalFace = ((source.json ?? source.definition ?? source) as Record<string, any>).cardFace;
+    const requestedFace = input.draft.cardFace as Record<string, any> | undefined;
+    const { themeId: oldTheme, ...originalStructure } = originalFace ?? {};
+    const { themeId: nextTheme, ...requestedStructure } = requestedFace ?? {};
+    const stable = (value: any): string => value && typeof value === 'object'
+      ? Array.isArray(value) ? `[${value.map(stable).join(',')}]` : `{${Object.keys(value).sort().map(key => `${JSON.stringify(key)}:${stable(value[key])}`).join(',')}}`
+      : JSON.stringify(value);
+    if (stable(originalStructure) !== stable(requestedStructure)) throw new Error('卡面资源与布局请在制作单中修改');
+    const { cardFace: _cardFace, ...definition } = input.draft;
+    draftDefinition = definition;
+    if (typeof nextTheme === 'string' && nextTheme !== oldTheme) draftPresentation = { themeId: nextTheme };
+  }
+  const result = await ctx.host.extensions.request('cardgame-content', 'createCardBatch', { projectId, cardIds: input.itemIds, featureId: input.featureId, ...(input.requestId ? { requestId: input.requestId } : {}),
+    ...(input.expectedRevision ? { sourceRevisions: { [input.itemIds[0]!]: input.expectedRevision } } : {}), brief: `卡面制作 · ${input.itemIds.join('、')}` }) as any;
+  if (draftDefinition) {
+    await ctx.host.extensions.request('cardgame-content', 'saveCardDraft', { projectId, productionId: result.production.id,
+      cardId: input.itemIds[0], baseRevision: result.production.revision, definition: draftDefinition,
+      ...(draftPresentation ? { presentation: draftPresentation } : {}) });
+  }
+  return { noteId, itemId: encodeContentRef({ projectId, kind: 'production', id: result.production.id }) };
+}
+
+ async function switchCardTheme(input: { id: string; themeId: string; expectedRevision: string }, ctx: ActionContext) {
+  const card = await readOp<CardData>('card', { id: input.id }, ctx as unknown as QueryContext);
+  const definition = (card.json ?? card.definition ?? card) as Record<string, any>;
+  const face = definition.cardFace;
+  if (!face?.variants?.[input.themeId]) throw new Error('这个主题尚未组装，请先进入卡牌工作流');
+  return requestContent('updateCard', { id: input.id, expectedRevision: input.expectedRevision, patch: { cardFace: { ...face, themeId: input.themeId } } }, ctx);
+}
+
+function jsonResult(value:unknown){return JSON.parse(JSON.stringify(value??null));}
+const action_pinReference=note.action({...{"description":"明确固定当前对象与修订到项目共享上下文，不发送消息。","visibility":"public"},input:z.looseObject({"kind":z.string(),"id":z.string(),"anchor":z.string().optional(),"context":z.record(z.string(),z.json()).optional(),"revision":z.string()}),output:z.json()},async(ctx,input)=>jsonResult(await pinReference(input as any,ctx)));
+export {action_pinReference as pinReference};
+const action_removePinnedReference=note.action({...{"description":"从项目共享上下文移除指定固定引用，不删除对象。","visibility":"public"},input:z.looseObject({"key":z.string()}),output:z.json()},async(ctx,input)=>jsonResult(await removePinnedReference(input as any,ctx)));
+export {action_removePinnedReference as removePinnedReference};
+const action_discussAudio=note.action({...{"description":"discussAudio","visibility":"public"},input:z.looseObject({}),output:z.json()},async(ctx,input)=>jsonResult(await discussAudio(input as any,ctx)));
+export {action_discussAudio as discussAudio};
+const action_discussSelection=note.action({...{"description":"固定所选对象并打开原生会话，等待用户输入。","visibility":"public"},input:z.looseObject({"itemIds":z.array(z.string()).optional()}),output:z.json()},async(ctx,input)=>jsonResult(await discussSelection(input as any,ctx)));
+export {action_discussSelection as discussSelection};
+const action_addResource=note.action({...{"description":"保留登记可读取的本机文件或资料目录的入口。","visibility":"public"},input:z.looseObject({"path":z.string(),"title":z.string().optional()}),output:z.json()},async(ctx,input)=>jsonResult(await addResource(input as any,ctx)));
+export {action_addResource as addResource};
+const action_prepareBattleExperiment=note.action({...{"description":"显式准备当前版本或恢复固定版本的本机自动对局执行器。","visibility":"public"},input:z.looseObject({"fresh":z.boolean().optional(),"candidate":z.looseObject({"productionId":z.string(),"candidateId":z.string(),"candidateHash":z.string()}).optional()}),output:z.json()},async(ctx,input)=>jsonResult(await prepareBattleExperiment(input as any,ctx)));
+export {action_prepareBattleExperiment as prepareBattleExperiment};
+const action_stopBattleExperiment=note.action({...{"description":"停止本机实验进程，保留已保存报告。","visibility":"public"},input:z.looseObject({}),output:z.json()},async(ctx,input)=>jsonResult(await stopBattleExperiment(input as any,ctx)));
+export {action_stopBattleExperiment as stopBattleExperiment};
+const action_analyzeStoryPaths=note.action({...{"description":"明确启动剧情初始状态路径检查；复用游戏规则并保存有范围限制的报告，不修改游戏或玩家存档。","visibility":"public"},input:z.looseObject({"id":z.string(),"expectedRevision":z.string()}),output:z.json()},async(ctx,input)=>jsonResult(await analyzeStoryPaths(input as any,ctx)));
+export {action_analyzeStoryPaths as analyzeStoryPaths};
+const action_saveDocument=note.action({...{"description":"saveDocument","visibility":"public"},input:z.record(z.string(),z.json()),output:z.json()},async(ctx,input)=>jsonResult(await saveDocument(input as any,ctx)));
+export {action_saveDocument as saveDocument};
+const action_moveDocument=note.action({...{"description":"moveDocument","visibility":"public"},input:z.record(z.string(),z.json()),output:z.json()},async(ctx,input)=>jsonResult(await moveDocument(input as any,ctx)));
+export {action_moveDocument as moveDocument};
+const action_updateCard=note.action({...{"description":"updateCard","visibility":"public"},input:z.record(z.string(),z.json()),output:z.json()},async(ctx,input)=>jsonResult(await updateCard(input as any,ctx)));
+export {action_updateCard as updateCard};
+const action_updateAsset=note.action({...{"description":"updateAsset","visibility":"public"},input:z.record(z.string(),z.json()),output:z.json()},async(ctx,input)=>jsonResult(await updateAsset(input as any,ctx)));
+export {action_updateAsset as updateAsset};
+const action_registerCandidates=note.action({...{"description":"将明确的制作产物登记为未采用的资源候选版本。","visibility":"public","receipt":"queryable"},input:z.record(z.string(),z.json()),output:z.json()},async(ctx,input)=>jsonResult(await registerCandidates(input as any,ctx)));
+export {action_registerCandidates as registerCandidates};
+const action_adoptVersion=note.action({...{"description":"按候选身份采用明确版本，返回实际资源和版本 ID。","visibility":"public","receipt":"queryable"},input:z.record(z.string(),z.json()),output:z.json()},async(ctx,input)=>jsonResult(await adoptVersion(input as any,ctx)));
+export {action_adoptVersion as adoptVersion};
+const action_compileStory=note.action({...{"description":"compileStory","visibility":"public"},input:z.record(z.string(),z.json()),output:z.json()},async(ctx,input)=>jsonResult(await compileStory(input as any,ctx)));
+export {action_compileStory as compileStory};
+const action_stageStoryCandidate=note.action({...{"description":"stageStoryCandidate","visibility":"public"},input:z.record(z.string(),z.json()),output:z.json()},async(ctx,input)=>jsonResult(await stageStoryCandidate(input as any,ctx)));
+export {action_stageStoryCandidate as stageStoryCandidate};
+const action_stageDocumentsCandidate=note.action({...{"description":"stageDocumentsCandidate","visibility":"public"},input:z.record(z.string(),z.json()),output:z.json()},async(ctx,input)=>jsonResult(await stageDocumentsCandidate(input as any,ctx)));
+export {action_stageDocumentsCandidate as stageDocumentsCandidate};
+const action_rejectAssetVersion=note.action({...{"description":"rejectAssetVersion","visibility":"public"},input:z.looseObject({"assetId":z.string(),"reason":z.string().optional()}),output:z.json()},async(ctx,input)=>jsonResult(await rejectAssetVersion(input as any,ctx)));
+export {action_rejectAssetVersion as rejectAssetVersion};
+const action_createCardWorkflow=note.action({...{"description":"createCardWorkflow","visibility":"public"},input:z.looseObject({"itemIds":z.array(z.string()),"featureId":z.string(),"draft":z.record(z.string(),z.json()).optional(),"expectedRevision":z.string().optional(),"requestId":z.string().optional()}),output:z.json()},async(ctx,input)=>jsonResult(await createCardWorkflow(input as any,ctx)));
+export {action_createCardWorkflow as createCardWorkflow};
+const action_switchCardTheme=note.action({...{"description":"switchCardTheme","visibility":"public"},input:z.looseObject({"id":z.string(),"themeId":z.string(),"expectedRevision":z.string()}),output:z.json()},async(ctx,input)=>jsonResult(await switchCardTheme(input as any,ctx)));
+export {action_switchCardTheme as switchCardTheme};
+export const queries={"pinnedReferenceTarget":note.query({...{"description":"核对待固定对象、剧情节点、数值指标或报告比较的当前身份。","visibility":"public"},input:z.intersection(z.record(z.string(),z.json()),z.looseObject({"projectId":z.string().optional()})).nullable(),output:z.json()},async(ctx,input)=>jsonResult(await operationQueries["pinnedReferenceTarget"](input??{} as any,ctx))),
+"pinnedReferences":note.query({...{"description":"读取本项目共享固定引用并核对当前修订。","visibility":"public"},input:z.intersection(z.record(z.string(),z.json()),z.looseObject({"projectId":z.string().optional()})).nullable(),output:z.json()},async(ctx,input)=>jsonResult(await operationQueries["pinnedReferences"](input??{} as any,ctx))),
+"battleExperiments":note.query({...{"description":"读取固定版本实验状态和历史报告，不自动启动进程。","visibility":"public"},input:z.intersection(z.record(z.string(),z.json()),z.looseObject({"projectId":z.string().optional()})).nullable(),output:z.json()},async(ctx,input)=>jsonResult(await operationQueries["battleExperiments"](input??{} as any,ctx))),
+"battleSources":note.query({...{"description":"读取当前项目的候选身份供准备独立对局快照，不返回本机路径。","visibility":"public"},input:z.intersection(z.record(z.string(),z.json()),z.looseObject({"projectId":z.string().optional()})).nullable(),output:z.json()},async(ctx,input)=>jsonResult(await operationQueries["battleSources"](input??{} as any,ctx))),
+"battleComparison":note.query({...{"description":"按实验及报告 ID 比较同设置的历史对局，仅统计两侧均完成的种子。","visibility":"public"},input:z.intersection(z.record(z.string(),z.json()),z.looseObject({"projectId":z.string().optional()})).nullable(),output:z.json()},async(ctx,input)=>jsonResult(await operationQueries["battleComparison"](input??{} as any,ctx))),
+"storyExecutionReport":note.query({...{"description":"读取已保存的条件路径检查报告、执行状态及正文版本是否匹配；不启动检查。","visibility":"public"},input:z.intersection(z.record(z.string(),z.json()),z.looseObject({"projectId":z.string().optional()})).nullable(),output:z.json()},async(ctx,input)=>jsonResult(await operationQueries["storyExecutionReport"](input??{} as any,ctx))),
+"candidateDiff":note.query({...{"description":"candidateDiff","visibility":"public"},input:z.intersection(z.record(z.string(),z.json()),z.looseObject({"projectId":z.string().optional()})).nullable(),output:z.json()},async(ctx,input)=>jsonResult(await operationQueries["candidateDiff"](input??{} as any,ctx))),
+"balanceOverview":note.query({...{"description":"读取正式卡牌定义统计及修订，不提供未经对局测量的胜率。","visibility":"public"},input:z.intersection(z.record(z.string(),z.json()),z.looseObject({"projectId":z.string().optional()})).nullable(),output:z.json()},async(ctx,input)=>jsonResult(await operationQueries["balanceOverview"](input??{} as any,ctx))),
+"gameDeck":note.query({...{"description":"按游戏目录中的卡组 ID 读取构成及卡牌引用。","visibility":"public"},input:z.intersection(z.record(z.string(),z.json()),z.looseObject({"projectId":z.string().optional()})).nullable(),output:z.json()},async(ctx,input)=>jsonResult(await operationQueries["gameDeck"](input??{} as any,ctx))),
+"gameCatalog":note.query({...{"description":"分页读取正式剧情、牌组或遭遇的稳定目录身份。","visibility":"public"},input:z.intersection(z.record(z.string(),z.json()),z.looseObject({"projectId":z.string().optional()})).nullable(),output:z.json()},async(ctx,input)=>jsonResult(await operationQueries["gameCatalog"](input??{} as any,ctx))),
+"storyAnalysis":note.query({...{"description":"按剧情目录 ID 读取版本绑定的节点、分支与结构检查；条件可达性尚未模拟。","visibility":"public"},input:z.intersection(z.record(z.string(),z.json()),z.looseObject({"projectId":z.string().optional()})).nullable(),output:z.json()},async(ctx,input)=>jsonResult(await operationQueries["storyAnalysis"](input??{} as any,ctx))),
+"featureChoices":note.query({...{"description":"featureChoices","visibility":"public"},input:z.intersection(z.record(z.string(),z.json()),z.looseObject({"projectId":z.string().optional()})).nullable(),output:z.json()},async(ctx,input)=>jsonResult(await operationQueries["featureChoices"](input??{} as any,ctx))),
+"status":note.query({...{"description":"status","visibility":"public"},input:z.intersection(z.record(z.string(),z.json()),z.looseObject({"projectId":z.string().optional()})).nullable(),output:z.json()},async(ctx,input)=>jsonResult(await operationQueries["status"](input??{} as any,ctx))),
+"documents":note.query({...{"description":"documents","visibility":"public"},input:z.intersection(z.record(z.string(),z.json()),z.looseObject({"projectId":z.string().optional()})).nullable(),output:z.json()},async(ctx,input)=>jsonResult(await operationQueries["documents"](input??{} as any,ctx))),
+"directories":note.query({...{"description":"directories","visibility":"public"},input:z.intersection(z.record(z.string(),z.json()),z.looseObject({"projectId":z.string().optional()})).nullable(),output:z.json()},async(ctx,input)=>jsonResult(await operationQueries["directories"](input??{} as any,ctx))),
+"document":note.query({...{"description":"按 ID 或登记路径读取一份知识文档的当前内容与版本。","visibility":"public"},input:z.intersection(z.record(z.string(),z.json()),z.looseObject({"projectId":z.string().optional()})).nullable(),output:z.json()},async(ctx,input)=>jsonResult(await operationQueries["document"](input??{} as any,ctx))),
+"documentMeta":note.query({...{"description":"documentMeta","visibility":"public"},input:z.intersection(z.record(z.string(),z.json()),z.looseObject({"projectId":z.string().optional()})).nullable(),output:z.json()},async(ctx,input)=>jsonResult(await operationQueries["documentMeta"](input??{} as any,ctx))),
+"referenceDocument":note.query({...{"description":"referenceDocument","visibility":"public"},input:z.intersection(z.record(z.string(),z.json()),z.looseObject({"projectId":z.string().optional()})).nullable(),output:z.json()},async(ctx,input)=>jsonResult(await operationQueries["referenceDocument"](input??{} as any,ctx))),
+"backlinks":note.query({...{"description":"backlinks","visibility":"public"},input:z.intersection(z.record(z.string(),z.json()),z.looseObject({"projectId":z.string().optional()})).nullable(),output:z.json()},async(ctx,input)=>jsonResult(await operationQueries["backlinks"](input??{} as any,ctx))),
+"graph":note.query({...{"description":"graph","visibility":"public"},input:z.intersection(z.record(z.string(),z.json()),z.looseObject({"projectId":z.string().optional()})).nullable(),output:z.json()},async(ctx,input)=>jsonResult(await operationQueries["graph"](input??{} as any,ctx))),
+"movePreview":note.query({...{"description":"movePreview","visibility":"public"},input:z.intersection(z.record(z.string(),z.json()),z.looseObject({"projectId":z.string().optional()})).nullable(),output:z.json()},async(ctx,input)=>jsonResult(await operationQueries["movePreview"](input??{} as any,ctx))),
+"cards":note.query({...{"description":"cards","visibility":"public"},input:z.intersection(z.record(z.string(),z.json()),z.looseObject({"projectId":z.string().optional()})).nullable(),output:z.json()},async(ctx,input)=>jsonResult(await operationQueries["cards"](input??{} as any,ctx))),
+"card":note.query({...{"description":"按稳定卡牌 ID 读取定义和源文件版本。","visibility":"public"},input:z.intersection(z.record(z.string(),z.json()),z.looseObject({"projectId":z.string().optional()})).nullable(),output:z.json()},async(ctx,input)=>jsonResult(await operationQueries["card"](input??{} as any,ctx))),
+"assets":note.query({...{"description":"分页查找资源库内的素材。","visibility":"public"},input:z.intersection(z.record(z.string(),z.json()),z.looseObject({"projectId":z.string().optional()})).nullable(),output:z.json()},async(ctx,input)=>jsonResult(await operationQueries["assets"](input??{} as any,ctx))),
+"asset":note.query({...{"description":"按资源 ID 读取当前素材及采用版本。","visibility":"public"},input:z.intersection(z.record(z.string(),z.json()),z.looseObject({"projectId":z.string().optional()})).nullable(),output:z.json()},async(ctx,input)=>jsonResult(await operationQueries["asset"](input??{} as any,ctx))),
+"versions":note.query({...{"description":"按资源 ID 读取候选与历史版本。","visibility":"public"},input:z.intersection(z.record(z.string(),z.json()),z.looseObject({"projectId":z.string().optional()})).nullable(),output:z.json()},async(ctx,input)=>jsonResult(await operationQueries["versions"](input??{} as any,ctx))),
+"inspection":note.query({...{"description":"inspection","visibility":"public"},input:z.intersection(z.record(z.string(),z.json()),z.looseObject({"projectId":z.string().optional()})).nullable(),output:z.json()},async(ctx,input)=>jsonResult(await operationQueries["inspection"](input??{} as any,ctx))),
+"recentChanges":note.query({...{"description":"recentChanges","visibility":"public"},input:z.intersection(z.record(z.string(),z.json()),z.looseObject({"projectId":z.string().optional()})).nullable(),output:z.json()},async(ctx,input)=>jsonResult(await operationQueries["recentChanges"](input??{} as any,ctx))),
+"storyBuilds":note.query({...{"description":"storyBuilds","visibility":"public"},input:z.intersection(z.record(z.string(),z.json()),z.looseObject({"projectId":z.string().optional()})).nullable(),output:z.json()},async(ctx,input)=>jsonResult(await operationQueries["storyBuilds"](input??{} as any,ctx))),
+"storyScenePage":note.query({...{"description":"storyScenePage","visibility":"public"},input:z.intersection(z.record(z.string(),z.json()),z.looseObject({"projectId":z.string().optional()})).nullable(),output:z.json()},async(ctx,input)=>jsonResult(await operationQueries["storyScenePage"](input??{} as any,ctx))),
+"media":note.query({...{"description":"media","visibility":"public"},input:z.intersection(z.record(z.string(),z.json()),z.looseObject({"projectId":z.string().optional()})).nullable(),output:z.json()},async(ctx,input)=>jsonResult(await operationQueries["media"](input??{} as any,ctx)))};
+
+export const setViewState=note.action({description:'保存本便笺的界面选择，核对当前修订。',visibility:'private',requiresConfig:false,input:z.object({patch:z.record(z.string(),z.json()),expectedRevision:z.string()}),output:z.object({revision:z.string()})},async(ctx,input)=>{const saved=await ctx.state.update(draft=>{Object.assign(draft,input.patch);},{expectedRevision:input.expectedRevision});return {revision:saved.revision};});

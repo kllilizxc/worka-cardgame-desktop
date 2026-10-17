@@ -1,0 +1,20 @@
+{
+  "schemaVersion": 1,
+  "codeVersion": "09fcfe780c8b-0ddbd614",
+  "status": "ready",
+  "files": [
+    "SKILL.md",
+    "references/api.d.ts",
+    "references/types/actions.d.ts",
+    "references/types/cardgame-operations.d.ts",
+    "references/types/migration-compat.d.ts",
+    "references/types/model.d.ts",
+    "references/types/projection.d.ts",
+    "references/types/schemas.d.ts"
+  ],
+  "diagnostics": [],
+  "skill": {
+    "name": "worka-feature-progress",
+    "description": "读取功能进展与交付状态，刷新跟踪器或调整功能归档状态。"
+  }
+}

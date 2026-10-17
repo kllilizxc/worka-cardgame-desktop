@@ -1,0 +1,19 @@
+{
+  "schemaVersion": 1,
+  "codeVersion": "update-fecb36a8-f277-41eb-88f3-3f0ee433782c",
+  "status": "partial",
+  "files": [
+    "SKILL.md",
+    "references/api.d.ts",
+    "references/types/forecast.d.ts",
+    "references/types/model.d.ts"
+  ],
+  "diagnostics": [
+    "Declaration generation: actions.ts(19,14): error TS2883: The inferred type of 'queries' cannot be named without a reference to 'NoteOperation' from './node_modules/@dsh-workbench/runtime/src/note'. This is likely not portable. A type annotation is necessary.\nactions.ts(54,14): error TS2883: The inferred type of 'setUnits' cannot be named without a reference to 'NoteOperation' from './node_modules/@dsh-workbench/runtime/src/note'. This is likely not portable. A type annotation is necessary.\nactions.ts(60,14): error TS2883: The inferred type of 'usePlace' cannot be named without a reference to 'NoteOperation' from './node_modules/@dsh-workbench/runtime/src/note'. This is likely not portable. A type annotation is necessary.\nactions.ts(82,14): error TS2883: The inferred type of 'locateByNetwork' cannot be named without a reference to 'NoteOperation' from './node_modules/@dsh-workbench/runtime/src/note'. This is likely not portable. A type annotation is necessary.\n",
+    "Missing declaration: actions.d.ts"
+  ],
+  "skill": {
+    "name": "worka-weather",
+    "description": "查看天气，设置地点与单位，搜索地点或刷新天气数据。"
+  }
+}

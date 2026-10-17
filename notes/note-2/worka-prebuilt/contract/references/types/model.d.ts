@@ -1,0 +1,1104 @@
+import { z, type NoteActionContext } from '@dsh-workbench/runtime';
+export { taskProgress, taskResult, emptyState, asRefId, cloneJson, sourceIdentity, sourceFromConnection, resultSnapshot, activeElapsedMs, terminalStatus, outcomeToDelegationStatus, recordedExecutionStatus, executionStatusRepairs, candidateFromProposal, normalizeCandidate, workSources, requirementProgress, normalizeState } from './projection';
+import { candidateSchema, candidateInputSchema, submitInputSchema, checkpointInputSchema, evidenceSchema, proposalSchema, operationSchema, prepareInputSchema } from './schemas';
+import type { JsonValue } from "@dsh-workbench/runtime";
+export declare const delegationStatusSchema: z.ZodEnum<{
+    blocked: "blocked";
+    cancelled: "cancelled";
+    completed: "completed";
+    dispatching: "dispatching";
+    failed: "failed";
+    "needs-input": "needs-input";
+    paused: "paused";
+    review: "review";
+    running: "running";
+    unknown: "unknown";
+}>;
+export declare const goalOutcomeStatusSchema: z.ZodEnum<{
+    blocked: "blocked";
+    cancelled: "cancelled";
+    completed: "completed";
+    failed: "failed";
+    incomplete: "incomplete";
+    "needs-input": "needs-input";
+    unknown: "unknown";
+}>;
+export declare const delegationSourceSchema: z.ZodObject<{
+    key: z.ZodString;
+    id: z.ZodString;
+    version: z.ZodString;
+    instruction: z.ZodOptional<z.ZodString>;
+    deliveryId: z.ZodOptional<z.ZodString>;
+    noteId: z.ZodOptional<z.ZodString>;
+    stateRef: z.ZodOptional<z.ZodUnion<readonly [z.ZodString, z.ZodObject<{
+        id: z.ZodString;
+    }, z.core.$strip>]>>;
+    path: z.ZodOptional<z.ZodString>;
+    itemId: z.ZodOptional<z.ZodString>;
+    itemPath: z.ZodOptional<z.ZodString>;
+    revision: z.ZodString;
+    value: z.ZodJSONSchema;
+    shelved: z.ZodOptional<z.ZodLiteral<true>>;
+}, z.core.$strip>;
+export type DelegationSource = z.infer<typeof delegationSourceSchema>;
+export type DelegationStatus = z.infer<typeof delegationStatusSchema>;
+export type GoalOutcomeStatus = z.infer<typeof goalOutcomeStatusSchema>;
+export type CheckpointStatus = GoalOutcomeStatus | 'continue';
+export type Evidence = z.infer<typeof evidenceSchema>;
+export type MergeProposalOperation = z.infer<typeof operationSchema>;
+export type Proposal = z.infer<typeof proposalSchema>;
+export type CandidateLaunch = z.infer<typeof candidateSchema>;
+export declare const previewDeliverySchema: z.ZodObject<{
+    key: z.ZodString;
+    status: z.ZodEnum<{
+        delivered: "delivered";
+        failed: "failed";
+        pending: "pending";
+    }>;
+    eventKey: z.ZodOptional<z.ZodString>;
+    noteId: z.ZodOptional<z.ZodString>;
+    requestedAt: z.ZodNumber;
+    checkedAt: z.ZodOptional<z.ZodNumber>;
+    error: z.ZodOptional<z.ZodString>;
+}, z.core.$strip>;
+export type PreviewDelivery = z.infer<typeof previewDeliverySchema>;
+/** A launch spec as declared by the owner; cwd/revision may come from the proposal. */
+export type CandidateLaunchInput = z.infer<typeof candidateInputSchema>;
+export declare const nativeResultSchema: z.ZodObject<{
+    status: z.ZodString;
+    interrupted: z.ZodOptional<z.ZodBoolean>;
+    text: z.ZodOptional<z.ZodString>;
+    textShelved: z.ZodOptional<z.ZodLiteral<true>>;
+    value: z.ZodOptional<z.ZodJSONSchema>;
+    error: z.ZodOptional<z.ZodString>;
+    checkedAt: z.ZodNumber;
+}, z.core.$strip>;
+export type NativeResult = z.infer<typeof nativeResultSchema>;
+export declare const delegationExecutionSchema: z.ZodObject<{
+    requirementVersion: z.ZodOptional<z.ZodNumber>;
+    requestId: z.ZodString;
+    runId: z.ZodOptional<z.ZodString>;
+    status: z.ZodString;
+    result: z.ZodOptional<z.ZodObject<{
+        status: z.ZodString;
+        interrupted: z.ZodOptional<z.ZodBoolean>;
+        text: z.ZodOptional<z.ZodString>;
+        textShelved: z.ZodOptional<z.ZodLiteral<true>>;
+        value: z.ZodOptional<z.ZodJSONSchema>;
+        error: z.ZodOptional<z.ZodString>;
+        checkedAt: z.ZodNumber;
+    }, z.core.$strip>>;
+    error: z.ZodOptional<z.ZodString>;
+    stopRequested: z.ZodOptional<z.ZodBoolean>;
+    verification: z.ZodOptional<z.ZodBoolean>;
+    repairFeedbackId: z.ZodOptional<z.ZodString>;
+    completionCheck: z.ZodOptional<z.ZodBoolean>;
+    trigger: z.ZodOptional<z.ZodObject<{
+        reason: z.ZodString;
+        source: z.ZodOptional<z.ZodString>;
+    }, z.core.$strip>>;
+}, z.core.$strip>;
+export type DelegationExecution = z.infer<typeof delegationExecutionSchema>;
+export declare const delegationSchema: z.ZodObject<{
+    origin: z.ZodOptional<z.ZodObject<{
+        kind: z.ZodLiteral<"inspection">;
+        label: z.ZodString;
+        noteId: z.ZodString;
+        problemId: z.ZodString;
+        evidenceVersion: z.ZodString;
+    }, z.core.$strip>>;
+    workType: z.ZodOptional<z.ZodEnum<{
+        "code-repair": "code-repair";
+        "data-permission": "data-permission";
+        investigation: "investigation";
+    }>>;
+    nextAction: z.ZodOptional<z.ZodString>;
+    requirementVersion: z.ZodOptional<z.ZodNumber>;
+    requirementHistory: z.ZodOptional<z.ZodArray<z.ZodObject<{
+        version: z.ZodNumber;
+        goal: z.ZodString;
+        scope: z.ZodArray<z.ZodString>;
+        source: z.ZodObject<{
+            key: z.ZodString;
+            id: z.ZodString;
+            version: z.ZodString;
+            instruction: z.ZodOptional<z.ZodString>;
+            deliveryId: z.ZodOptional<z.ZodString>;
+            noteId: z.ZodOptional<z.ZodString>;
+            stateRef: z.ZodOptional<z.ZodUnion<readonly [z.ZodString, z.ZodObject<{
+                id: z.ZodString;
+            }, z.core.$strip>]>>;
+            path: z.ZodOptional<z.ZodString>;
+            itemId: z.ZodOptional<z.ZodString>;
+            itemPath: z.ZodOptional<z.ZodString>;
+            revision: z.ZodString;
+            value: z.ZodJSONSchema;
+            shelved: z.ZodOptional<z.ZodLiteral<true>>;
+        }, z.core.$strip>;
+        shelved: z.ZodOptional<z.ZodLiteral<true>>;
+    }, z.core.$strip>>>;
+    updates: z.ZodOptional<z.ZodArray<z.ZodObject<{
+        id: z.ZodString;
+        fingerprint: z.ZodString;
+        version: z.ZodNumber;
+        receivedAt: z.ZodNumber;
+    }, z.core.$strip>>>;
+    id: z.ZodString;
+    sourceIdentity: z.ZodString;
+    businessKey: z.ZodOptional<z.ZodString>;
+    source: z.ZodObject<{
+        key: z.ZodString;
+        id: z.ZodString;
+        version: z.ZodString;
+        instruction: z.ZodOptional<z.ZodString>;
+        deliveryId: z.ZodOptional<z.ZodString>;
+        noteId: z.ZodOptional<z.ZodString>;
+        stateRef: z.ZodOptional<z.ZodUnion<readonly [z.ZodString, z.ZodObject<{
+            id: z.ZodString;
+        }, z.core.$strip>]>>;
+        path: z.ZodOptional<z.ZodString>;
+        itemId: z.ZodOptional<z.ZodString>;
+        itemPath: z.ZodOptional<z.ZodString>;
+        revision: z.ZodString;
+        value: z.ZodJSONSchema;
+        shelved: z.ZodOptional<z.ZodLiteral<true>>;
+    }, z.core.$strip>;
+    goal: z.ZodString;
+    title: z.ZodOptional<z.ZodString>;
+    scope: z.ZodArray<z.ZodString>;
+    status: z.ZodEnum<{
+        blocked: "blocked";
+        cancelled: "cancelled";
+        completed: "completed";
+        dispatching: "dispatching";
+        failed: "failed";
+        "needs-input": "needs-input";
+        paused: "paused";
+        review: "review";
+        running: "running";
+        unknown: "unknown";
+    }>;
+    statusCorrection: z.ZodOptional<z.ZodObject<{
+        runId: z.ZodString;
+        previousStatus: z.ZodEnum<{
+            blocked: "blocked";
+            cancelled: "cancelled";
+            completed: "completed";
+            dispatching: "dispatching";
+            failed: "failed";
+            "needs-input": "needs-input";
+            paused: "paused";
+            review: "review";
+            running: "running";
+            unknown: "unknown";
+        }>;
+        previousUpdatedAt: z.ZodNumber;
+        correctedAt: z.ZodNumber;
+    }, z.core.$strip>>;
+    owner: z.ZodOptional<z.ZodObject<{
+        sessionId: z.ZodString;
+        noteId: z.ZodString;
+        cwd: z.ZodOptional<z.ZodString>;
+    }, z.core.$strip>>;
+    execution: z.ZodOptional<z.ZodObject<{
+        requirementVersion: z.ZodOptional<z.ZodNumber>;
+        requestId: z.ZodString;
+        runId: z.ZodOptional<z.ZodString>;
+        status: z.ZodString;
+        result: z.ZodOptional<z.ZodObject<{
+            status: z.ZodString;
+            interrupted: z.ZodOptional<z.ZodBoolean>;
+            text: z.ZodOptional<z.ZodString>;
+            textShelved: z.ZodOptional<z.ZodLiteral<true>>;
+            value: z.ZodOptional<z.ZodJSONSchema>;
+            error: z.ZodOptional<z.ZodString>;
+            checkedAt: z.ZodNumber;
+        }, z.core.$strip>>;
+        error: z.ZodOptional<z.ZodString>;
+        stopRequested: z.ZodOptional<z.ZodBoolean>;
+        verification: z.ZodOptional<z.ZodBoolean>;
+        repairFeedbackId: z.ZodOptional<z.ZodString>;
+        completionCheck: z.ZodOptional<z.ZodBoolean>;
+        trigger: z.ZodOptional<z.ZodObject<{
+            reason: z.ZodString;
+            source: z.ZodOptional<z.ZodString>;
+        }, z.core.$strip>>;
+    }, z.core.$strip>>;
+    pendingContinuation: z.ZodOptional<z.ZodBoolean>;
+    verificationStarted: z.ZodOptional<z.ZodBoolean>;
+    continueRequested: z.ZodOptional<z.ZodBoolean>;
+    pendingRequestId: z.ZodOptional<z.ZodString>;
+    feedback: z.ZodOptional<z.ZodArray<z.ZodObject<{
+        id: z.ZodString;
+        connectionId: z.ZodString;
+        subject: z.ZodOptional<z.ZodString>;
+        status: z.ZodString;
+        summary: z.ZodString;
+        diagnostics: z.ZodOptional<z.ZodString>;
+        instruction: z.ZodOptional<z.ZodString>;
+        shelved: z.ZodOptional<z.ZodLiteral<true>>;
+        receivedAt: z.ZodNumber;
+        pending: z.ZodBoolean;
+        manual: z.ZodOptional<z.ZodBoolean>;
+        auto: z.ZodOptional<z.ZodBoolean>;
+        candidateKey: z.ZodOptional<z.ZodString>;
+        revision: z.ZodOptional<z.ZodString>;
+        commits: z.ZodOptional<z.ZodArray<z.ZodString>>;
+        surface: z.ZodOptional<z.ZodString>;
+        runId: z.ZodOptional<z.ZodString>;
+        repairRequestId: z.ZodOptional<z.ZodString>;
+    }, z.core.$strip>>>;
+    continuationSeq: z.ZodNumber;
+    activeMs: z.ZodNumber;
+    activeSince: z.ZodOptional<z.ZodNumber>;
+    approvalWaitMs: z.ZodNumber;
+    approvalWaitSince: z.ZodOptional<z.ZodNumber>;
+    longWaitNotified: z.ZodBoolean;
+    evidence: z.ZodArray<z.ZodObject<{
+        id: z.ZodOptional<z.ZodString>;
+        kind: z.ZodEnum<{
+            commit: "commit";
+            file: "file";
+            record: "record";
+            text: "text";
+            url: "url";
+        }>;
+        summary: z.ZodString;
+        ref: z.ZodOptional<z.ZodString>;
+    }, z.core.$strip>>;
+    proposals: z.ZodArray<z.ZodObject<{
+        id: z.ZodString;
+        summary: z.ZodString;
+        operations: z.ZodArray<z.ZodDiscriminatedUnion<[z.ZodObject<{
+            repository: z.ZodString;
+            targetRef: z.ZodString;
+            expectedBase: z.ZodString;
+            head: z.ZodString;
+            kind: z.ZodLiteral<"git-merge">;
+            worktree: z.ZodOptional<z.ZodString>;
+        }, z.core.$strip>, z.ZodObject<{
+            repository: z.ZodString;
+            targetRef: z.ZodString;
+            expectedBase: z.ZodString;
+            head: z.ZodString;
+            kind: z.ZodLiteral<"pr-merge">;
+            url: z.ZodString;
+        }, z.core.$strip>], "kind">>;
+        evidence: z.ZodArray<z.ZodString>;
+        status: z.ZodOptional<z.ZodEnum<{
+            applied: "applied";
+            approved: "approved";
+            draft: "draft";
+            "pending-approval": "pending-approval";
+            rejected: "rejected";
+            unknown: "unknown";
+        }>>;
+    }, z.core.$strip>>;
+    proposal: z.ZodOptional<z.ZodObject<{
+        id: z.ZodString;
+        summary: z.ZodString;
+        operations: z.ZodArray<z.ZodDiscriminatedUnion<[z.ZodObject<{
+            repository: z.ZodString;
+            targetRef: z.ZodString;
+            expectedBase: z.ZodString;
+            head: z.ZodString;
+            kind: z.ZodLiteral<"git-merge">;
+            worktree: z.ZodOptional<z.ZodString>;
+        }, z.core.$strip>, z.ZodObject<{
+            repository: z.ZodString;
+            targetRef: z.ZodString;
+            expectedBase: z.ZodString;
+            head: z.ZodString;
+            kind: z.ZodLiteral<"pr-merge">;
+            url: z.ZodString;
+        }, z.core.$strip>], "kind">>;
+        evidence: z.ZodArray<z.ZodString>;
+        status: z.ZodOptional<z.ZodEnum<{
+            applied: "applied";
+            approved: "approved";
+            draft: "draft";
+            "pending-approval": "pending-approval";
+            rejected: "rejected";
+            unknown: "unknown";
+        }>>;
+    }, z.core.$strip>>;
+    candidate: z.ZodOptional<z.ZodObject<{
+        cwd: z.ZodString;
+        revision: z.ZodString;
+        argv: z.ZodArray<z.ZodString>;
+        url: z.ZodString;
+        readinessPath: z.ZodOptional<z.ZodString>;
+        adapter: z.ZodOptional<z.ZodString>;
+        repos: z.ZodOptional<z.ZodRecord<z.ZodString, z.ZodObject<{
+            repo: z.ZodString;
+            commit: z.ZodString;
+        }, z.core.$strip>>>;
+        options: z.ZodOptional<z.ZodRecord<z.ZodString, z.ZodJSONSchema>>;
+        featureId: z.ZodOptional<z.ZodString>;
+        start: z.ZodOptional<z.ZodBoolean>;
+        embed: z.ZodOptional<z.ZodBoolean>;
+    }, z.core.$strip>>;
+    preview: z.ZodOptional<z.ZodObject<{
+        key: z.ZodString;
+        status: z.ZodEnum<{
+            delivered: "delivered";
+            failed: "failed";
+            pending: "pending";
+        }>;
+        eventKey: z.ZodOptional<z.ZodString>;
+        noteId: z.ZodOptional<z.ZodString>;
+        requestedAt: z.ZodNumber;
+        checkedAt: z.ZodOptional<z.ZodNumber>;
+        error: z.ZodOptional<z.ZodString>;
+    }, z.core.$strip>>;
+    archived: z.ZodOptional<z.ZodBoolean>;
+    archivedAt: z.ZodOptional<z.ZodNumber>;
+    resultReadAt: z.ZodOptional<z.ZodNumber>;
+    dispatchAttempts: z.ZodOptional<z.ZodNumber>;
+    nextDispatchAt: z.ZodOptional<z.ZodNumber>;
+    lastDispatchError: z.ZodOptional<z.ZodString>;
+    outcome: z.ZodOptional<z.ZodObject<{
+        requirementVersion: z.ZodOptional<z.ZodNumber>;
+        status: z.ZodEnum<{
+            blocked: "blocked";
+            cancelled: "cancelled";
+            completed: "completed";
+            failed: "failed";
+            incomplete: "incomplete";
+            "needs-input": "needs-input";
+            unknown: "unknown";
+        }>;
+        remainingWork: z.ZodOptional<z.ZodArray<z.ZodString>>;
+        blockers: z.ZodOptional<z.ZodArray<z.ZodString>>;
+        summary: z.ZodString;
+        evidence: z.ZodOptional<z.ZodArray<z.ZodObject<{
+            id: z.ZodOptional<z.ZodString>;
+            kind: z.ZodEnum<{
+                commit: "commit";
+                file: "file";
+                record: "record";
+                text: "text";
+                url: "url";
+            }>;
+            summary: z.ZodString;
+            ref: z.ZodOptional<z.ZodString>;
+        }, z.core.$strip>>>;
+        proposals: z.ZodArray<z.ZodObject<{
+            id: z.ZodString;
+            summary: z.ZodString;
+            operations: z.ZodArray<z.ZodDiscriminatedUnion<[z.ZodObject<{
+                repository: z.ZodString;
+                targetRef: z.ZodString;
+                expectedBase: z.ZodString;
+                head: z.ZodString;
+                kind: z.ZodLiteral<"git-merge">;
+                worktree: z.ZodOptional<z.ZodString>;
+            }, z.core.$strip>, z.ZodObject<{
+                repository: z.ZodString;
+                targetRef: z.ZodString;
+                expectedBase: z.ZodString;
+                head: z.ZodString;
+                kind: z.ZodLiteral<"pr-merge">;
+                url: z.ZodString;
+            }, z.core.$strip>], "kind">>;
+            evidence: z.ZodArray<z.ZodString>;
+            status: z.ZodOptional<z.ZodEnum<{
+                applied: "applied";
+                approved: "approved";
+                draft: "draft";
+                "pending-approval": "pending-approval";
+                rejected: "rejected";
+                unknown: "unknown";
+            }>>;
+        }, z.core.$strip>>;
+        replySuggestion: z.ZodOptional<z.ZodString>;
+        recordedAt: z.ZodNumber;
+        requestId: z.ZodOptional<z.ZodString>;
+    }, z.core.$strip>>;
+    createdAt: z.ZodNumber;
+    updatedAt: z.ZodNumber;
+}, z.core.$strip>;
+export type Delegation = z.infer<typeof delegationSchema>;
+export declare const executionDeskStateSchema: z.ZodObject<{
+    version: z.ZodLiteral<1>;
+    title: z.ZodOptional<z.ZodString>;
+    description: z.ZodOptional<z.ZodString>;
+    delegations: z.ZodRecord<z.ZodString, z.ZodObject<{
+        origin: z.ZodOptional<z.ZodObject<{
+            kind: z.ZodLiteral<"inspection">;
+            label: z.ZodString;
+            noteId: z.ZodString;
+            problemId: z.ZodString;
+            evidenceVersion: z.ZodString;
+        }, z.core.$strip>>;
+        workType: z.ZodOptional<z.ZodEnum<{
+            "code-repair": "code-repair";
+            "data-permission": "data-permission";
+            investigation: "investigation";
+        }>>;
+        nextAction: z.ZodOptional<z.ZodString>;
+        requirementVersion: z.ZodOptional<z.ZodNumber>;
+        requirementHistory: z.ZodOptional<z.ZodArray<z.ZodObject<{
+            version: z.ZodNumber;
+            goal: z.ZodString;
+            scope: z.ZodArray<z.ZodString>;
+            source: z.ZodObject<{
+                key: z.ZodString;
+                id: z.ZodString;
+                version: z.ZodString;
+                instruction: z.ZodOptional<z.ZodString>;
+                deliveryId: z.ZodOptional<z.ZodString>;
+                noteId: z.ZodOptional<z.ZodString>;
+                stateRef: z.ZodOptional<z.ZodUnion<readonly [z.ZodString, z.ZodObject<{
+                    id: z.ZodString;
+                }, z.core.$strip>]>>;
+                path: z.ZodOptional<z.ZodString>;
+                itemId: z.ZodOptional<z.ZodString>;
+                itemPath: z.ZodOptional<z.ZodString>;
+                revision: z.ZodString;
+                value: z.ZodJSONSchema;
+                shelved: z.ZodOptional<z.ZodLiteral<true>>;
+            }, z.core.$strip>;
+            shelved: z.ZodOptional<z.ZodLiteral<true>>;
+        }, z.core.$strip>>>;
+        updates: z.ZodOptional<z.ZodArray<z.ZodObject<{
+            id: z.ZodString;
+            fingerprint: z.ZodString;
+            version: z.ZodNumber;
+            receivedAt: z.ZodNumber;
+        }, z.core.$strip>>>;
+        id: z.ZodString;
+        sourceIdentity: z.ZodString;
+        businessKey: z.ZodOptional<z.ZodString>;
+        source: z.ZodObject<{
+            key: z.ZodString;
+            id: z.ZodString;
+            version: z.ZodString;
+            instruction: z.ZodOptional<z.ZodString>;
+            deliveryId: z.ZodOptional<z.ZodString>;
+            noteId: z.ZodOptional<z.ZodString>;
+            stateRef: z.ZodOptional<z.ZodUnion<readonly [z.ZodString, z.ZodObject<{
+                id: z.ZodString;
+            }, z.core.$strip>]>>;
+            path: z.ZodOptional<z.ZodString>;
+            itemId: z.ZodOptional<z.ZodString>;
+            itemPath: z.ZodOptional<z.ZodString>;
+            revision: z.ZodString;
+            value: z.ZodJSONSchema;
+            shelved: z.ZodOptional<z.ZodLiteral<true>>;
+        }, z.core.$strip>;
+        goal: z.ZodString;
+        title: z.ZodOptional<z.ZodString>;
+        scope: z.ZodArray<z.ZodString>;
+        status: z.ZodEnum<{
+            blocked: "blocked";
+            cancelled: "cancelled";
+            completed: "completed";
+            dispatching: "dispatching";
+            failed: "failed";
+            "needs-input": "needs-input";
+            paused: "paused";
+            review: "review";
+            running: "running";
+            unknown: "unknown";
+        }>;
+        statusCorrection: z.ZodOptional<z.ZodObject<{
+            runId: z.ZodString;
+            previousStatus: z.ZodEnum<{
+                blocked: "blocked";
+                cancelled: "cancelled";
+                completed: "completed";
+                dispatching: "dispatching";
+                failed: "failed";
+                "needs-input": "needs-input";
+                paused: "paused";
+                review: "review";
+                running: "running";
+                unknown: "unknown";
+            }>;
+            previousUpdatedAt: z.ZodNumber;
+            correctedAt: z.ZodNumber;
+        }, z.core.$strip>>;
+        owner: z.ZodOptional<z.ZodObject<{
+            sessionId: z.ZodString;
+            noteId: z.ZodString;
+            cwd: z.ZodOptional<z.ZodString>;
+        }, z.core.$strip>>;
+        execution: z.ZodOptional<z.ZodObject<{
+            requirementVersion: z.ZodOptional<z.ZodNumber>;
+            requestId: z.ZodString;
+            runId: z.ZodOptional<z.ZodString>;
+            status: z.ZodString;
+            result: z.ZodOptional<z.ZodObject<{
+                status: z.ZodString;
+                interrupted: z.ZodOptional<z.ZodBoolean>;
+                text: z.ZodOptional<z.ZodString>;
+                textShelved: z.ZodOptional<z.ZodLiteral<true>>;
+                value: z.ZodOptional<z.ZodJSONSchema>;
+                error: z.ZodOptional<z.ZodString>;
+                checkedAt: z.ZodNumber;
+            }, z.core.$strip>>;
+            error: z.ZodOptional<z.ZodString>;
+            stopRequested: z.ZodOptional<z.ZodBoolean>;
+            verification: z.ZodOptional<z.ZodBoolean>;
+            repairFeedbackId: z.ZodOptional<z.ZodString>;
+            completionCheck: z.ZodOptional<z.ZodBoolean>;
+            trigger: z.ZodOptional<z.ZodObject<{
+                reason: z.ZodString;
+                source: z.ZodOptional<z.ZodString>;
+            }, z.core.$strip>>;
+        }, z.core.$strip>>;
+        pendingContinuation: z.ZodOptional<z.ZodBoolean>;
+        verificationStarted: z.ZodOptional<z.ZodBoolean>;
+        continueRequested: z.ZodOptional<z.ZodBoolean>;
+        pendingRequestId: z.ZodOptional<z.ZodString>;
+        feedback: z.ZodOptional<z.ZodArray<z.ZodObject<{
+            id: z.ZodString;
+            connectionId: z.ZodString;
+            subject: z.ZodOptional<z.ZodString>;
+            status: z.ZodString;
+            summary: z.ZodString;
+            diagnostics: z.ZodOptional<z.ZodString>;
+            instruction: z.ZodOptional<z.ZodString>;
+            shelved: z.ZodOptional<z.ZodLiteral<true>>;
+            receivedAt: z.ZodNumber;
+            pending: z.ZodBoolean;
+            manual: z.ZodOptional<z.ZodBoolean>;
+            auto: z.ZodOptional<z.ZodBoolean>;
+            candidateKey: z.ZodOptional<z.ZodString>;
+            revision: z.ZodOptional<z.ZodString>;
+            commits: z.ZodOptional<z.ZodArray<z.ZodString>>;
+            surface: z.ZodOptional<z.ZodString>;
+            runId: z.ZodOptional<z.ZodString>;
+            repairRequestId: z.ZodOptional<z.ZodString>;
+        }, z.core.$strip>>>;
+        continuationSeq: z.ZodNumber;
+        activeMs: z.ZodNumber;
+        activeSince: z.ZodOptional<z.ZodNumber>;
+        approvalWaitMs: z.ZodNumber;
+        approvalWaitSince: z.ZodOptional<z.ZodNumber>;
+        longWaitNotified: z.ZodBoolean;
+        evidence: z.ZodArray<z.ZodObject<{
+            id: z.ZodOptional<z.ZodString>;
+            kind: z.ZodEnum<{
+                commit: "commit";
+                file: "file";
+                record: "record";
+                text: "text";
+                url: "url";
+            }>;
+            summary: z.ZodString;
+            ref: z.ZodOptional<z.ZodString>;
+        }, z.core.$strip>>;
+        proposals: z.ZodArray<z.ZodObject<{
+            id: z.ZodString;
+            summary: z.ZodString;
+            operations: z.ZodArray<z.ZodDiscriminatedUnion<[z.ZodObject<{
+                repository: z.ZodString;
+                targetRef: z.ZodString;
+                expectedBase: z.ZodString;
+                head: z.ZodString;
+                kind: z.ZodLiteral<"git-merge">;
+                worktree: z.ZodOptional<z.ZodString>;
+            }, z.core.$strip>, z.ZodObject<{
+                repository: z.ZodString;
+                targetRef: z.ZodString;
+                expectedBase: z.ZodString;
+                head: z.ZodString;
+                kind: z.ZodLiteral<"pr-merge">;
+                url: z.ZodString;
+            }, z.core.$strip>], "kind">>;
+            evidence: z.ZodArray<z.ZodString>;
+            status: z.ZodOptional<z.ZodEnum<{
+                applied: "applied";
+                approved: "approved";
+                draft: "draft";
+                "pending-approval": "pending-approval";
+                rejected: "rejected";
+                unknown: "unknown";
+            }>>;
+        }, z.core.$strip>>;
+        proposal: z.ZodOptional<z.ZodObject<{
+            id: z.ZodString;
+            summary: z.ZodString;
+            operations: z.ZodArray<z.ZodDiscriminatedUnion<[z.ZodObject<{
+                repository: z.ZodString;
+                targetRef: z.ZodString;
+                expectedBase: z.ZodString;
+                head: z.ZodString;
+                kind: z.ZodLiteral<"git-merge">;
+                worktree: z.ZodOptional<z.ZodString>;
+            }, z.core.$strip>, z.ZodObject<{
+                repository: z.ZodString;
+                targetRef: z.ZodString;
+                expectedBase: z.ZodString;
+                head: z.ZodString;
+                kind: z.ZodLiteral<"pr-merge">;
+                url: z.ZodString;
+            }, z.core.$strip>], "kind">>;
+            evidence: z.ZodArray<z.ZodString>;
+            status: z.ZodOptional<z.ZodEnum<{
+                applied: "applied";
+                approved: "approved";
+                draft: "draft";
+                "pending-approval": "pending-approval";
+                rejected: "rejected";
+                unknown: "unknown";
+            }>>;
+        }, z.core.$strip>>;
+        candidate: z.ZodOptional<z.ZodObject<{
+            cwd: z.ZodString;
+            revision: z.ZodString;
+            argv: z.ZodArray<z.ZodString>;
+            url: z.ZodString;
+            readinessPath: z.ZodOptional<z.ZodString>;
+            adapter: z.ZodOptional<z.ZodString>;
+            repos: z.ZodOptional<z.ZodRecord<z.ZodString, z.ZodObject<{
+                repo: z.ZodString;
+                commit: z.ZodString;
+            }, z.core.$strip>>>;
+            options: z.ZodOptional<z.ZodRecord<z.ZodString, z.ZodJSONSchema>>;
+            featureId: z.ZodOptional<z.ZodString>;
+            start: z.ZodOptional<z.ZodBoolean>;
+            embed: z.ZodOptional<z.ZodBoolean>;
+        }, z.core.$strip>>;
+        preview: z.ZodOptional<z.ZodObject<{
+            key: z.ZodString;
+            status: z.ZodEnum<{
+                delivered: "delivered";
+                failed: "failed";
+                pending: "pending";
+            }>;
+            eventKey: z.ZodOptional<z.ZodString>;
+            noteId: z.ZodOptional<z.ZodString>;
+            requestedAt: z.ZodNumber;
+            checkedAt: z.ZodOptional<z.ZodNumber>;
+            error: z.ZodOptional<z.ZodString>;
+        }, z.core.$strip>>;
+        archived: z.ZodOptional<z.ZodBoolean>;
+        archivedAt: z.ZodOptional<z.ZodNumber>;
+        resultReadAt: z.ZodOptional<z.ZodNumber>;
+        dispatchAttempts: z.ZodOptional<z.ZodNumber>;
+        nextDispatchAt: z.ZodOptional<z.ZodNumber>;
+        lastDispatchError: z.ZodOptional<z.ZodString>;
+        outcome: z.ZodOptional<z.ZodObject<{
+            requirementVersion: z.ZodOptional<z.ZodNumber>;
+            status: z.ZodEnum<{
+                blocked: "blocked";
+                cancelled: "cancelled";
+                completed: "completed";
+                failed: "failed";
+                incomplete: "incomplete";
+                "needs-input": "needs-input";
+                unknown: "unknown";
+            }>;
+            remainingWork: z.ZodOptional<z.ZodArray<z.ZodString>>;
+            blockers: z.ZodOptional<z.ZodArray<z.ZodString>>;
+            summary: z.ZodString;
+            evidence: z.ZodOptional<z.ZodArray<z.ZodObject<{
+                id: z.ZodOptional<z.ZodString>;
+                kind: z.ZodEnum<{
+                    commit: "commit";
+                    file: "file";
+                    record: "record";
+                    text: "text";
+                    url: "url";
+                }>;
+                summary: z.ZodString;
+                ref: z.ZodOptional<z.ZodString>;
+            }, z.core.$strip>>>;
+            proposals: z.ZodArray<z.ZodObject<{
+                id: z.ZodString;
+                summary: z.ZodString;
+                operations: z.ZodArray<z.ZodDiscriminatedUnion<[z.ZodObject<{
+                    repository: z.ZodString;
+                    targetRef: z.ZodString;
+                    expectedBase: z.ZodString;
+                    head: z.ZodString;
+                    kind: z.ZodLiteral<"git-merge">;
+                    worktree: z.ZodOptional<z.ZodString>;
+                }, z.core.$strip>, z.ZodObject<{
+                    repository: z.ZodString;
+                    targetRef: z.ZodString;
+                    expectedBase: z.ZodString;
+                    head: z.ZodString;
+                    kind: z.ZodLiteral<"pr-merge">;
+                    url: z.ZodString;
+                }, z.core.$strip>], "kind">>;
+                evidence: z.ZodArray<z.ZodString>;
+                status: z.ZodOptional<z.ZodEnum<{
+                    applied: "applied";
+                    approved: "approved";
+                    draft: "draft";
+                    "pending-approval": "pending-approval";
+                    rejected: "rejected";
+                    unknown: "unknown";
+                }>>;
+            }, z.core.$strip>>;
+            replySuggestion: z.ZodOptional<z.ZodString>;
+            recordedAt: z.ZodNumber;
+            requestId: z.ZodOptional<z.ZodString>;
+        }, z.core.$strip>>;
+        createdAt: z.ZodNumber;
+        updatedAt: z.ZodNumber;
+    }, z.core.$strip>>;
+}, z.core.$strip>;
+export type ExecutionDeskState = z.infer<typeof executionDeskStateSchema>;
+export declare const executionConfigSchema: z.ZodObject<{
+    projectId: z.ZodOptional<z.ZodString>;
+    notes: z.ZodOptional<z.ZodObject<{
+        todo: z.ZodOptional<z.ZodString>;
+        execution: z.ZodOptional<z.ZodString>;
+    }, z.core.$loose>>;
+}, z.core.$loose>;
+export declare const note: import("@dsh-workbench/runtime").NoteModel<z.ZodObject<{
+    version: z.ZodLiteral<1>;
+    title: z.ZodOptional<z.ZodString>;
+    description: z.ZodOptional<z.ZodString>;
+    delegations: z.ZodRecord<z.ZodString, z.ZodObject<{
+        origin: z.ZodOptional<z.ZodObject<{
+            kind: z.ZodLiteral<"inspection">;
+            label: z.ZodString;
+            noteId: z.ZodString;
+            problemId: z.ZodString;
+            evidenceVersion: z.ZodString;
+        }, z.core.$strip>>;
+        workType: z.ZodOptional<z.ZodEnum<{
+            "code-repair": "code-repair";
+            "data-permission": "data-permission";
+            investigation: "investigation";
+        }>>;
+        nextAction: z.ZodOptional<z.ZodString>;
+        requirementVersion: z.ZodOptional<z.ZodNumber>;
+        requirementHistory: z.ZodOptional<z.ZodArray<z.ZodObject<{
+            version: z.ZodNumber;
+            goal: z.ZodString;
+            scope: z.ZodArray<z.ZodString>;
+            source: z.ZodObject<{
+                key: z.ZodString;
+                id: z.ZodString;
+                version: z.ZodString;
+                instruction: z.ZodOptional<z.ZodString>;
+                deliveryId: z.ZodOptional<z.ZodString>;
+                noteId: z.ZodOptional<z.ZodString>;
+                stateRef: z.ZodOptional<z.ZodUnion<readonly [z.ZodString, z.ZodObject<{
+                    id: z.ZodString;
+                }, z.core.$strip>]>>;
+                path: z.ZodOptional<z.ZodString>;
+                itemId: z.ZodOptional<z.ZodString>;
+                itemPath: z.ZodOptional<z.ZodString>;
+                revision: z.ZodString;
+                value: z.ZodJSONSchema;
+                shelved: z.ZodOptional<z.ZodLiteral<true>>;
+            }, z.core.$strip>;
+            shelved: z.ZodOptional<z.ZodLiteral<true>>;
+        }, z.core.$strip>>>;
+        updates: z.ZodOptional<z.ZodArray<z.ZodObject<{
+            id: z.ZodString;
+            fingerprint: z.ZodString;
+            version: z.ZodNumber;
+            receivedAt: z.ZodNumber;
+        }, z.core.$strip>>>;
+        id: z.ZodString;
+        sourceIdentity: z.ZodString;
+        businessKey: z.ZodOptional<z.ZodString>;
+        source: z.ZodObject<{
+            key: z.ZodString;
+            id: z.ZodString;
+            version: z.ZodString;
+            instruction: z.ZodOptional<z.ZodString>;
+            deliveryId: z.ZodOptional<z.ZodString>;
+            noteId: z.ZodOptional<z.ZodString>;
+            stateRef: z.ZodOptional<z.ZodUnion<readonly [z.ZodString, z.ZodObject<{
+                id: z.ZodString;
+            }, z.core.$strip>]>>;
+            path: z.ZodOptional<z.ZodString>;
+            itemId: z.ZodOptional<z.ZodString>;
+            itemPath: z.ZodOptional<z.ZodString>;
+            revision: z.ZodString;
+            value: z.ZodJSONSchema;
+            shelved: z.ZodOptional<z.ZodLiteral<true>>;
+        }, z.core.$strip>;
+        goal: z.ZodString;
+        title: z.ZodOptional<z.ZodString>;
+        scope: z.ZodArray<z.ZodString>;
+        status: z.ZodEnum<{
+            blocked: "blocked";
+            cancelled: "cancelled";
+            completed: "completed";
+            dispatching: "dispatching";
+            failed: "failed";
+            "needs-input": "needs-input";
+            paused: "paused";
+            review: "review";
+            running: "running";
+            unknown: "unknown";
+        }>;
+        statusCorrection: z.ZodOptional<z.ZodObject<{
+            runId: z.ZodString;
+            previousStatus: z.ZodEnum<{
+                blocked: "blocked";
+                cancelled: "cancelled";
+                completed: "completed";
+                dispatching: "dispatching";
+                failed: "failed";
+                "needs-input": "needs-input";
+                paused: "paused";
+                review: "review";
+                running: "running";
+                unknown: "unknown";
+            }>;
+            previousUpdatedAt: z.ZodNumber;
+            correctedAt: z.ZodNumber;
+        }, z.core.$strip>>;
+        owner: z.ZodOptional<z.ZodObject<{
+            sessionId: z.ZodString;
+            noteId: z.ZodString;
+            cwd: z.ZodOptional<z.ZodString>;
+        }, z.core.$strip>>;
+        execution: z.ZodOptional<z.ZodObject<{
+            requirementVersion: z.ZodOptional<z.ZodNumber>;
+            requestId: z.ZodString;
+            runId: z.ZodOptional<z.ZodString>;
+            status: z.ZodString;
+            result: z.ZodOptional<z.ZodObject<{
+                status: z.ZodString;
+                interrupted: z.ZodOptional<z.ZodBoolean>;
+                text: z.ZodOptional<z.ZodString>;
+                textShelved: z.ZodOptional<z.ZodLiteral<true>>;
+                value: z.ZodOptional<z.ZodJSONSchema>;
+                error: z.ZodOptional<z.ZodString>;
+                checkedAt: z.ZodNumber;
+            }, z.core.$strip>>;
+            error: z.ZodOptional<z.ZodString>;
+            stopRequested: z.ZodOptional<z.ZodBoolean>;
+            verification: z.ZodOptional<z.ZodBoolean>;
+            repairFeedbackId: z.ZodOptional<z.ZodString>;
+            completionCheck: z.ZodOptional<z.ZodBoolean>;
+            trigger: z.ZodOptional<z.ZodObject<{
+                reason: z.ZodString;
+                source: z.ZodOptional<z.ZodString>;
+            }, z.core.$strip>>;
+        }, z.core.$strip>>;
+        pendingContinuation: z.ZodOptional<z.ZodBoolean>;
+        verificationStarted: z.ZodOptional<z.ZodBoolean>;
+        continueRequested: z.ZodOptional<z.ZodBoolean>;
+        pendingRequestId: z.ZodOptional<z.ZodString>;
+        feedback: z.ZodOptional<z.ZodArray<z.ZodObject<{
+            id: z.ZodString;
+            connectionId: z.ZodString;
+            subject: z.ZodOptional<z.ZodString>;
+            status: z.ZodString;
+            summary: z.ZodString;
+            diagnostics: z.ZodOptional<z.ZodString>;
+            instruction: z.ZodOptional<z.ZodString>;
+            shelved: z.ZodOptional<z.ZodLiteral<true>>;
+            receivedAt: z.ZodNumber;
+            pending: z.ZodBoolean;
+            manual: z.ZodOptional<z.ZodBoolean>;
+            auto: z.ZodOptional<z.ZodBoolean>;
+            candidateKey: z.ZodOptional<z.ZodString>;
+            revision: z.ZodOptional<z.ZodString>;
+            commits: z.ZodOptional<z.ZodArray<z.ZodString>>;
+            surface: z.ZodOptional<z.ZodString>;
+            runId: z.ZodOptional<z.ZodString>;
+            repairRequestId: z.ZodOptional<z.ZodString>;
+        }, z.core.$strip>>>;
+        continuationSeq: z.ZodNumber;
+        activeMs: z.ZodNumber;
+        activeSince: z.ZodOptional<z.ZodNumber>;
+        approvalWaitMs: z.ZodNumber;
+        approvalWaitSince: z.ZodOptional<z.ZodNumber>;
+        longWaitNotified: z.ZodBoolean;
+        evidence: z.ZodArray<z.ZodObject<{
+            id: z.ZodOptional<z.ZodString>;
+            kind: z.ZodEnum<{
+                commit: "commit";
+                file: "file";
+                record: "record";
+                text: "text";
+                url: "url";
+            }>;
+            summary: z.ZodString;
+            ref: z.ZodOptional<z.ZodString>;
+        }, z.core.$strip>>;
+        proposals: z.ZodArray<z.ZodObject<{
+            id: z.ZodString;
+            summary: z.ZodString;
+            operations: z.ZodArray<z.ZodDiscriminatedUnion<[z.ZodObject<{
+                repository: z.ZodString;
+                targetRef: z.ZodString;
+                expectedBase: z.ZodString;
+                head: z.ZodString;
+                kind: z.ZodLiteral<"git-merge">;
+                worktree: z.ZodOptional<z.ZodString>;
+            }, z.core.$strip>, z.ZodObject<{
+                repository: z.ZodString;
+                targetRef: z.ZodString;
+                expectedBase: z.ZodString;
+                head: z.ZodString;
+                kind: z.ZodLiteral<"pr-merge">;
+                url: z.ZodString;
+            }, z.core.$strip>], "kind">>;
+            evidence: z.ZodArray<z.ZodString>;
+            status: z.ZodOptional<z.ZodEnum<{
+                applied: "applied";
+                approved: "approved";
+                draft: "draft";
+                "pending-approval": "pending-approval";
+                rejected: "rejected";
+                unknown: "unknown";
+            }>>;
+        }, z.core.$strip>>;
+        proposal: z.ZodOptional<z.ZodObject<{
+            id: z.ZodString;
+            summary: z.ZodString;
+            operations: z.ZodArray<z.ZodDiscriminatedUnion<[z.ZodObject<{
+                repository: z.ZodString;
+                targetRef: z.ZodString;
+                expectedBase: z.ZodString;
+                head: z.ZodString;
+                kind: z.ZodLiteral<"git-merge">;
+                worktree: z.ZodOptional<z.ZodString>;
+            }, z.core.$strip>, z.ZodObject<{
+                repository: z.ZodString;
+                targetRef: z.ZodString;
+                expectedBase: z.ZodString;
+                head: z.ZodString;
+                kind: z.ZodLiteral<"pr-merge">;
+                url: z.ZodString;
+            }, z.core.$strip>], "kind">>;
+            evidence: z.ZodArray<z.ZodString>;
+            status: z.ZodOptional<z.ZodEnum<{
+                applied: "applied";
+                approved: "approved";
+                draft: "draft";
+                "pending-approval": "pending-approval";
+                rejected: "rejected";
+                unknown: "unknown";
+            }>>;
+        }, z.core.$strip>>;
+        candidate: z.ZodOptional<z.ZodObject<{
+            cwd: z.ZodString;
+            revision: z.ZodString;
+            argv: z.ZodArray<z.ZodString>;
+            url: z.ZodString;
+            readinessPath: z.ZodOptional<z.ZodString>;
+            adapter: z.ZodOptional<z.ZodString>;
+            repos: z.ZodOptional<z.ZodRecord<z.ZodString, z.ZodObject<{
+                repo: z.ZodString;
+                commit: z.ZodString;
+            }, z.core.$strip>>>;
+            options: z.ZodOptional<z.ZodRecord<z.ZodString, z.ZodJSONSchema>>;
+            featureId: z.ZodOptional<z.ZodString>;
+            start: z.ZodOptional<z.ZodBoolean>;
+            embed: z.ZodOptional<z.ZodBoolean>;
+        }, z.core.$strip>>;
+        preview: z.ZodOptional<z.ZodObject<{
+            key: z.ZodString;
+            status: z.ZodEnum<{
+                delivered: "delivered";
+                failed: "failed";
+                pending: "pending";
+            }>;
+            eventKey: z.ZodOptional<z.ZodString>;
+            noteId: z.ZodOptional<z.ZodString>;
+            requestedAt: z.ZodNumber;
+            checkedAt: z.ZodOptional<z.ZodNumber>;
+            error: z.ZodOptional<z.ZodString>;
+        }, z.core.$strip>>;
+        archived: z.ZodOptional<z.ZodBoolean>;
+        archivedAt: z.ZodOptional<z.ZodNumber>;
+        resultReadAt: z.ZodOptional<z.ZodNumber>;
+        dispatchAttempts: z.ZodOptional<z.ZodNumber>;
+        nextDispatchAt: z.ZodOptional<z.ZodNumber>;
+        lastDispatchError: z.ZodOptional<z.ZodString>;
+        outcome: z.ZodOptional<z.ZodObject<{
+            requirementVersion: z.ZodOptional<z.ZodNumber>;
+            status: z.ZodEnum<{
+                blocked: "blocked";
+                cancelled: "cancelled";
+                completed: "completed";
+                failed: "failed";
+                incomplete: "incomplete";
+                "needs-input": "needs-input";
+                unknown: "unknown";
+            }>;
+            remainingWork: z.ZodOptional<z.ZodArray<z.ZodString>>;
+            blockers: z.ZodOptional<z.ZodArray<z.ZodString>>;
+            summary: z.ZodString;
+            evidence: z.ZodOptional<z.ZodArray<z.ZodObject<{
+                id: z.ZodOptional<z.ZodString>;
+                kind: z.ZodEnum<{
+                    commit: "commit";
+                    file: "file";
+                    record: "record";
+                    text: "text";
+                    url: "url";
+                }>;
+                summary: z.ZodString;
+                ref: z.ZodOptional<z.ZodString>;
+            }, z.core.$strip>>>;
+            proposals: z.ZodArray<z.ZodObject<{
+                id: z.ZodString;
+                summary: z.ZodString;
+                operations: z.ZodArray<z.ZodDiscriminatedUnion<[z.ZodObject<{
+                    repository: z.ZodString;
+                    targetRef: z.ZodString;
+                    expectedBase: z.ZodString;
+                    head: z.ZodString;
+                    kind: z.ZodLiteral<"git-merge">;
+                    worktree: z.ZodOptional<z.ZodString>;
+                }, z.core.$strip>, z.ZodObject<{
+                    repository: z.ZodString;
+                    targetRef: z.ZodString;
+                    expectedBase: z.ZodString;
+                    head: z.ZodString;
+                    kind: z.ZodLiteral<"pr-merge">;
+                    url: z.ZodString;
+                }, z.core.$strip>], "kind">>;
+                evidence: z.ZodArray<z.ZodString>;
+                status: z.ZodOptional<z.ZodEnum<{
+                    applied: "applied";
+                    approved: "approved";
+                    draft: "draft";
+                    "pending-approval": "pending-approval";
+                    rejected: "rejected";
+                    unknown: "unknown";
+                }>>;
+            }, z.core.$strip>>;
+            replySuggestion: z.ZodOptional<z.ZodString>;
+            recordedAt: z.ZodNumber;
+            requestId: z.ZodOptional<z.ZodString>;
+        }, z.core.$strip>>;
+        createdAt: z.ZodNumber;
+        updatedAt: z.ZodNumber;
+    }, z.core.$strip>>;
+}, z.core.$strip>, z.ZodObject<{
+    projectId: z.ZodOptional<z.ZodString>;
+    notes: z.ZodOptional<z.ZodObject<{
+        todo: z.ZodOptional<z.ZodString>;
+        execution: z.ZodOptional<z.ZodString>;
+    }, z.core.$loose>>;
+}, z.core.$loose>, {}>;
+/** Private source for an explicitly created Desk task. */
+export type DirectTaskSource = {
+    id: string;
+    key: string;
+    version: string;
+    instruction: string;
+    deliveryId: string;
+    source: {
+        noteId: string;
+        stateRef?: string;
+        path: string;
+        revision: string;
+        value: JsonValue;
+    };
+    chain: string[];
+};
+export type PrepareInput = z.infer<typeof prepareInputSchema>;
+export type ExecutionContext = NoteActionContext<typeof note>;
+export type ExecutionAgent = ExecutionContext['host']['agent'];
+export type SubmitInput = z.infer<typeof submitInputSchema>;
+export type CheckpointInput = z.infer<typeof checkpointInputSchema>;

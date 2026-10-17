@@ -1,0 +1,73 @@
+{
+  "onboarding": {
+    "title": "开始交办任务",
+    "description": "执行台汇集你明确交给它做的事。",
+    "steps": [
+      "先在待办里记下事项，再选择“交办”；只记录不会自动执行。",
+      "从关联的便笺进入同一个执行台；还没连上时，可以让 AI 帮你连。",
+      "执行需要可用的模型和项目；暂时没有任务是正常的。"
+    ],
+    "locales": {
+      "en": {
+        "title": "Start assigning tasks",
+        "description": "The execution desk collects tasks you explicitly assign.",
+        "steps": [
+          "Record a Todo item, then assign it. Adding an item does not execute it automatically.",
+          "Follow the linked source to the same execution desk. An agent can help create missing connections.",
+          "Execution requires an available model and project context. Having no tasks is normal."
+        ]
+      }
+    }
+  },
+  "schemaVersion": 1,
+  "name": "执行台",
+  "scenarios": "开发者：把需求交给 Agent 在代码仓库里执行，跟进任务进度、看结果、审批合入。工作目录里有 git 仓库时适合。",
+  "icon": {
+    "type": "svg",
+    "path": "icon.svg",
+    "monochrome": true
+  },
+  "files": [
+    "README.md",
+    "SKILL.md",
+    "actions.ts",
+    "archive.ts",
+    "display.ts",
+    "execution-presentation.ts",
+    "icon.svg",
+    "inspection-artifacts.ts",
+    "inspection.ts",
+    "messages.ts",
+    "model.ts",
+    "package.json",
+    "projection.ts",
+    "prompt.ts",
+    "schemas.ts",
+    "state.ts",
+    "view.tsx",
+    "worka-prebuilt/actions.mjs",
+    "worka-prebuilt/contract/SKILL.md",
+    "worka-prebuilt/contract/manifest.json",
+    "worka-prebuilt/contract/references/api.d.ts",
+    "worka-prebuilt/contract/references/types/actions.d.ts",
+    "worka-prebuilt/contract/references/types/archive.d.ts",
+    "worka-prebuilt/contract/references/types/display.d.ts",
+    "worka-prebuilt/contract/references/types/inspection-artifacts.d.ts",
+    "worka-prebuilt/contract/references/types/inspection.d.ts",
+    "worka-prebuilt/contract/references/types/model.d.ts",
+    "worka-prebuilt/contract/references/types/projection.d.ts",
+    "worka-prebuilt/contract/references/types/prompt.d.ts",
+    "worka-prebuilt/contract/references/types/schemas.d.ts",
+    "worka-prebuilt/entry-7vpsytwj.js",
+    "worka-prebuilt/entry-bundle.css",
+    "worka-prebuilt/entry-bundle.js",
+    "worka-prebuilt/entry-bundle.tailwind.css",
+    "worka-prebuilt/entry-nxnk8d8j.js",
+    "worka-prebuilt/index.html",
+    "worka-prebuilt/view-href1x4d.js",
+    "worka-prebuilt/view-runtime-qbnkpzmx.js",
+    "worka-prebuilt/view-runtime.mjs",
+    "worka-prebuilt/zod-config.mjs",
+    "worka-prebuilt/manifest.json"
+  ]
+}

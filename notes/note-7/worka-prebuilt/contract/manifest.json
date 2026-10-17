@@ -1,0 +1,18 @@
+{
+  "schemaVersion": 1,
+  "codeVersion": "e9b46416b1ab-f03f9b05",
+  "status": "ready",
+  "files": [
+    "SKILL.md",
+    "references/api.d.ts",
+    "references/types/actions.d.ts",
+    "references/types/content-model.d.ts",
+    "references/types/model.d.ts",
+    "references/types/note-model.d.ts"
+  ],
+  "diagnostics": [],
+  "skill": {
+    "name": "cardgame-library",
+    "description": "CardGame 知识库、卡牌库和资源库的统一检索与编辑便笺。通过 projectId 读取权威内容索引，使用稳定深链接打开文档、卡牌和资源。"
+  }
+}

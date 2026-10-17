@@ -1,0 +1,283 @@
+import { z } from '@dsh-workbench/runtime';
+export declare const featureReceiptSchema: z.ZodObject<{
+    id: z.ZodString;
+    revision: z.ZodNullable<z.ZodString>;
+    record: z.ZodNullable<z.ZodObject<{
+        id: z.ZodString;
+        title: z.ZodString;
+        summary: z.ZodString;
+        next: z.ZodString;
+        body: z.ZodString;
+        links: z.ZodArray<z.ZodObject<{
+            repo: z.ZodString;
+            branches: z.ZodArray<z.ZodString>;
+        }, z.core.$strip>>;
+    }, z.core.$loose>>;
+    registered: z.ZodOptional<z.ZodBoolean>;
+    changed: z.ZodOptional<z.ZodBoolean>;
+}, z.core.$loose>;
+export declare const getFeatureSchema: z.ZodObject<{
+    id: z.ZodString;
+    revision: z.ZodNullable<z.ZodString>;
+    record: z.ZodNullable<z.ZodObject<{
+        id: z.ZodString;
+        title: z.ZodString;
+        summary: z.ZodString;
+        next: z.ZodString;
+        body: z.ZodString;
+        links: z.ZodArray<z.ZodObject<{
+            repo: z.ZodString;
+            branches: z.ZodArray<z.ZodString>;
+        }, z.core.$strip>>;
+    }, z.core.$loose>>;
+    registered: z.ZodOptional<z.ZodBoolean>;
+    changed: z.ZodOptional<z.ZodBoolean>;
+    context: z.ZodObject<{
+        plugin: z.ZodString;
+        home: z.ZodString;
+        guide: z.ZodString;
+        cli: z.ZodString;
+    }, z.core.$loose>;
+    existingFeatures: z.ZodArray<z.ZodObject<{
+        id: z.ZodString;
+        title: z.ZodString;
+        summary: z.ZodOptional<z.ZodString>;
+        links: z.ZodArray<z.ZodObject<{
+            repo: z.ZodString;
+            repository: z.ZodOptional<z.ZodString>;
+            branches: z.ZodArray<z.ZodString>;
+        }, z.core.$strip>>;
+    }, z.core.$strip>>;
+}, z.core.$loose>;
+export declare const summarySchema: z.ZodObject<{
+    serverUrl: z.ZodString;
+    status: z.ZodEnum<{
+        error: "error";
+        running: "running";
+        syncing: "syncing";
+    }>;
+    totalCount: z.ZodNumber;
+    activeCount: z.ZodNumber;
+    archivedCount: z.ZodNumber;
+    errors: z.ZodArray<z.ZodObject<{
+        file: z.ZodString;
+        error: z.ZodString;
+    }, z.core.$strip>>;
+    features: z.ZodArray<z.ZodObject<{
+        id: z.ZodString;
+        title: z.ZodString;
+        summary: z.ZodOptional<z.ZodString>;
+        next: z.ZodOptional<z.ZodString>;
+        archived: z.ZodBoolean;
+        totalPrs: z.ZodNumber;
+        mergedPrs: z.ZodNumber;
+        execution: z.ZodOptional<z.ZodObject<{
+            noteId: z.ZodOptional<z.ZodString>;
+            delegationId: z.ZodOptional<z.ZodString>;
+        }, z.core.$strip>>;
+        links: z.ZodArray<z.ZodObject<{
+            repo: z.ZodString;
+            repoName: z.ZodString;
+        }, z.core.$strip>>;
+    }, z.core.$strip>>;
+}, z.core.$loose>;
+export declare const externalLinkSchema: z.ZodObject<{
+    url: z.ZodString;
+    label: z.ZodString;
+    title: z.ZodString;
+    tone: z.ZodOptional<z.ZodString>;
+}, z.core.$strip>;
+export declare const prSchema: z.ZodObject<{
+    number: z.ZodNumber;
+    url: z.ZodString;
+    label: z.ZodString;
+    state: z.ZodOptional<z.ZodString>;
+    title: z.ZodString;
+    tone: z.ZodOptional<z.ZodString>;
+}, z.core.$strip>;
+export declare const gameCandidateSchema: z.ZodObject<{
+    id: z.ZodString;
+    projectId: z.ZodString;
+    productionId: z.ZodString;
+    cardId: z.ZodOptional<z.ZodString>;
+    featureId: z.ZodString;
+    kind: z.ZodOptional<z.ZodEnum<{
+        card: "card";
+        deck: "deck";
+        documents: "documents";
+        story: "story";
+    }>>;
+    targetId: z.ZodOptional<z.ZodString>;
+    candidateHash: z.ZodOptional<z.ZodString>;
+    targetBaseRevision: z.ZodOptional<z.ZodString>;
+    validationManifest: z.ZodOptional<z.ZodString>;
+    commit: z.ZodOptional<z.ZodString>;
+    status: z.ZodEnum<{
+        adopted: "adopted";
+        candidate: "candidate";
+        undone: "undone";
+    }>;
+    previewVerified: z.ZodOptional<z.ZodBoolean>;
+    adoptedAt: z.ZodOptional<z.ZodString>;
+    undoneAt: z.ZodOptional<z.ZodString>;
+    adoptionId: z.ZodOptional<z.ZodString>;
+}, z.core.$loose>;
+export declare const viewSchema: z.ZodObject<{
+    serverUrl: z.ZodString;
+    status: z.ZodEnum<{
+        error: "error";
+        running: "running";
+        syncing: "syncing";
+    }>;
+    totalCount: z.ZodNumber;
+    activeCount: z.ZodNumber;
+    archivedCount: z.ZodNumber;
+    errors: z.ZodArray<z.ZodObject<{
+        file: z.ZodString;
+        error: z.ZodString;
+    }, z.core.$strip>>;
+    features: z.ZodArray<z.ZodObject<{
+        id: z.ZodString;
+        title: z.ZodString;
+        summary: z.ZodOptional<z.ZodString>;
+        next: z.ZodOptional<z.ZodString>;
+        archived: z.ZodBoolean;
+        totalPrs: z.ZodNumber;
+        mergedPrs: z.ZodNumber;
+        execution: z.ZodOptional<z.ZodObject<{
+            noteId: z.ZodOptional<z.ZodString>;
+            delegationId: z.ZodOptional<z.ZodString>;
+        }, z.core.$strip>>;
+        body: z.ZodOptional<z.ZodString>;
+        createdAt: z.ZodOptional<z.ZodString>;
+        autoArchived: z.ZodBoolean;
+        gameCandidates: z.ZodArray<z.ZodObject<{
+            id: z.ZodString;
+            projectId: z.ZodString;
+            productionId: z.ZodString;
+            cardId: z.ZodOptional<z.ZodString>;
+            featureId: z.ZodString;
+            kind: z.ZodOptional<z.ZodEnum<{
+                card: "card";
+                deck: "deck";
+                documents: "documents";
+                story: "story";
+            }>>;
+            targetId: z.ZodOptional<z.ZodString>;
+            candidateHash: z.ZodOptional<z.ZodString>;
+            targetBaseRevision: z.ZodOptional<z.ZodString>;
+            validationManifest: z.ZodOptional<z.ZodString>;
+            commit: z.ZodOptional<z.ZodString>;
+            status: z.ZodEnum<{
+                adopted: "adopted";
+                candidate: "candidate";
+                undone: "undone";
+            }>;
+            previewVerified: z.ZodOptional<z.ZodBoolean>;
+            adoptedAt: z.ZodOptional<z.ZodString>;
+            undoneAt: z.ZodOptional<z.ZodString>;
+            adoptionId: z.ZodOptional<z.ZodString>;
+        }, z.core.$loose>>;
+        links: z.ZodArray<z.ZodObject<{
+            repo: z.ZodString;
+            repoName: z.ZodString;
+            repoNameShort: z.ZodString;
+            url: z.ZodOptional<z.ZodString>;
+            trackingLabel: z.ZodOptional<z.ZodString>;
+            mappingIssue: z.ZodOptional<z.ZodString>;
+            branches: z.ZodArray<z.ZodString>;
+            allPrs: z.ZodArray<z.ZodObject<{
+                number: z.ZodNumber;
+                url: z.ZodString;
+                label: z.ZodString;
+                state: z.ZodOptional<z.ZodString>;
+                title: z.ZodString;
+                tone: z.ZodOptional<z.ZodString>;
+                branch: z.ZodString;
+            }, z.core.$strip>>;
+            envBranches: z.ZodRecord<z.ZodString, z.ZodObject<{
+                branch: z.ZodString;
+                merge: z.ZodObject<{
+                    label: z.ZodString;
+                    tone: z.ZodString;
+                    stale: z.ZodOptional<z.ZodBoolean>;
+                }, z.core.$strip>;
+                ci: z.ZodObject<{
+                    label: z.ZodString;
+                    tone: z.ZodString;
+                    stale: z.ZodOptional<z.ZodBoolean>;
+                }, z.core.$strip>;
+                deploy: z.ZodObject<{
+                    label: z.ZodString;
+                    tone: z.ZodString;
+                    stale: z.ZodOptional<z.ZodBoolean>;
+                }, z.core.$strip>;
+                prs: z.ZodArray<z.ZodObject<{
+                    number: z.ZodNumber;
+                    url: z.ZodString;
+                    label: z.ZodString;
+                    state: z.ZodOptional<z.ZodString>;
+                    title: z.ZodString;
+                    tone: z.ZodOptional<z.ZodString>;
+                }, z.core.$strip>>;
+                ciLinks: z.ZodArray<z.ZodObject<{
+                    url: z.ZodString;
+                    label: z.ZodString;
+                    title: z.ZodString;
+                    tone: z.ZodOptional<z.ZodString>;
+                }, z.core.$strip>>;
+                deploymentLinks: z.ZodArray<z.ZodObject<{
+                    url: z.ZodString;
+                    label: z.ZodString;
+                    title: z.ZodString;
+                    tone: z.ZodOptional<z.ZodString>;
+                }, z.core.$strip>>;
+            }, z.core.$strip>>;
+        }, z.core.$strip>>;
+    }, z.core.$strip>>;
+}, z.core.$strip>;
+export declare const gameCandidateInputSchema: z.ZodObject<{
+    projectId: z.ZodString;
+    productionId: z.ZodString;
+    candidateId: z.ZodString;
+    featureId: z.ZodString;
+    candidateHash: z.ZodString;
+    targetBaseRevision: z.ZodString;
+    validationManifest: z.ZodString;
+}, z.core.$strip>;
+export declare const gameAdoptionSchema: z.ZodObject<{
+    candidate: z.ZodObject<{
+        id: z.ZodString;
+        projectId: z.ZodString;
+        productionId: z.ZodString;
+        cardId: z.ZodOptional<z.ZodString>;
+        featureId: z.ZodString;
+        kind: z.ZodOptional<z.ZodEnum<{
+            card: "card";
+            deck: "deck";
+            documents: "documents";
+            story: "story";
+        }>>;
+        targetId: z.ZodOptional<z.ZodString>;
+        candidateHash: z.ZodOptional<z.ZodString>;
+        targetBaseRevision: z.ZodOptional<z.ZodString>;
+        validationManifest: z.ZodOptional<z.ZodString>;
+        commit: z.ZodOptional<z.ZodString>;
+        status: z.ZodEnum<{
+            adopted: "adopted";
+            candidate: "candidate";
+            undone: "undone";
+        }>;
+        previewVerified: z.ZodOptional<z.ZodBoolean>;
+        adoptedAt: z.ZodOptional<z.ZodString>;
+        undoneAt: z.ZodOptional<z.ZodString>;
+        adoptionId: z.ZodOptional<z.ZodString>;
+    }, z.core.$loose>;
+    production: z.ZodOptional<z.ZodObject<{
+        id: z.ZodString;
+        projectId: z.ZodString;
+        revision: z.ZodNumber;
+    }, z.core.$loose>>;
+    adoptionId: z.ZodOptional<z.ZodString>;
+    reused: z.ZodOptional<z.ZodBoolean>;
+}, z.core.$strip>;

@@ -1,0 +1,11 @@
+{
+  "schemaVersion": 1,
+  "event": {
+    "id": "sample-delegate",
+    "noteId": "e1c42324-c8ab-452c-bb24-e776af0ca33f",
+    "name": "cardgame.todo.delegationRequested",
+    "payload": {}
+  },
+  "responses": [],
+  "expectedOutcome": "agent"
+}

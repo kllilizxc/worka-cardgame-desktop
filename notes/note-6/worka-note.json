@@ -1,0 +1,62 @@
+{
+  "onboarding": {
+    "title": "关联项目与功能记录",
+    "description": "查看项目的功能交付进展。",
+    "steps": [
+      "先检查本便笺使用的数据源是否可读取。",
+      "让 Agent 关联项目或已有功能记录。",
+      "明确开始实施或发布时才创建功能记录；纯讨论不登记。"
+    ]
+  },
+  "schemaVersion": 1,
+  "name": "功能进展",
+  "scenarios": "开发团队或独立开发者：跟踪一个仓库里各个功能做到哪了、谁在做、卡在哪。",
+  "icon": {
+    "type": "svg",
+    "path": "icon.svg",
+    "monochrome": true
+  },
+  "files": [
+    "README.md",
+    "SKILL.md",
+    "actions.ts",
+    "branch-state.d.ts",
+    "branch-state.js",
+    "cardgame-operations.ts",
+    "feature-create.tsx",
+    "game-changes.tsx",
+    "icon.svg",
+    "initial-state.json",
+    "migration-compat.ts",
+    "model.ts",
+    "package.json",
+    "projection.ts",
+    "reference-collection.tsx",
+    "schemas.ts",
+    "state.ts",
+    "surface.ts",
+    "view.tsx",
+    "worka-source.json",
+    "worka-prebuilt/actions.mjs",
+    "worka-prebuilt/contract/SKILL.md",
+    "worka-prebuilt/contract/manifest.json",
+    "worka-prebuilt/contract/references/api.d.ts",
+    "worka-prebuilt/contract/references/types/actions.d.ts",
+    "worka-prebuilt/contract/references/types/cardgame-operations.d.ts",
+    "worka-prebuilt/contract/references/types/migration-compat.d.ts",
+    "worka-prebuilt/contract/references/types/model.d.ts",
+    "worka-prebuilt/contract/references/types/projection.d.ts",
+    "worka-prebuilt/contract/references/types/schemas.d.ts",
+    "worka-prebuilt/entry-4857kz7s.js",
+    "worka-prebuilt/entry-bundle.css",
+    "worka-prebuilt/entry-bundle.js",
+    "worka-prebuilt/entry-bundle.tailwind.css",
+    "worka-prebuilt/entry-zg8e4sm9.js",
+    "worka-prebuilt/index.html",
+    "worka-prebuilt/view-kyz6sje5.js",
+    "worka-prebuilt/view-runtime-jxb6kzm0.js",
+    "worka-prebuilt/view-runtime.mjs",
+    "worka-prebuilt/zod-config.mjs",
+    "worka-prebuilt/manifest.json"
+  ]
+}

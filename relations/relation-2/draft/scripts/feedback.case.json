@@ -1,0 +1,163 @@
+{
+  "schemaVersion": 1,
+  "event": {
+    "id": "sample-feedback",
+    "noteId": "5b8d0e52-c726-40ba-8a06-3f3868d42b07",
+    "name": "candidates.feedbackReported",
+    "payload": {
+      "id": "sample-report",
+      "candidateKey": "sample-task",
+      "surface": "web",
+      "runId": "sample-pass",
+      "status": "failed",
+      "summary": "Page failed",
+      "delegationId": "sample-task",
+      "originNoteId": "4018ca18-a624-454e-a1b2-6c43b25d11e3",
+      "revision": "sample-head"
+    }
+  },
+  "responses": [
+    {
+      "method": "describe",
+      "input": {},
+      "result": [
+        {
+          "noteId": "4018ca18-a624-454e-a1b2-6c43b25d11e3",
+          "name": "执行台",
+          "codeVersion": "028940a64759-aad35ab7",
+          "capabilities": {
+            "queries": [
+              "progress",
+              "result",
+              "task",
+              "requirements",
+              "previewFeedback"
+            ],
+            "actions": [
+              "acceptRequirement",
+              "acceptPreviewFeedback",
+              "recordPreviewDelivery"
+            ],
+            "events": [
+              "tasks.candidateReady",
+              "tasks.previewControlRequested",
+              "tasks.previewTitleChanged",
+              "tasks.changed"
+            ]
+          }
+        },
+        {
+          "noteId": "5b8d0e52-c726-40ba-8a06-3f3868d42b07",
+          "name": "试玩",
+          "codeVersion": "27c746066dbe-33891224",
+          "capabilities": {
+            "queries": [
+              "candidate"
+            ],
+            "actions": [
+              "receive",
+              "recordFeedback",
+              "rename",
+              "archiveByFeature"
+            ],
+            "events": [
+              "candidates.feedbackReported"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "method": "query",
+      "input": {
+        "noteId": "5b8d0e52-c726-40ba-8a06-3f3868d42b07",
+        "name": "candidate",
+        "input": {
+          "key": "sample-task"
+        },
+        "codeVersion": "27c746066dbe-33891224"
+      },
+      "result": {
+        "candidate": {
+          "key": "sample-task",
+          "title": "Sample task",
+          "delegationId": "sample-task",
+          "originNoteId": "4018ca18-a624-454e-a1b2-6c43b25d11e3",
+          "status": {
+            "web": {
+              "pass": "sample-pass",
+              "phase": "failed",
+              "failure": {}
+            }
+          }
+        },
+        "revision": "sample-preview-r1"
+      }
+    },
+    {
+      "method": "query",
+      "input": {
+        "noteId": "4018ca18-a624-454e-a1b2-6c43b25d11e3",
+        "name": "task",
+        "input": {
+          "delegationId": "sample-task"
+        },
+        "codeVersion": "028940a64759-aad35ab7"
+      },
+      "result": {
+        "id": "sample-task"
+      }
+    },
+    {
+      "method": "action",
+      "input": {
+        "noteId": "4018ca18-a624-454e-a1b2-6c43b25d11e3",
+        "name": "acceptPreviewFeedback",
+        "codeVersion": "028940a64759-aad35ab7",
+        "operationId": "feedback",
+        "input": {
+          "id": "sample-report",
+          "delegationId": "sample-task",
+          "sourceNoteId": "5b8d0e52-c726-40ba-8a06-3f3868d42b07",
+          "originNoteId": "4018ca18-a624-454e-a1b2-6c43b25d11e3",
+          "status": "failed",
+          "summary": "Page failed",
+          "candidateKey": "sample-task",
+          "revision": "sample-head",
+          "surface": "web",
+          "runId": "sample-pass"
+        }
+      },
+      "result": {
+        "received": true,
+        "handling": "needs-input",
+        "summary": "Page failed",
+        "delegationId": "sample-task"
+      }
+    },
+    {
+      "method": "action",
+      "input": {
+        "noteId": "5b8d0e52-c726-40ba-8a06-3f3868d42b07",
+        "name": "recordFeedback",
+        "codeVersion": "27c746066dbe-33891224",
+        "operationId": "record-result",
+        "input": {
+          "key": "sample-task",
+          "surface": "web",
+          "runId": "sample-pass",
+          "reportId": "sample-report",
+          "handling": "needs-input",
+          "summary": "Page failed",
+          "delegationId": "sample-task"
+        }
+      },
+      "result": {
+        "stored": true,
+        "key": "sample-task",
+        "runId": "sample-pass"
+      }
+    }
+  ],
+  "expectedOutcome": "completed"
+}

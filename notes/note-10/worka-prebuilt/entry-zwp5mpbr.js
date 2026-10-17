@@ -1,0 +1,2 @@
+import{Aa as Y,ea as z,fa as K,ga as L,ha as J,ia as N,ka as T,za as X}from"./entry-2nwef42g.js";var Z=class extends Y{static{z(this,"WardleyValueConverter")}runCustomConverter(B,q,I){switch(B.name.toUpperCase()){case"LINK_LABEL":return q.substring(1).trim();default:return}}},$={parser:{ValueConverter:z(()=>new Z,"ValueConverter")}};function b(B=N){let q=J(L(B),T),I=J(K({shared:q}),X,$);return q.ServiceRegistry.register(I),{shared:q,Wardley:I}}z(b,"createWardleyServices");
+export{$ as m,b as n};

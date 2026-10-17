@@ -1,0 +1,62 @@
+{
+  "onboarding": {
+    "title": "查看执行成果的预览",
+    "description": "执行台产出可运行候选后，预览会出现在这里。",
+    "steps": [
+      "先从关联执行台查看委托是否已产出候选。",
+      "没有候选时不会自动启动项目。",
+      "候选出现后分别展示准备、运行与验证结果；启动不等于通过验收。"
+    ]
+  },
+  "schemaVersion": 1,
+  "name": "候选预览",
+  "scenarios": "开发者：执行台做出的改动合入前先跑起来看一眼（前端页面或服务的候选版本）。和执行台一起用。",
+  "icon": {
+    "type": "svg",
+    "path": "icon.svg",
+    "monochrome": true
+  },
+  "files": [
+    "README.md",
+    "SKILL.md",
+    "actions.ts",
+    "cardgame-operations.ts",
+    "formal-preview.tsx",
+    "icon.svg",
+    "messages.ts",
+    "model.ts",
+    "package.json",
+    "pinned-references.tsx",
+    "projection.ts",
+    "reference-collection.tsx",
+    "schemas.ts",
+    "state.ts",
+    "surface.ts",
+    "view-compact.tsx",
+    "view-expanded.tsx",
+    "view-local-expanded.tsx",
+    "view-model.tsx",
+    "view-report.tsx",
+    "view.tsx",
+    "worka-prebuilt/actions.mjs",
+    "worka-prebuilt/contract/SKILL.md",
+    "worka-prebuilt/contract/manifest.json",
+    "worka-prebuilt/contract/references/api.d.ts",
+    "worka-prebuilt/contract/references/types/model.d.ts",
+    "worka-prebuilt/contract/references/types/projection.d.ts",
+    "worka-prebuilt/contract/references/types/schemas.d.ts",
+    "worka-prebuilt/entry-9brzy4v4.js",
+    "worka-prebuilt/entry-bundle.css",
+    "worka-prebuilt/entry-bundle.js",
+    "worka-prebuilt/entry-bundle.tailwind.css",
+    "worka-prebuilt/entry-g1wpzmjs.js",
+    "worka-prebuilt/entry-r7k0kzw7.js",
+    "worka-prebuilt/entry-rt5knpzg.js",
+    "worka-prebuilt/index.html",
+    "worka-prebuilt/view-8nq9vvcf.js",
+    "worka-prebuilt/view-compact-tbhyj55g.js",
+    "worka-prebuilt/view-expanded-j6bmkqrp.js",
+    "worka-prebuilt/view-local-expanded-cs0fcaf8.js",
+    "worka-prebuilt/manifest.json"
+  ]
+}

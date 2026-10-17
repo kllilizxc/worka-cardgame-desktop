@@ -1,0 +1,11 @@
+{
+  "schemaVersion": 1,
+  "event": {
+    "id": "sample-adopt",
+    "noteId": "694fd00e-c72f-4a00-b679-50df16f018c5",
+    "name": "cardgame.production.adoptionRequested",
+    "payload": {}
+  },
+  "responses": [],
+  "expectedOutcome": "agent"
+}

@@ -1,0 +1,4 @@
+import {defineNote,z} from '@dsh-workbench/runtime';
+export const configSchema=z.looseObject({projectId:z.string().min(1),projectRoot:z.string().optional(),mode:z.enum(['knowledge','cards','assets']).optional(),presentation:z.enum(['story','balance','changes']).optional(),assetScope:z.enum(['art','audio']).optional(),notes:z.record(z.string(),z.string()).optional(),resources:z.array(z.looseObject({path:z.string(),title:z.string(),root:z.string().optional(),linkBase:z.string().optional(),revision:z.string().optional()})).optional()});
+export const stateSchema=z.looseObject({projectId:z.string().optional(),query:z.string().optional(),selectedId:z.string().optional(),filter:z.string().optional(),showCompleted:z.boolean().optional()});
+export const note=defineNote({state:{schema:stateSchema,initial:{}},config:{schema:configSchema,defaults:{}},update:{dataVersion:'cardgame-production@1',compatibleFrom:['legacy','cardgame-production@1']}});

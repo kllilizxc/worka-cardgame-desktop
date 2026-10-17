@@ -1,0 +1,100 @@
+{
+  "schemaVersion": 1,
+  "event": {
+    "id": "sample-title",
+    "noteId": "4018ca18-a624-454e-a1b2-6c43b25d11e3",
+    "name": "tasks.previewTitleChanged",
+    "payload": {
+      "delegationId": "sample-task",
+      "originNoteId": "4018ca18-a624-454e-a1b2-6c43b25d11e3",
+      "rawTitle": "Sample task",
+      "title": "Sample task",
+      "revision": "1"
+    }
+  },
+  "responses": [
+    {
+      "method": "describe",
+      "input": {},
+      "result": [
+        {
+          "noteId": "4018ca18-a624-454e-a1b2-6c43b25d11e3",
+          "name": "执行台",
+          "codeVersion": "028940a64759-aad35ab7",
+          "capabilities": {
+            "queries": [
+              "progress",
+              "result",
+              "task",
+              "requirements",
+              "previewFeedback"
+            ],
+            "actions": [
+              "acceptRequirement",
+              "acceptPreviewFeedback",
+              "recordPreviewDelivery"
+            ],
+            "events": [
+              "tasks.candidateReady",
+              "tasks.previewControlRequested",
+              "tasks.previewTitleChanged",
+              "tasks.changed"
+            ]
+          }
+        },
+        {
+          "noteId": "5b8d0e52-c726-40ba-8a06-3f3868d42b07",
+          "name": "试玩",
+          "codeVersion": "27c746066dbe-33891224",
+          "capabilities": {
+            "queries": [
+              "candidate"
+            ],
+            "actions": [
+              "receive",
+              "recordFeedback",
+              "rename",
+              "archiveByFeature"
+            ],
+            "events": [
+              "candidates.feedbackReported"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "method": "query",
+      "input": {
+        "noteId": "4018ca18-a624-454e-a1b2-6c43b25d11e3",
+        "name": "task",
+        "input": {
+          "delegationId": "sample-task"
+        },
+        "codeVersion": "028940a64759-aad35ab7"
+      },
+      "result": {
+        "id": "sample-task",
+        "title": "Sample task"
+      }
+    },
+    {
+      "method": "action",
+      "input": {
+        "noteId": "5b8d0e52-c726-40ba-8a06-3f3868d42b07",
+        "name": "rename",
+        "codeVersion": "27c746066dbe-33891224",
+        "operationId": "rename",
+        "input": {
+          "originNoteId": "4018ca18-a624-454e-a1b2-6c43b25d11e3",
+          "delegationId": "sample-task",
+          "title": "Sample task"
+        }
+      },
+      "result": {
+        "renamed": 1
+      }
+    }
+  ],
+  "expectedOutcome": "completed"
+}

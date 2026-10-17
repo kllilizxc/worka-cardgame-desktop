@@ -1,0 +1,11 @@
+{
+  "schemaVersion": 1,
+  "event": {
+    "id": "sample-progress",
+    "noteId": "4018ca18-a624-454e-a1b2-6c43b25d11e3",
+    "name": "tasks.changed",
+    "payload": {}
+  },
+  "responses": [],
+  "expectedOutcome": "agent"
+}

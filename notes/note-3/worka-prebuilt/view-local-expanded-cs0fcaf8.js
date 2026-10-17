@@ -1,0 +1,1 @@
+import{a as r}from"./entry-r7k0kzw7.js";import{b as e,p as d}from"./entry-g1wpzmjs.js";import"./entry-rt5knpzg.js";import{H as o}from"./entry-9brzy4v4.js";function p(){return o(r,{model:d(e())})}export{p as default};

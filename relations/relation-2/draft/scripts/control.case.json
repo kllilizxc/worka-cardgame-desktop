@@ -1,0 +1,122 @@
+{
+  "schemaVersion": 1,
+  "event": {
+    "id": "sample-control",
+    "noteId": "4018ca18-a624-454e-a1b2-6c43b25d11e3",
+    "name": "tasks.previewControlRequested",
+    "payload": {
+      "delegationId": "sample-task",
+      "originNoteId": "4018ca18-a624-454e-a1b2-6c43b25d11e3",
+      "key": "sample-task",
+      "revision": "sample-head",
+      "operation": "stop",
+      "requestId": "sample-control"
+    }
+  },
+  "responses": [
+    {
+      "method": "describe",
+      "input": {},
+      "result": [
+        {
+          "noteId": "4018ca18-a624-454e-a1b2-6c43b25d11e3",
+          "name": "执行台",
+          "codeVersion": "028940a64759-aad35ab7",
+          "capabilities": {
+            "queries": [
+              "progress",
+              "result",
+              "task",
+              "requirements",
+              "previewFeedback"
+            ],
+            "actions": [
+              "acceptRequirement",
+              "acceptPreviewFeedback",
+              "recordPreviewDelivery"
+            ],
+            "events": [
+              "tasks.candidateReady",
+              "tasks.previewControlRequested",
+              "tasks.previewTitleChanged",
+              "tasks.changed"
+            ]
+          }
+        },
+        {
+          "noteId": "5b8d0e52-c726-40ba-8a06-3f3868d42b07",
+          "name": "试玩",
+          "codeVersion": "27c746066dbe-33891224",
+          "capabilities": {
+            "queries": [
+              "candidate"
+            ],
+            "actions": [
+              "receive",
+              "recordFeedback",
+              "rename",
+              "archiveByFeature"
+            ],
+            "events": [
+              "candidates.feedbackReported"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "method": "query",
+      "input": {
+        "noteId": "4018ca18-a624-454e-a1b2-6c43b25d11e3",
+        "name": "task",
+        "input": {
+          "delegationId": "sample-task"
+        },
+        "codeVersion": "028940a64759-aad35ab7"
+      },
+      "result": {
+        "id": "sample-task",
+        "candidate": {
+          "revision": "sample-head"
+        }
+      }
+    },
+    {
+      "method": "query",
+      "input": {
+        "noteId": "5b8d0e52-c726-40ba-8a06-3f3868d42b07",
+        "name": "candidate",
+        "input": {
+          "key": "sample-task"
+        },
+        "codeVersion": "27c746066dbe-33891224"
+      },
+      "result": {
+        "candidate": {
+          "key": "sample-task",
+          "delegationId": "sample-task",
+          "originNoteId": "4018ca18-a624-454e-a1b2-6c43b25d11e3"
+        }
+      }
+    },
+    {
+      "method": "action",
+      "input": {
+        "noteId": "5b8d0e52-c726-40ba-8a06-3f3868d42b07",
+        "name": "receive",
+        "codeVersion": "27c746066dbe-33891224",
+        "operationId": "control",
+        "input": {
+          "operation": "stop",
+          "key": "sample-task",
+          "originNoteId": "4018ca18-a624-454e-a1b2-6c43b25d11e3",
+          "delegationId": "sample-task"
+        }
+      },
+      "result": {
+        "accepted": true
+      }
+    }
+  ],
+  "expectedOutcome": "completed"
+}

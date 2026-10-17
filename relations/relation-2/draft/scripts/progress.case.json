@@ -1,0 +1,151 @@
+{
+  "schemaVersion": 1,
+  "event": {
+    "id": "sample-progress",
+    "noteId": "4018ca18-a624-454e-a1b2-6c43b25d11e3",
+    "name": "tasks.changed",
+    "payload": {
+      "delegationId": "sample-task"
+    }
+  },
+  "responses": [
+    {
+      "method": "describe",
+      "input": {},
+      "result": [
+        {
+          "noteId": "4018ca18-a624-454e-a1b2-6c43b25d11e3",
+          "name": "执行台",
+          "codeVersion": "028940a64759-aad35ab7",
+          "capabilities": {
+            "queries": [
+              "progress",
+              "result",
+              "task",
+              "requirements",
+              "previewFeedback"
+            ],
+            "actions": [
+              "acceptRequirement",
+              "acceptPreviewFeedback",
+              "recordPreviewDelivery"
+            ],
+            "events": [
+              "tasks.candidateReady",
+              "tasks.previewControlRequested",
+              "tasks.previewTitleChanged",
+              "tasks.changed"
+            ]
+          }
+        },
+        {
+          "noteId": "5b8d0e52-c726-40ba-8a06-3f3868d42b07",
+          "name": "试玩",
+          "codeVersion": "27c746066dbe-33891224",
+          "capabilities": {
+            "queries": [
+              "candidate"
+            ],
+            "actions": [
+              "receive",
+              "recordFeedback",
+              "rename",
+              "archiveByFeature"
+            ],
+            "events": [
+              "candidates.feedbackReported"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "method": "bindingList",
+      "input": {
+        "ref": {
+          "noteId": "4018ca18-a624-454e-a1b2-6c43b25d11e3",
+          "objectId": "sample-task"
+        }
+      },
+      "result": [
+        {
+          "kind": "preview",
+          "source": {
+            "noteId": "4018ca18-a624-454e-a1b2-6c43b25d11e3",
+            "objectId": "sample-task"
+          },
+          "target": {
+            "noteId": "5b8d0e52-c726-40ba-8a06-3f3868d42b07",
+            "objectId": "sample-task"
+          }
+        }
+      ]
+    },
+    {
+      "method": "query",
+      "input": {
+        "noteId": "5b8d0e52-c726-40ba-8a06-3f3868d42b07",
+        "name": "candidate",
+        "input": {
+          "key": "sample-task"
+        },
+        "codeVersion": "27c746066dbe-33891224"
+      },
+      "result": {
+        "candidate": {
+          "key": "sample-task",
+          "status": {
+            "web": {
+              "phase": "failed",
+              "pass": "sample-pass",
+              "failure": {
+                "reportId": "sample-report"
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "method": "query",
+      "input": {
+        "noteId": "4018ca18-a624-454e-a1b2-6c43b25d11e3",
+        "name": "previewFeedback",
+        "input": {
+          "delegationId": "sample-task",
+          "reportId": "sample-report"
+        },
+        "codeVersion": "028940a64759-aad35ab7"
+      },
+      "result": {
+        "received": true,
+        "handling": "completed",
+        "summary": "Fixed",
+        "sessionId": "owner-session"
+      }
+    },
+    {
+      "method": "action",
+      "input": {
+        "noteId": "5b8d0e52-c726-40ba-8a06-3f3868d42b07",
+        "name": "recordFeedback",
+        "codeVersion": "27c746066dbe-33891224",
+        "operationId": "progress:sample-task:web:sample-report",
+        "input": {
+          "key": "sample-task",
+          "surface": "web",
+          "runId": "sample-pass",
+          "reportId": "sample-report",
+          "handling": "completed",
+          "summary": "Fixed",
+          "delegationId": "sample-task",
+          "sessionId": "owner-session"
+        }
+      },
+      "result": {
+        "stored": true
+      }
+    }
+  ],
+  "expectedOutcome": "completed"
+}

@@ -1,0 +1,677 @@
+{
+  "schemaVersion": 3,
+  "name": "默认桌面",
+  "notes": [
+    {
+      "key": "note-1",
+      "name": "CardGame 内容库",
+      "source": {
+        "path": "notes/note-1"
+      },
+      "layout": {
+        "x": 120,
+        "y": 130,
+        "width": 320,
+        "height": 210
+      }
+    },
+    {
+      "key": "note-2",
+      "name": "执行台",
+      "source": {
+        "path": "notes/note-2"
+      },
+      "layout": {
+        "x": 293,
+        "y": 656,
+        "width": 440,
+        "height": 191,
+        "expandedWidth": 1100,
+        "expandedHeight": 522,
+        "zIndex": 3,
+        "groupId": "execution"
+      },
+      "initialState": {
+        "version": 1,
+        "delegations": {},
+        "title": "执行台"
+      }
+    },
+    {
+      "key": "note-3",
+      "name": "候选预览",
+      "source": {
+        "path": "notes/note-3"
+      },
+      "layout": {
+        "x": 791,
+        "y": 571,
+        "width": 440,
+        "height": 161,
+        "expandedWidth": 1560,
+        "expandedHeight": 900,
+        "zIndex": 4,
+        "groupId": "execution"
+      },
+      "initialState": {
+        "title": "候选预览",
+        "candidates": [],
+        "previews": [],
+        "attached": []
+      }
+    },
+    {
+      "key": "note-4",
+      "name": "AI 资源生产",
+      "source": {
+        "path": "notes/note-4"
+      },
+      "layout": {
+        "x": 120,
+        "y": 390,
+        "width": 320,
+        "height": 210
+      }
+    },
+    {
+      "key": "note-5",
+      "name": "天气",
+      "source": {
+        "path": "notes/note-5"
+      },
+      "layout": {
+        "x": 947,
+        "y": 128,
+        "width": 340,
+        "height": 303,
+        "expandedWidth": 800,
+        "expandedHeight": 962,
+        "zIndex": 2
+      },
+      "initialState": {}
+    },
+    {
+      "key": "note-6",
+      "name": "功能进展",
+      "source": {
+        "path": "notes/note-6"
+      },
+      "layout": {
+        "x": 823,
+        "y": 781,
+        "width": 380,
+        "height": 421,
+        "expandedWidth": 1280,
+        "expandedHeight": 1014,
+        "zIndex": 5,
+        "groupId": "execution"
+      },
+      "initialState": {}
+    },
+    {
+      "key": "note-7",
+      "name": "知识库",
+      "source": {
+        "path": "notes/note-7"
+      },
+      "layout": {
+        "x": 543,
+        "y": 165,
+        "width": 320,
+        "height": 222,
+        "expandedWidth": 1100,
+        "expandedHeight": 720,
+        "zIndex": 6
+      },
+      "initialState": {
+        "title": "知识库"
+      },
+      "initialConfig": {
+        "resources": [
+          {
+            "title": "设计规范",
+            "path": "worka:design"
+          },
+          {
+            "title": "记忆",
+            "path": "worka:memory"
+          }
+        ]
+      }
+    },
+    {
+      "key": "note-8",
+      "name": "CardGame 内容库",
+      "source": {
+        "path": "notes/note-8"
+      },
+      "layout": {
+        "x": 460,
+        "y": 650,
+        "width": 320,
+        "height": 210
+      }
+    },
+    {
+      "key": "note-9",
+      "name": "CardGame 内容库",
+      "source": {
+        "path": "notes/note-9"
+      },
+      "layout": {
+        "x": 800,
+        "y": 650,
+        "width": 320,
+        "height": 210
+      }
+    },
+    {
+      "key": "note-10",
+      "name": "CardGame 内容库",
+      "source": {
+        "path": "notes/note-10"
+      },
+      "layout": {
+        "x": 120,
+        "y": 910,
+        "width": 320,
+        "height": 210
+      }
+    },
+    {
+      "key": "note-11",
+      "name": "待办",
+      "source": {
+        "path": "notes/note-11"
+      },
+      "layout": {
+        "x": 120,
+        "y": 130,
+        "width": 340,
+        "height": 364,
+        "expandedWidth": 1160,
+        "expandedHeight": 720
+      },
+      "initialState": {
+        "items": []
+      }
+    },
+    {
+      "key": "note-12",
+      "name": "CardGame 内容库",
+      "source": {
+        "path": "notes/note-12"
+      },
+      "layout": {
+        "x": 800,
+        "y": 910,
+        "width": 320,
+        "height": 210
+      }
+    }
+  ],
+  "groups": [
+    {
+      "key": "execution",
+      "name": "执行",
+      "bounds": {
+        "x": 168,
+        "y": 520,
+        "width": 1198,
+        "height": 719
+      }
+    }
+  ],
+  "camera": {
+    "x": 332.8193566710577,
+    "y": -3.9296299646275656,
+    "scale": 0.7300490529216125
+  },
+  "relations": [
+    {
+      "key": "relation-1",
+      "name": "执行台资料",
+      "goal": "按任务需要读取知识、卡牌、资源和功能进展的当前版本。",
+      "nodeKeys": [
+        "note-7",
+        "note-2",
+        "note-12",
+        "note-9",
+        "note-6"
+      ],
+      "constraints": [],
+      "grants": [
+        {
+          "nodeKey": "note-7",
+          "queries": [
+            "document",
+            "card",
+            "assets",
+            "asset",
+            "versions"
+          ],
+          "actions": [
+            "registerCandidates",
+            "adoptVersion"
+          ],
+          "events": []
+        },
+        {
+          "nodeKey": "note-2",
+          "queries": [
+            "progress",
+            "result",
+            "task",
+            "requirements",
+            "previewFeedback"
+          ],
+          "actions": [
+            "acceptRequirement",
+            "acceptPreviewFeedback",
+            "recordPreviewDelivery"
+          ],
+          "events": []
+        },
+        {
+          "nodeKey": "note-12",
+          "queries": [
+            "document",
+            "card",
+            "assets",
+            "asset",
+            "versions"
+          ],
+          "actions": [
+            "registerCandidates",
+            "adoptVersion"
+          ],
+          "events": []
+        },
+        {
+          "nodeKey": "note-9",
+          "queries": [
+            "document",
+            "card",
+            "assets",
+            "asset",
+            "versions"
+          ],
+          "actions": [
+            "registerCandidates",
+            "adoptVersion"
+          ],
+          "events": []
+        },
+        {
+          "nodeKey": "note-6",
+          "queries": [],
+          "actions": [],
+          "events": []
+        }
+      ],
+      "enabled": true,
+      "source": {
+        "path": "relations/relation-1",
+        "noteBindings": {
+          "a16b2245-c04d-4945-9101-2ddc355e2860": "note-7",
+          "4018ca18-a624-454e-a1b2-6c43b25d11e3": "note-2",
+          "e25b37f2-919f-47ff-aecf-ed9a3c407c83": "note-12",
+          "cb7c5190-65f4-4d42-86d4-f582303f6427": "note-9",
+          "9e04f87b-7e91-4438-82df-938b076235f4": "note-6"
+        }
+      }
+    },
+    {
+      "key": "relation-2",
+      "name": "执行台与试玩",
+      "goal": "按精确候选版本交付试玩，并把运行回执送回原执行任务。",
+      "nodeKeys": [
+        "note-2",
+        "note-3"
+      ],
+      "constraints": [],
+      "grants": [
+        {
+          "nodeKey": "note-2",
+          "queries": [
+            "progress",
+            "result",
+            "task",
+            "requirements",
+            "previewFeedback"
+          ],
+          "actions": [
+            "acceptRequirement",
+            "acceptPreviewFeedback",
+            "recordPreviewDelivery"
+          ],
+          "events": [
+            "tasks.candidateReady",
+            "tasks.previewControlRequested",
+            "tasks.previewTitleChanged",
+            "tasks.changed"
+          ]
+        },
+        {
+          "nodeKey": "note-3",
+          "queries": [
+            "candidate"
+          ],
+          "actions": [
+            "receive",
+            "recordFeedback",
+            "rename",
+            "archiveByFeature"
+          ],
+          "events": [
+            "candidates.feedbackReported"
+          ]
+        }
+      ],
+      "enabled": true,
+      "source": {
+        "path": "relations/relation-2",
+        "noteBindings": {
+          "4018ca18-a624-454e-a1b2-6c43b25d11e3": "note-2",
+          "5b8d0e52-c726-40ba-8a06-3f3868d42b07": "note-3"
+        }
+      }
+    },
+    {
+      "key": "relation-3",
+      "name": "制作与资源库",
+      "goal": "登记制作候选；资源采用由用户明确操作并保留版本身份。",
+      "nodeKeys": [
+        "note-4",
+        "note-9"
+      ],
+      "constraints": [],
+      "grants": [
+        {
+          "nodeKey": "note-4",
+          "queries": [
+            "production",
+            "productions"
+          ],
+          "actions": [
+            "upsertRequest",
+            "bindTodo",
+            "generate",
+            "bindExecution",
+            "receiveResult",
+            "registerCandidates",
+            "recordCandidates",
+            "adoptAsset",
+            "recordAdoption"
+          ],
+          "events": [
+            "cardgame.production.candidatesRequested",
+            "cardgame.production.adoptionRequested"
+          ]
+        },
+        {
+          "nodeKey": "note-9",
+          "queries": [
+            "document",
+            "card",
+            "assets",
+            "asset",
+            "versions"
+          ],
+          "actions": [
+            "registerCandidates",
+            "adoptVersion"
+          ],
+          "events": []
+        }
+      ],
+      "enabled": true,
+      "source": {
+        "path": "relations/relation-3",
+        "noteBindings": {
+          "694fd00e-c72f-4a00-b679-50df16f018c5": "note-4",
+          "cb7c5190-65f4-4d42-86d4-f582303f6427": "note-9"
+        }
+      }
+    },
+    {
+      "key": "relation-4",
+      "name": "制作资料",
+      "goal": "按制作请求读取知识规范和明确版本的参考素材。",
+      "nodeKeys": [
+        "note-7",
+        "note-4",
+        "note-9"
+      ],
+      "constraints": [],
+      "grants": [
+        {
+          "nodeKey": "note-7",
+          "queries": [
+            "document",
+            "card",
+            "assets",
+            "asset",
+            "versions"
+          ],
+          "actions": [
+            "registerCandidates",
+            "adoptVersion"
+          ],
+          "events": []
+        },
+        {
+          "nodeKey": "note-4",
+          "queries": [
+            "production",
+            "productions"
+          ],
+          "actions": [
+            "upsertRequest",
+            "bindTodo",
+            "generate",
+            "bindExecution",
+            "receiveResult",
+            "registerCandidates",
+            "recordCandidates",
+            "adoptAsset",
+            "recordAdoption"
+          ],
+          "events": []
+        },
+        {
+          "nodeKey": "note-9",
+          "queries": [
+            "document",
+            "card",
+            "assets",
+            "asset",
+            "versions"
+          ],
+          "actions": [
+            "registerCandidates",
+            "adoptVersion"
+          ],
+          "events": []
+        }
+      ],
+      "enabled": true,
+      "source": {
+        "path": "relations/relation-4",
+        "noteBindings": {
+          "a16b2245-c04d-4945-9101-2ddc355e2860": "note-7",
+          "694fd00e-c72f-4a00-b679-50df16f018c5": "note-4",
+          "cb7c5190-65f4-4d42-86d4-f582303f6427": "note-9"
+        }
+      }
+    },
+    {
+      "key": "relation-5",
+      "name": "制作与执行台",
+      "goal": "交办制作轮次并将执行结果按原请求和轮次写回制作记录。",
+      "nodeKeys": [
+        "note-4",
+        "note-2"
+      ],
+      "constraints": [],
+      "grants": [
+        {
+          "nodeKey": "note-4",
+          "queries": [
+            "production",
+            "productions"
+          ],
+          "actions": [
+            "upsertRequest",
+            "bindTodo",
+            "generate",
+            "bindExecution",
+            "receiveResult",
+            "registerCandidates",
+            "recordCandidates",
+            "adoptAsset",
+            "recordAdoption"
+          ],
+          "events": [
+            "cardgame.production.generationRequested"
+          ]
+        },
+        {
+          "nodeKey": "note-2",
+          "queries": [
+            "progress",
+            "result",
+            "task",
+            "requirements",
+            "previewFeedback"
+          ],
+          "actions": [
+            "acceptRequirement",
+            "acceptPreviewFeedback",
+            "recordPreviewDelivery"
+          ],
+          "events": [
+            "tasks.changed"
+          ]
+        }
+      ],
+      "enabled": true,
+      "source": {
+        "path": "relations/relation-5",
+        "noteBindings": {
+          "694fd00e-c72f-4a00-b679-50df16f018c5": "note-4",
+          "4018ca18-a624-454e-a1b2-6c43b25d11e3": "note-2"
+        }
+      }
+    },
+    {
+      "key": "relation-6",
+      "name": "待办与制作",
+      "goal": "将用户明确选择的资源事项建立为同一制作单草稿。",
+      "nodeKeys": [
+        "note-11",
+        "note-4"
+      ],
+      "constraints": [],
+      "grants": [
+        {
+          "nodeKey": "note-11",
+          "queries": [
+            "todo",
+            "todos"
+          ],
+          "actions": [
+            "delegateTodo",
+            "bindExecution",
+            "productionRequest",
+            "feedback"
+          ],
+          "events": [
+            "cardgame.todo.productionRequested"
+          ]
+        },
+        {
+          "nodeKey": "note-4",
+          "queries": [
+            "production",
+            "productions"
+          ],
+          "actions": [
+            "upsertRequest",
+            "bindTodo",
+            "generate",
+            "bindExecution",
+            "receiveResult",
+            "registerCandidates",
+            "recordCandidates",
+            "adoptAsset",
+            "recordAdoption"
+          ],
+          "events": []
+        }
+      ],
+      "enabled": true,
+      "source": {
+        "path": "relations/relation-6",
+        "noteBindings": {
+          "e1c42324-c8ab-452c-bb24-e776af0ca33f": "note-11",
+          "694fd00e-c72f-4a00-b679-50df16f018c5": "note-4"
+        }
+      }
+    },
+    {
+      "key": "relation-7",
+      "name": "待办与执行台",
+      "goal": "只在明确交办后处理单项待办，并把可核对的执行进展写回原事项。",
+      "nodeKeys": [
+        "note-11",
+        "note-2"
+      ],
+      "constraints": [],
+      "grants": [
+        {
+          "nodeKey": "note-11",
+          "queries": [
+            "todo",
+            "todos"
+          ],
+          "actions": [
+            "delegateTodo",
+            "bindExecution",
+            "productionRequest",
+            "feedback"
+          ],
+          "events": [
+            "cardgame.todo.delegationRequested"
+          ]
+        },
+        {
+          "nodeKey": "note-2",
+          "queries": [
+            "progress",
+            "result",
+            "task",
+            "requirements",
+            "previewFeedback"
+          ],
+          "actions": [
+            "acceptRequirement",
+            "acceptPreviewFeedback",
+            "recordPreviewDelivery"
+          ],
+          "events": [
+            "tasks.changed"
+          ]
+        }
+      ],
+      "enabled": true,
+      "source": {
+        "path": "relations/relation-7",
+        "noteBindings": {
+          "e1c42324-c8ab-452c-bb24-e776af0ca33f": "note-11",
+          "4018ca18-a624-454e-a1b2-6c43b25d11e3": "note-2"
+        }
+      }
+    }
+  ]
+}

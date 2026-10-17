@@ -1,0 +1,158 @@
+{
+  "schemaVersion": 1,
+  "event": {
+    "id": "sample-candidate",
+    "key": "sample-key",
+    "noteId": "4018ca18-a624-454e-a1b2-6c43b25d11e3",
+    "name": "tasks.candidateReady",
+    "payload": {
+      "delegationId": "sample-task",
+      "originNoteId": "4018ca18-a624-454e-a1b2-6c43b25d11e3",
+      "key": "sample-task",
+      "revision": "sample-head",
+      "title": "Sample task",
+      "cwd": "/sample",
+      "argv": [
+        "bun",
+        "dev"
+      ],
+      "url": "http://127.0.0.1:3000",
+      "start": true
+    }
+  },
+  "responses": [
+    {
+      "method": "describe",
+      "input": {},
+      "result": [
+        {
+          "noteId": "4018ca18-a624-454e-a1b2-6c43b25d11e3",
+          "name": "执行台",
+          "codeVersion": "028940a64759-aad35ab7",
+          "capabilities": {
+            "queries": [
+              "progress",
+              "result",
+              "task",
+              "requirements",
+              "previewFeedback"
+            ],
+            "actions": [
+              "acceptRequirement",
+              "acceptPreviewFeedback",
+              "recordPreviewDelivery"
+            ],
+            "events": [
+              "tasks.candidateReady",
+              "tasks.previewControlRequested",
+              "tasks.previewTitleChanged",
+              "tasks.changed"
+            ]
+          }
+        },
+        {
+          "noteId": "5b8d0e52-c726-40ba-8a06-3f3868d42b07",
+          "name": "试玩",
+          "codeVersion": "27c746066dbe-33891224",
+          "capabilities": {
+            "queries": [
+              "candidate"
+            ],
+            "actions": [
+              "receive",
+              "recordFeedback",
+              "rename",
+              "archiveByFeature"
+            ],
+            "events": [
+              "candidates.feedbackReported"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "method": "query",
+      "input": {
+        "noteId": "4018ca18-a624-454e-a1b2-6c43b25d11e3",
+        "name": "task",
+        "input": {
+          "delegationId": "sample-task"
+        },
+        "codeVersion": "028940a64759-aad35ab7"
+      },
+      "result": {
+        "id": "sample-task",
+        "candidate": {
+          "revision": "sample-head"
+        }
+      }
+    },
+    {
+      "method": "action",
+      "input": {
+        "noteId": "5b8d0e52-c726-40ba-8a06-3f3868d42b07",
+        "name": "receive",
+        "codeVersion": "27c746066dbe-33891224",
+        "operationId": "receive",
+        "input": {
+          "delegationId": "sample-task",
+          "originNoteId": "4018ca18-a624-454e-a1b2-6c43b25d11e3",
+          "key": "sample-task",
+          "revision": "sample-head",
+          "title": "Sample task",
+          "cwd": "/sample",
+          "argv": [
+            "bun",
+            "dev"
+          ],
+          "url": "http://127.0.0.1:3000",
+          "start": true
+        }
+      },
+      "result": {
+        "accepted": true,
+        "candidate": {
+          "key": "sample-task"
+        }
+      }
+    },
+    {
+      "method": "bindingLink",
+      "input": {
+        "kind": "preview",
+        "source": {
+          "noteId": "4018ca18-a624-454e-a1b2-6c43b25d11e3",
+          "objectId": "sample-task"
+        },
+        "target": {
+          "noteId": "5b8d0e52-c726-40ba-8a06-3f3868d42b07",
+          "objectId": "sample-task"
+        }
+      },
+      "result": {
+        "duplicate": false
+      }
+    },
+    {
+      "method": "action",
+      "input": {
+        "noteId": "4018ca18-a624-454e-a1b2-6c43b25d11e3",
+        "name": "recordPreviewDelivery",
+        "codeVersion": "028940a64759-aad35ab7",
+        "operationId": "receipt",
+        "input": {
+          "delegationId": "sample-task",
+          "revision": "sample-head",
+          "previewNoteId": "5b8d0e52-c726-40ba-8a06-3f3868d42b07",
+          "eventKey": "sample-key"
+        }
+      },
+      "result": {
+        "delegationId": "sample-task",
+        "delivered": true
+      }
+    }
+  ],
+  "expectedOutcome": "completed"
+}
