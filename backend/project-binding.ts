@@ -1,3 +1,4 @@
+import {configureProjectContract} from './plugins/cardgame-content/src/contract';
 import { createHash, randomUUID } from 'node:crypto';
 import { lstat, readFile, realpath } from 'node:fs/promises';
 import { isAbsolute, join, relative, sep } from 'node:path';
@@ -348,7 +349,7 @@ export function createProjectBindingManager(options: ProjectBindingOptions): Ext
       return withChild(scope.binding, async ({ provider }) => await provider.noteContext?.(scope.note, binding) ?? []);
     }),
     invoke: (method, input, caller) => tracked(async () => {
-      if (method === 'configureProject') return configure(input, caller);
+      if (method === 'configureProject') return configureProjectContract.output.parseAsync(await configure(await configureProjectContract.input.parseAsync(input), caller));
       if(['bindProduction','productionResult','receiveResult','recordCandidates','recordAdoption'].includes(method)&&typeof input.projectGeneration!=='string')throw Error('旧回执缺少项目代次；请在当前制作单重新核对原轮次并重试，不要重建桌面');
       const scope = await scoped(caller.noteId, input);
       if (!scope.binding) throw Error('CardGame 项目尚未配置，请先从当前桌面选择项目目录');

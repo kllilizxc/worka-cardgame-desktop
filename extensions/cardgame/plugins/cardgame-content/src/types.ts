@@ -1,3 +1,5 @@
+import type {z} from '@dsh-workbench/runtime';
+import type {contentQueries,contentActions,documentLinkSchema,documentItemSchema,documentSchema,cardItemSchema} from './contract';
 /**
  * Public contract for the CardGame content backend.
  *
@@ -86,6 +88,7 @@ export interface ContentListQuery extends ContentQueryBase {
 
 export interface ContentDetailQuery extends ContentQueryBase {
   op: 'document' | 'documentMeta' | 'card' | 'asset';
+  versionId?: string;
   id?: string;
   path?: string;
   assetId?: string;
@@ -131,18 +134,9 @@ export interface InspectionQuery extends ContentQueryBase {
   limit?: number;
 }
 
-export interface InspectionFinding {
-  kind: InspectionKind;
-  severity: 'info' | 'warning' | 'high';
-  ref: { type: 'document' | 'card' | 'asset'; id?: string; path?: string };
-  detail: string;
-}
+export type InspectionFinding=z.output<typeof contentQueries.inspection.output>['findings'][number];
 
-export interface InspectionResult {
-  findings: InspectionFinding[];
-  counts: Partial<Record<InspectionKind, number>>;
-  nextCursor?: string;
-}
+export type InspectionResult=z.output<typeof contentQueries.inspection.output>;
 
 export interface RecentChangesQuery extends ContentQueryBase {
   op: 'recentChanges';
@@ -152,14 +146,7 @@ export interface RecentChangesQuery extends ContentQueryBase {
   limit?: number;
 }
 
-export interface RecentChangeItem {
-  kind: 'document' | 'card' | 'asset' | 'version';
-  id?: string;
-  path?: string;
-  name?: string;
-  change: 'created' | 'updated';
-  at: string;
-}
+export type RecentChangeItem=z.output<typeof contentQueries.recentChanges.output>['items'][number];
 
 export interface StoryBuildsQuery extends ContentQueryBase {
   op: 'storyBuilds';
@@ -179,59 +166,15 @@ export interface StoryScenePageQuery extends ContentQueryBase {
   expectedRevision?: string;
 }
 
-export interface StoryScenePage {
-  id: string;
-  path: string;
-  revision: string;
-  nodeId: string;
-  title: string;
-  chapter: string;
-  summary: string;
-  dialogueCount: number;
-  offset: number;
-  nextOffset?: number;
-  items: Array<{ id: string; speakerId: string; speakerName: string; text: string; emotion?: string; line: number }>;
-  diagnostics: StoryDiagnostic[];
-}
+export type StoryScenePage=z.output<typeof contentQueries.storyScenePage.output>;
 
-export interface StoryDiagnostic {
-  severity: 'error' | 'warning';
-  /** Project-relative source document the diagnostic points at. */
-  path: string;
-  line?: number;
-  detail: string;
-}
+export type StoryDiagnostic=z.output<typeof contentQueries.storyScenePage.output>['diagnostics'][number];
 
-export interface StoryBuildItem {
-  storyId: string;
-  entryPath: string;
-  outputPath: string;
-  sourcePaths: string[];
-  errorCount: number;
-  warningCount: number;
-  nodeCount: number;
-  choiceCount: number;
-  builtAt: string;
-}
+export type StoryBuildItem=z.output<typeof contentQueries.storyBuilds.output>['items'][number];
 
-export interface CompileStoryInput {
-  projectId: string;
-  /** Project-relative path of the entry scene document. */
-  entry: string;
-  /** Overrides the derived `story.<entry-path>` identifier. */
-  storyId?: string;
-  /** Compiles and validates without touching the project or the build log. */
-  dryRun?: boolean;
-}
+export type CompileStoryInput=z.output<typeof contentActions.compileStory.method.input>;
 
-export interface CompileStoryResult {
-  storyId: string;
-  outputPath: string;
-  catalogUpdated: boolean;
-  nodeCount: number;
-  choiceCount: number;
-  diagnostics: StoryDiagnostic[];
-}
+export type CompileStoryResult=z.output<typeof contentActions.compileStory.output>;
 
 export type ContentQuery =
   | (ContentQueryBase & { op: 'status' })
@@ -251,20 +194,12 @@ export type ContentQuery =
 
 export interface Page<T> {
   items: T[];
-  nextCursor?: string;
+  next?: string;
+  revision: string;
   total?: number;
 }
 
-export interface ContentStatus {
-  projectId: string;
-  phase: 'pending' | 'indexing' | 'ready' | 'error' | 'closed';
-  indexedAt?: string;
-  documents: number;
-  directories: number;
-  cards: number;
-  assets: number;
-  errors: string[];
-}
+export type ContentStatus=z.output<typeof contentQueries.status.output>;
 
 export interface ContentListItem {
   id: string;
@@ -275,133 +210,29 @@ export interface ContentListItem {
   [key: string]: unknown;
 }
 
-export interface DocumentLink {
-  targetPath: string;
-  targetKind: 'document' | 'card' | 'asset' | 'unknown' | 'external';
-  targetId?: string;
-  anchor?: string;
-  label?: string;
-  line: number;
-  rawTarget: string;
-}
+export type DocumentLink=z.output<typeof documentLinkSchema>;
 
-export interface ContentDocument extends ContentListItem {
-  type: 'document';
-  /** Omitted from list rows; populated by the document detail query. */
-  content?: string;
-  links: DocumentLink[];
-  size: number;
-  updatedAt?: string;
-  snippet?: string;
-}
+export type ContentDocument=z.output<typeof documentItemSchema> & Partial<Pick<z.output<typeof documentSchema>,'content'>>;
 
-export interface ContentDocumentMeta {
-  id: string;
-  path: string;
-  title: string;
-  revision: string;
-  size: number;
-  isScene: boolean;
-}
+export type ContentDocumentMeta=z.output<typeof contentQueries.documentMeta.output>;
 
-export interface BacklinkItem extends ContentListItem {
-  type: 'backlink';
-  sourceId: string;
-  sourcePath: string;
-  targetPath: string;
-  line: number;
-  label?: string;
-  anchor?: string;
-  snippet?: string;
-}
+export type BacklinkItem=z.output<typeof contentQueries.backlinks.output>['items'][number];
 
-export interface GraphNode extends ContentListItem {
-  type: 'document' | 'asset';
-  depth: number;
-}
+export type GraphNode=z.output<typeof contentQueries.graph.output>['nodes'][number];
 
-export interface GraphEdge {
-  sourceId: string;
-  targetId?: string;
-  sourcePath: string;
-  targetPath: string;
-  kind: DocumentLink['targetKind'];
-  anchor?: string;
-}
+export type GraphEdge=z.output<typeof contentQueries.graph.output>['edges'][number];
 
-export interface ContentGraph {
-  nodes: GraphNode[];
-  edges: GraphEdge[];
-  truncated: boolean;
-}
+export type ContentGraph=z.output<typeof contentQueries.graph.output>;
 
-export interface MoveAffectedDocument {
-  id: string;
-  path: string;
-  revision: string;
-  changed: boolean;
-  changedLinks: number;
-}
+export type MoveAffectedDocument=z.output<typeof contentQueries.movePreview.output>['affected'][number];
 
-export interface MovePreview {
-  source: ContentDocument;
-  toPath: string;
-  affected: MoveAffectedDocument[];
-  conflicts: string[];
-  canApply: boolean;
-}
+export type MovePreview=z.output<typeof contentQueries.movePreview.output>;
 
-export interface CardItem extends ContentListItem {
-  type: 'card';
-  kind: string;
-  name: string;
-  attack?: number;
-  health?: number;
-  description?: string;
-  rarity?: string;
-  labels?: string[];
-  /** Small list projection; the full card definition remains detail-only. */
-  facePreview?: string;
-  /** Omitted from card list rows; populated by the card detail query. */
-  json?: Record<string, unknown>;
-}
+export type CardItem=z.output<typeof cardItemSchema> & {json?:Record<string,unknown>};
 
-export interface AssetVersion {
-  id: string;
-  assetId: string;
-  path: string;
-  revision: string;
-  mimeType: string;
-  size: number;
-  width?: number;
-  height?: number;
-  durationMs?: number;
-  frameCount?: number;
-  source: 'project' | 'candidate' | 'adopted';
-  candidateId?: string;
-  metadata?: Record<string, unknown>;
-  createdAt: string;
-  adopted: boolean;
-}
+export type AssetVersion=Omit<z.output<typeof contentQueries.versions.output>['items'][number],'metadata'> & {metadata?:Record<string,unknown>};
 
-export interface AssetItem extends ContentListItem {
-  type: 'asset';
-  name?: string;
-  tags?: string[];
-  metadataRevision?: string;
-  format?: string;
-  status?: 'ready' | 'candidate' | string;
-  kind: 'image' | 'audio' | 'spritesheet' | 'other';
-  mimeType: string;
-  size: number;
-  width?: number;
-  height?: number;
-  durationMs?: number;
-  frameCount?: number;
-  currentVersionId?: string;
-  metadata?: Record<string, unknown>;
-  versions?: AssetVersion[];
-}
+export type AssetItem=Omit<z.output<typeof contentQueries.asset.output>,'metadata'|'versions'> & {metadata?:Record<string,unknown>;versions?:AssetVersion[]};
 
 export interface MediaResponse {
   id: string;
@@ -422,25 +253,9 @@ export interface MediaResponse {
   data?: string;
 }
 
-export interface SaveDocumentInput {
-  projectId: string;
-  id?: string;
-  path?: string;
-  content: string;
-  expectedRevision?: string;
-  title?: string;
-}
+export type SaveDocumentInput=z.output<typeof contentActions.saveDocument.method.input>;
 
-export interface MoveDocumentInput {
-  projectId: string;
-  id?: string;
-  path?: string;
-  toPath: string;
-  expectedRevision?: string;
-  /** Expected revisions for link-bearing documents shown by movePreview. */
-  expectedRevisions?: Record<string, string>;
-  updateLinks?: boolean;
-}
+export type MoveDocumentInput=z.output<typeof contentActions.moveDocument.method.input>;
 
 export interface UpdateCardInput {
   projectId: string;
@@ -494,13 +309,7 @@ export interface AdoptVersionInput {
   metadata?: Record<string, unknown>;
 }
 
-export interface UpdateAssetInput {
-  projectId: string;
-  id: string;
-  name?: string;
-  tags?: string[];
-  expectedMetadataRevision?: string;
-}
+export type UpdateAssetInput=z.output<typeof contentActions.updateAsset.method.input>;
 
 export type ContentCommandMethod =
   | 'saveDocument'

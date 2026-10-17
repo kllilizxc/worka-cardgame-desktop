@@ -1,2 +1,0 @@
-import{e,r,N,z}from"./entry-79v5dffy.js";import{W}from"./entry-c6s124hx.js";var i={parse:e(async(t)=>{let a=await W("info",t);r.debug(a)},"parse")},s={version:"12.0.0"},p=e(()=>s.version,"getVersion"),g={getVersion:p},m=e((t,a,n)=>{r.debug(`rendering info diagram
-`+t);let o=z(a);N(o,100,400,!0),o.append("g").append("text").attr("x",100).attr("y",40).attr("class","version").attr("font-size",32).style("text-anchor","middle").text(`v${n}`)},"draw"),v={draw:m},y={parser:i,db:g,renderer:v};export{y as diagram};

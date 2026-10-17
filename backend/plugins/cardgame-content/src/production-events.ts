@@ -2,7 +2,8 @@ import { createHash } from 'node:crypto';
 import { readFile, realpath, stat } from 'node:fs/promises';
 import { isAbsolute, relative, sep } from 'node:path';
 import type { WorkflowService, ProductionRecord, ProductionRound } from './workflow';
-import type { ContentService, AssetItem, AssetVersion, Page } from './types';
+import type { ContentService, AssetItem, AssetVersion } from './types';
+import type { ContentQueryOutput } from './contract';
 
 const object=(value:unknown):Record<string,unknown>=>value&&typeof value==='object'&&!Array.isArray(value)?value as Record<string,unknown>:{};
 const required=(value:unknown,label:string)=>{if(typeof value!=='string'||!value)throw Error(`${label}缺失`);return value;};
@@ -83,8 +84,12 @@ export function createProductionEvents(workflow:WorkflowService,content:ContentS
     const production=await detail(input),assetId=required(input.assetId,'资源'),versionId=required(input.versionId,'版本'),candidateId=required(input.candidateId,'候选');
     const asset=await content.query({projectId:production.projectId,op:'asset',id:assetId}) as AssetItem;
     if(asset.currentVersionId!==versionId)throw Error('资源服务尚未采用该版本');
-    let cursor:string|undefined,version:AssetVersion|undefined;
-    do {const page=await content.query({projectId:production.projectId,op:'versions',assetId,limit:100,...(cursor?{cursor}:{})}) as Page<AssetVersion>;version=page.items.find(item=>item.id===versionId);cursor=page.nextCursor;} while(!version&&cursor);
+    let cursor:string|undefined,revision:string|undefined,version:AssetVersion|undefined;
+    do {
+      const page=await content.query({projectId:production.projectId,op:'versions',assetId,limit:100,...(cursor?{cursor}:{})}) as ContentQueryOutput<'versions'>;
+      if(revision!==undefined&&revision!==page.revision)throw Error('资源版本列表已变化，请重新核对采用回执');
+      revision=page.revision;version=page.items.find(item=>item.id===versionId);cursor=page.next;
+    } while(!version&&cursor);
     if(!version||version.candidateId!==candidateId)throw Error('已采用版本不是该候选的真实回执');
     await content.resolveMedia({projectId:production.projectId,op:'media',id:assetId,versionId,variant:'original'});
     return workflow.command('recordAdoption',{...input,receipt:undefined},{assets:{adoptVersion:async()=>({status:'completed',result:{assetId,versionId}})}});

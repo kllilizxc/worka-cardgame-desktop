@@ -9,8 +9,8 @@
   "files": {
     ".gitattributes": "d6504560a89539dfc9e0a7d9d0b37e48d526efd4b5d52f12d836704ba5545256",
     "LICENSE": "b51593dd875fcde7a5af0c84ca7b67b96ed5c2d174d9f5ca178d8bd07a2a6a50",
-    "README.md": "da5c2b207efb28ff1783b346d1fe487ee40b3b050e7c3920858d4b7ad03c58f0",
-    "dist/plugin.js": "1ffa14d446992f7f87d95073c65f7382e6b232b349731c3a32a0de82cb2ab2e9",
+    "README.md": "c3b7032ddc5b53fc923cb4b94183fd8a612a1f69dbb2c560fe167e1240e72c31",
+    "dist/plugin.js": "b14b9f6e4d070ec08e996fcf9a6047eeac2041b978fc57d5cf700c56aff179d4",
     "package.json": "2164bc24e83999dfffdfad2e839e6b037934d5cc4b098cade6e324b623f2ce34",
     "plugins/cardgame-content/analysis/battle-browser-adapter.ts": "73f0ef40e256fa6ffc5c7e17d3066a290206a3d7b06e8310893c73bf7bfe950c",
     "plugins/cardgame-content/analysis/battle-server.ts": "e0e5fcec36215a41ca86767da390a8cbc0c449e55a9d7b18f09a9758e7762cbe",
@@ -24,8 +24,9 @@
     "plugins/cardgame-content/src/card-pipeline.ts": "8e71b13cd688f7022de1c14aaea4aa7da5a0b293f236a5ed56461eee064a2501",
     "plugins/cardgame-content/src/changes.ts": "1f92f1745b1098c7a35e2da3bc6c115459ae7846fc367874b5fdc9484136128e",
     "plugins/cardgame-content/src/codex-imagegen.ts": "ccf2c6928275519063c3780958ff678d7c56fcfc1de876e1b6e6f08120b4c041",
-    "plugins/cardgame-content/src/content.ts": "a978f9ce531ab80006f4a2d19eca52d29c44e2760b7d4217e5fc8957c55c83c2",
+    "plugins/cardgame-content/src/content.ts": "6d1b10d18d42cb8d3e94feb042a7092a06a6bf50038f2a5463936dc831f49ab4",
     "plugins/cardgame-content/src/context.ts": "fcafe8845481be1e048b7a7ff6ce970ec6b83119b02ec105c14c7c602c8a276d",
+    "plugins/cardgame-content/src/contract.ts": "457132034f9d35fd25323d776ef680a481903f47c3280c7e1bed29139049b347",
     "plugins/cardgame-content/src/deck-plan.ts": "12362d606db6b380be8b8c1fa8d08ee613f2468f0529a1186bece1fcdc166929",
     "plugins/cardgame-content/src/formal-preview.ts": "0f55cfebf48d3788f4c28c229dbd5c5c46e65165391fa7a3c11d37d0a00a385b",
     "plugins/cardgame-content/src/game-adoption.ts": "827b583d285613f8d492e9c21f4452ab8016ff0b6dd6daa8e0d8d598a1bb6883",
@@ -34,15 +35,15 @@
     "plugins/cardgame-content/src/native-guard.ts": "6eb37a361310a18c72f94e1e0bd598cf355767ff1244ef43459a0dbaf684edbb",
     "plugins/cardgame-content/src/path-safety.ts": "d6b83f8e93def9a32f3cccadf1c52be157747da4179b16151262f0928ad8567f",
     "plugins/cardgame-content/src/pinned-references.ts": "efd12e066fa201e1676725f6ccf7c4a7775b13dc2d226cbffbeb12e2285f2967",
-    "plugins/cardgame-content/src/production-events.ts": "5e76810e0a47b45a66c60881c482c6290ba0a1f962937bc462420a97e73b0d0d",
-    "plugins/cardgame-content/src/registration.ts": "a354bd155a4f48e443d29d02048f1b0110311ab55e41f230ea4a5d110b31ea77",
+    "plugins/cardgame-content/src/production-events.ts": "fb1d061b84445c83eff1f15683a8bd9228e71203402084848dab1e585ebf2f79",
+    "plugins/cardgame-content/src/registration.ts": "55b78c0d62c7170696bd13b65b6c18162b9b00dae53ba5007ffdb21ac2b2cbe8",
     "plugins/cardgame-content/src/story-analysis.ts": "b0f17afb48e19c0161d2f054436b568fe75bb01ce45046241173b91f9b9bff12",
     "plugins/cardgame-content/src/story-copy-edits.ts": "169e2216ba9918312cb169108c81d621d1304c0044b7f5ed50dabe5fef55ebcf",
     "plugins/cardgame-content/src/story-execution-service.ts": "6799e1b737ddc50c95255dc5faa3744571e212c15518bcea1967ebc85531a7b6",
     "plugins/cardgame-content/src/story-execution.ts": "e8121b37fc453db7badbf81ce04dd19e6b96d434964770de835d607a06b4f2e2",
     "plugins/cardgame-content/src/story-rules.ts": "2d3bf72deb1ae587f3a791e4b111272b77074a55a867b1a1045d9273846e76c2",
-    "plugins/cardgame-content/src/types.ts": "a2723d2173358c4dafa29f1156d21ca19bf9366fbcbb71387b6d1af09d13a4f7",
+    "plugins/cardgame-content/src/types.ts": "8339c06fe12195e63b58a8017130d29f1b707192201f9244e2975d03782d36de",
     "plugins/cardgame-content/src/workflow.ts": "68474db0403acf1979ad8168b8fb9ecd9b740c8c643b365d9ed6d7040ee9f83a"
   },
-  "integrity": "sha256-dfd2778e4e0ee4a04b4dabad4cb5759712bc700dd65300db01f4f45b6d33bd33"
+  "integrity": "sha256-3c999977dce1753d88fefcc25388934d2a14761e633bf92bcdb2326822c99f9a"
 }

@@ -7,6 +7,7 @@
     "references/api.d.ts",
     "references/types/actions.d.ts",
     "references/types/content-model.d.ts",
+    "references/types/contract.d.ts",
     "references/types/note-model.d.ts"
   ],
   "diagnostics": [

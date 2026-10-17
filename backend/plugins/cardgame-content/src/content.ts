@@ -73,7 +73,6 @@ import {
   type MediaResponse,
   type MoveDocumentInput,
   type MovePreview,
-  type Page,
   type RecentChangeItem,
   type RegisterCandidatesInput,
   type SaveDocumentInput,
@@ -83,6 +82,28 @@ import {
   type UpdateAssetInput,
   type UpdateCardInput,
 } from './types';
+
+// SQL loaders retain their private seek cursors. Only query() publishes pages.
+interface SqlPage<T> { items: T[]; nextCursor?: string; total?: number; revision?: string }
+const PAGE_OPERATIONS = new Set(['documents', 'directories', 'backlinks', 'cards', 'assets', 'versions', 'recentChanges', 'storyBuilds', 'gameCatalog']);
+interface PageCursor { version: 1; query: string; revision: string; after: string }
+function pageQueryIdentity(input: ContentQuery): string {
+  const { cursor: _cursor, projectGeneration: _generation, allowLegacyReconciliation: _legacy, ...query } = input as ContentQuery & { cursor?: unknown; projectGeneration?: unknown; allowLegacyReconciliation?: unknown };
+  return hashBytes(JSON.stringify({ ...query, limit: clampLimit('limit' in input ? input.limit : undefined) }, (_key, value) => value && typeof value === 'object' && !Array.isArray(value)
+    ? Object.fromEntries(Object.entries(value).sort(([a], [b]) => a < b ? -1 : a > b ? 1 : 0)) : value));
+}
+function decodePageCursor(cursor: unknown): PageCursor | undefined {
+  if (cursor === undefined) return;
+  if (typeof cursor !== 'string' || !cursor || cursor.length > 16384 || !/^[A-Za-z0-9_-]+$/.test(cursor)) throw new ContentServiceError('INVALID_INPUT', 'page cursor is malformed.');
+  try {
+    const value: unknown = JSON.parse(Buffer.from(cursor, 'base64url').toString('utf8'));
+    if (!value || typeof value !== 'object' || Array.isArray(value)) throw Error();
+    const item = value as Partial<PageCursor>;
+    if (Object.keys(item).sort().join(',') !== 'after,query,revision,version' || item.version !== 1 || typeof item.query !== 'string' || !/^[a-f0-9]{64}$/.test(item.query)
+      || typeof item.revision !== 'string' || !item.revision || item.revision.length > 256 || typeof item.after !== 'string' || !item.after || item.after.length > 8192) throw Error();
+    return item as PageCursor;
+  } catch { throw new ContentServiceError('INVALID_INPUT', 'page cursor is malformed.'); }
+}
 
 const MAX_PAGE_SIZE = 100;
 // The host serves media through the bounded capability resolver.  Keeping the
@@ -390,7 +411,8 @@ function decodeCursor(cursor: unknown): string | undefined {
   if (typeof cursor !== 'string' || cursor.length === 0) return undefined;
   try {
     const parsed = JSON.parse(Buffer.from(cursor, 'base64url').toString('utf8')) as { path?: unknown };
-    return typeof parsed.path === 'string' ? parsed.path : undefined;
+    if (!parsed || typeof parsed.path !== 'string' || !parsed.path) throw Error('cursor lacks a seek key');
+    return parsed.path;
   } catch {
     throw new ContentServiceError('INVALID_INPUT', 'cursor is malformed.');
   }
@@ -1089,6 +1111,8 @@ CREATE TABLE IF NOT EXISTS story_builds (
 class ContentServiceImpl implements ContentService {
   private readonly options: ContentServiceOptions;
   private readonly dataRoot: string;
+  /** A cursor from a previous database connection cannot resume this one. */
+  private readonly pageEpoch = randomUUID();
   private readonly projects = new Map<string, ProjectState>();
   private readonly listeners = new Set<ContentInvalidationListener>();
   private readonly pendingStoryRebuilds = new Set<string>();
@@ -1251,6 +1275,49 @@ class ContentServiceImpl implements ContentService {
     this.project(projectId);
     if (input.op === 'status') return this.queryStatus(projectId);
     await this.requireReady();
+    if (PAGE_OPERATIONS.has(input.op)) {
+      // Share the existing database queue with mutations. A page cannot observe
+      // partially finished async indexing or a command's intermediate writes.
+      return this.enqueue(() => this.queryPage(input));
+    }
+    return this.queryValue(input);
+  }
+
+  private async pageRevision(input: ContentQuery): Promise<{ revision: string; catalog?: string }> {
+    const database = this.getDatabase();
+    // total_changes covers writes on this connection; data_version covers other
+    // connections. Neither reads payloads nor writes a derived counter table.
+    const local = database.prepare('SELECT CAST(total_changes() AS TEXT) AS changes').get() as { changes: string };
+    const external = database.prepare('PRAGMA data_version').get() as { data_version: number };
+    const counter = `${this.pageEpoch}:${local.changes}:${external.data_version}`;
+    if (input.op === 'gameCatalog') {
+      const catalog = await this.gameCatalog(input.projectId);
+      return { revision: `content-page:${counter}:${catalog.revision}`, catalog: catalog.revision };
+    }
+    return { revision: `content-page:${counter}` };
+  }
+
+  private async queryPage(input: ContentQuery) {
+    if (this.closed) throw new ContentServiceError('SERVICE_CLOSED', 'content service is closed.');
+    const identity = pageQueryIdentity(input);
+    const cursor = decodePageCursor('cursor' in input ? input.cursor : undefined);
+    if (cursor && cursor.query !== identity) throw new ContentServiceError('INVALID_INPUT', 'page cursor belongs to another project or query.');
+    const before = await this.pageRevision(input);
+    // A changed collection restarts at its current first page. The new revision
+    // tells the SDK to discard its previous page stack rather than append.
+    const activeCursor = cursor?.revision === before.revision ? encodeCursor(cursor.after) : undefined;
+    const page = await this.queryValue({ ...input, cursor: activeCursor } as ContentQuery) as SqlPage<unknown>;
+    const after = await this.pageRevision(input);
+    if (before.revision !== after.revision || before.catalog !== undefined && page.revision !== before.catalog)
+      throw new ContentServiceError('CONTENT_CONFLICT', 'content changed while reading a page; restart from the first page.');
+    const afterKey = page.nextCursor === undefined ? undefined : decodeCursor(page.nextCursor);
+    return { items: page.items, revision: before.revision,
+      ...(afterKey === undefined ? {} : { next: Buffer.from(JSON.stringify({ version: 1, query: identity, revision: before.revision, after: afterKey } satisfies PageCursor)).toString('base64url') }),
+      ...(page.total === undefined ? {} : { total: page.total }),
+    };
+  }
+
+  private async queryValue(input: ContentQuery): Promise<unknown> {
     switch (input.op) {
       case 'documents': return this.queryDocuments(input);
       case 'directories': return this.queryDirectories(input);
@@ -1986,7 +2053,7 @@ class ContentServiceImpl implements ContentService {
     }));
   }
 
-  private page<T extends { path: string }>(items: T[], cursor: unknown, limit: unknown): Page<T> {
+  private page<T extends { path: string }>(items: T[], cursor: unknown, limit: unknown): SqlPage<T> {
     const after = decodeCursor(cursor);
     const filtered = after === undefined ? items : items.filter((item) => item.path > after);
     const pageLimit = clampLimit(limit);
@@ -1998,7 +2065,7 @@ class ContentServiceImpl implements ContentService {
     };
   }
 
-  private pageSql<T extends { path: string }>(items: T[], cursor: unknown, limit: unknown, total: number): Page<T> {
+  private pageSql<T extends { path: string }>(items: T[], cursor: unknown, limit: unknown, total: number): SqlPage<T> {
     const pageLimit = clampLimit(limit);
     const hasMore = items.length > pageLimit;
     const pageItems = items.slice(0, pageLimit);
@@ -2009,7 +2076,7 @@ class ContentServiceImpl implements ContentService {
     };
   }
 
-  private pageSqlKey<T>(items: T[], limit: unknown, total: number, key: (item: T) => string): Page<T> {
+  private pageSqlKey<T>(items: T[], limit: unknown, total: number, key: (item: T) => string): SqlPage<T> {
     const pageLimit = clampLimit(limit);
     const hasMore = items.length > pageLimit;
     const pageItems = items.slice(0, pageLimit);
@@ -2020,7 +2087,7 @@ class ContentServiceImpl implements ContentService {
     };
   }
 
-  private async queryDocuments(input: import('./types').ContentListQuery): Promise<Page<ContentDocument>> {
+  private async queryDocuments(input: import('./types').ContentListQuery): Promise<SqlPage<ContentDocument>> {
     const directory = input.directory ? normalizeRelativePath(input.directory, 'directory') : undefined;
     const after = decodeCursor(input.cursor);
     const clauses = ['project_id = ?', 'deleted = 0'];
@@ -2051,7 +2118,7 @@ class ContentServiceImpl implements ContentService {
     return this.pageSql(items, input.cursor, input.limit, Number(count?.count ?? 0));
   }
 
-  private async queryDirectories(input: import('./types').ContentListQuery): Promise<Page<ContentListItem>> {
+  private async queryDirectories(input: import('./types').ContentListQuery): Promise<SqlPage<ContentListItem>> {
     const directory = input.directory ? normalizeRelativePath(input.directory, 'directory') : undefined;
     const after = decodeCursor(input.cursor);
     const clauses = ['project_id = ?', 'deleted = 0'];
@@ -2122,7 +2189,7 @@ class ContentServiceImpl implements ContentService {
     return { ...row, isScene: scene?.revision === row.revision };
   }
 
-  private async queryBacklinks(input: import('./types').ContentListQuery): Promise<Page<BacklinkItem>> {
+  private async queryBacklinks(input: import('./types').ContentListQuery): Promise<SqlPage<BacklinkItem>> {
     let targetPath = input.path ? normalizeRelativePath(input.path) : undefined;
     if (input.id) {
       const target = this.resolveDocument(input.projectId, input.id);
@@ -2131,17 +2198,26 @@ class ContentServiceImpl implements ContentService {
     if (!targetPath) throw new ContentServiceError('INVALID_INPUT', 'backlinks requires id or path.');
     const after = decodeCursor(input.cursor);
     const pageLimit = clampLimit(input.limit);
-    const cursorClause = after ? 'AND d.path > ?' : '';
+    let afterLink: [string, number, number] | undefined;
+    if (after !== undefined) {
+      try {
+        const parsed: unknown = JSON.parse(after);
+        if (!Array.isArray(parsed) || parsed.length !== 3 || typeof parsed[0] !== 'string' || !Number.isSafeInteger(parsed[1]) || !Number.isSafeInteger(parsed[2])) throw Error();
+        afterLink = parsed as [string, number, number];
+      } catch { throw new ContentServiceError('INVALID_INPUT', 'backlink cursor is malformed.'); }
+    }
+    const cursorClause = afterLink ? 'AND (d.path > ? OR (d.path = ? AND (l.line > ? OR (l.line = ? AND l.rowid > ?))))' : '';
     const rowsParameters: unknown[] = [input.projectId, targetPath];
-    if (after) rowsParameters.push(after);
+    if (afterLink) rowsParameters.push(afterLink[0], afterLink[0], afterLink[1], afterLink[1], afterLink[2]);
     const rows = this.getDatabase().prepare(`
-      SELECT l.*, d.path AS source_path, d.title AS source_title, d.revision AS source_revision, d.content AS source_content
+      SELECT l.rowid AS link_rowid, l.*, d.path AS source_path, d.title AS source_title, d.revision AS source_revision, d.content AS source_content
       FROM document_links l JOIN documents d ON d.project_id = l.project_id AND d.id = l.source_id
       WHERE l.project_id = ? AND l.target_path = ? AND d.deleted = 0
         ${cursorClause}
-      ORDER BY d.path, l.line
+      ORDER BY d.path, l.line, l.rowid
       LIMIT ?
     `).all(...rowsParameters, pageLimit + 1) as Array<{
+      link_rowid: number;
       source_id: string;
       source_path: string;
       source_title: string;
@@ -2153,7 +2229,7 @@ class ContentServiceImpl implements ContentService {
       source_content: string;
     }>;
     const items: BacklinkItem[] = rows.map((row) => ({
-      id: row.source_id,
+      id: `${row.source_id}:${row.link_rowid}`,
       title: row.source_title,
       path: row.source_path,
       revision: row.source_revision,
@@ -2167,7 +2243,8 @@ class ContentServiceImpl implements ContentService {
       snippet: row.source_content.split('\n').slice(Math.max(0, row.line - 2), row.line + 1).join(' ').slice(0, 220),
     }));
     const count = this.getDatabase().prepare(`SELECT COUNT(*) AS count FROM document_links l JOIN documents d ON d.project_id = l.project_id AND d.id = l.source_id WHERE l.project_id = ? AND l.target_path = ? AND d.deleted = 0`).get(input.projectId, targetPath) as { count?: number } | undefined;
-    return this.pageSql(items, input.cursor, input.limit, Number(count?.count ?? 0));
+    const page = this.pageSqlKey(rows, input.limit, Number(count?.count ?? 0), row => JSON.stringify([row.source_path, row.line, row.link_rowid]));
+    return { ...page, items: items.slice(0, pageLimit) };
   }
 
   private async queryGraph(input: import('./types').GraphQuery): Promise<ContentGraph> {
@@ -2242,7 +2319,7 @@ class ContentServiceImpl implements ContentService {
     };
   }
 
-  private async queryCards(input: import('./types').ContentListQuery): Promise<Page<CardItem>> {
+  private async queryCards(input: import('./types').ContentListQuery): Promise<SqlPage<CardItem>> {
     const after = decodeCursor(input.cursor);
     const clauses = ['project_id = ?', 'deleted = 0'];
     const parameters: unknown[] = [input.projectId];
@@ -2278,7 +2355,7 @@ class ContentServiceImpl implements ContentService {
     return cardFromRow(row);
   }
 
-  private async queryAssets(input: import('./types').ContentListQuery): Promise<Page<AssetItem>> {
+  private async queryAssets(input: import('./types').ContentListQuery): Promise<SqlPage<AssetItem>> {
     if (input.status === 'candidate') return this.queryCandidateAssets(input);
     if (input.status && input.status !== 'ready') return { items: [], total: 0 };
     const after = decodeCursor(input.cursor);
@@ -2303,7 +2380,7 @@ class ContentServiceImpl implements ContentService {
     return this.pageSql(items, input.cursor, input.limit, Number(count?.count ?? 0));
   }
 
-  private async queryCandidateAssets(input: import('./types').ContentListQuery): Promise<Page<AssetItem>> {
+  private async queryCandidateAssets(input: import('./types').ContentListQuery): Promise<SqlPage<AssetItem>> {
     const after = decodeCursor(input.cursor);
     const clauses = ['project_id = ?'];
     const parameters: unknown[] = [input.projectId];
@@ -2351,8 +2428,15 @@ class ContentServiceImpl implements ContentService {
   }
 
   private async queryAsset(input: import('./types').ContentDetailQuery): Promise<AssetItem> {
-    const id = input.id ?? input.assetId;
-    if (!id) throw new ContentServiceError('INVALID_INPUT', 'asset query requires id.');
+    let id = input.id ?? input.assetId;
+    if (input.versionId !== undefined) {
+      const versionId = ensureString(input.versionId, 'versionId');
+      const version = this.getDatabase().prepare('SELECT asset_id FROM asset_versions WHERE project_id = ? AND id = ?').get(input.projectId, versionId) as { asset_id: string } | undefined;
+      if (!version) throw new ContentServiceError('NOT_FOUND', 'asset version was not found in this project.');
+      if (id !== undefined && id !== version.asset_id) throw new ContentServiceError('INVALID_INPUT', 'asset and version identities do not match.');
+      id = version.asset_id;
+    }
+    if (!id) throw new ContentServiceError('INVALID_INPUT', 'asset query requires id or versionId.');
     const row = this.getDatabase().prepare('SELECT * FROM assets WHERE project_id = ? AND id = ? AND deleted = 0').get(input.projectId, id) as AssetRow | undefined;
     if (!row) {
       const candidate = this.getDatabase().prepare('SELECT * FROM candidates WHERE project_id = ? AND id = ?').get(input.projectId, id) as CandidateRow | undefined;
@@ -2362,7 +2446,7 @@ class ContentServiceImpl implements ContentService {
     return assetFromRow(row);
   }
 
-  private async queryVersions(input: import('./types').ContentListQuery): Promise<Page<AssetVersion>> {
+  private async queryVersions(input: import('./types').ContentListQuery): Promise<SqlPage<AssetVersion>> {
     const assetId = input.assetId ?? input.id;
     if (!assetId) throw new ContentServiceError('INVALID_INPUT', 'versions query requires assetId.');
     const after = decodeCursor(input.cursor);
@@ -2529,7 +2613,7 @@ class ContentServiceImpl implements ContentService {
     };
   }
 
-  private async queryRecentChanges(input: import('./types').RecentChangesQuery): Promise<Page<RecentChangeItem>> {
+  private async queryRecentChanges(input: import('./types').RecentChangesQuery): Promise<SqlPage<RecentChangeItem>> {
     let since: string | undefined;
     if (input.since !== undefined) {
       if (typeof input.since !== 'string' || Number.isNaN(Date.parse(input.since))) {
@@ -2929,7 +3013,7 @@ class ContentServiceImpl implements ContentService {
     };
   }
 
-  private async queryStoryBuilds(input: import('./types').StoryBuildsQuery): Promise<Page<StoryBuildItem>> {
+  private async queryStoryBuilds(input: import('./types').StoryBuildsQuery): Promise<SqlPage<StoryBuildItem>> {
     const db = this.getDatabase();
     const after = decodeCursor(input.cursor);
     const clauses = ['project_id = ?'];

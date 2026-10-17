@@ -79,9 +79,9 @@ export declare const stateSchema: z.ZodObject<{
             minDurationMs: z.ZodOptional<z.ZodNumber>;
             maxDurationMs: z.ZodOptional<z.ZodNumber>;
             status: z.ZodOptional<z.ZodString>;
-        }, z.core.$loose>>>;
-    }, z.core.$loose>>;
-}, z.core.$loose>;
+        }, z.core.$strip>>>;
+    }, z.core.$strip>>;
+}, z.core.$strip>;
 export declare const note: import("@dsh-workbench/runtime").NoteModel<z.ZodObject<{
     query: z.ZodOptional<z.ZodString>;
     bookmarks: z.ZodOptional<z.ZodArray<z.ZodString>>;
@@ -136,9 +136,9 @@ export declare const note: import("@dsh-workbench/runtime").NoteModel<z.ZodObjec
             minDurationMs: z.ZodOptional<z.ZodNumber>;
             maxDurationMs: z.ZodOptional<z.ZodNumber>;
             status: z.ZodOptional<z.ZodString>;
-        }, z.core.$loose>>>;
-    }, z.core.$loose>>;
-}, z.core.$loose>, z.ZodObject<{
+        }, z.core.$strip>>>;
+    }, z.core.$strip>>;
+}, z.core.$strip>, z.ZodObject<{
     projectId: z.ZodOptional<z.ZodString>;
     projectRoot: z.ZodOptional<z.ZodString>;
     mode: z.ZodOptional<z.ZodEnum<{

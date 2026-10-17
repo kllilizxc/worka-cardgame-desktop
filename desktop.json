@@ -143,9 +143,6 @@
         "expandedHeight": 720,
         "zIndex": 6
       },
-      "initialState": {
-        "title": "知识库"
-      },
       "initialConfig": {
         "resources": [
           {

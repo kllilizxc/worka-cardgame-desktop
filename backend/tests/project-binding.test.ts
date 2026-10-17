@@ -4,6 +4,9 @@ import { mkdtemp, mkdir, writeFile, rm, symlink } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { createProjectBindingManager, desktopProjectId, validateProjectRoot } from '../project-binding';
+import { requestExtension, readExtension, type ResourceSnapshot } from '@dsh-workbench/runtime';
+import type { ResourceRequest, ResourcesClient } from '@dsh-workbench/runtime/internal';
+import { configureProjectContract, contentActions, contentQueries } from '../plugins/cardgame-content/src/contract';
 
 const temporary: string[] = [];
 const managers: ReturnType<typeof createProjectBindingManager>[] = [];
@@ -23,6 +26,7 @@ function fixture() {
   const configs = new Map<string, any>();
   const records = new Map<string, any>();
   const events: string[] = [];
+  const invocations: Array<{ method: string; input: any; caller: any }> = [];
   let serial = 0, createCount = 0, validationCount = 0, failWrite = false;
   const mediaHandlers = new Map<string, any>();
   const row = (value: any) => ({ value: structuredClone(value), revision: String(++serial) });
@@ -75,7 +79,7 @@ function fixture() {
         const releaseMedia = proxy.register('cardgame-content', async input => ({ path: projects[0]!.root + '/synthetic.png', mimeType: 'image/png', revision: String(input.projectId) }));
         return {
           resources: { query: { version: '1', load: async input => load(input), subscribe: async () => () => { releaseSubscription++; } } },
-          async invoke(method, input) { return { method, projectId: input.projectId, url: proxy.issue('cardgame-content', input) }; },
+          async invoke(method, input, caller) { invocations.push({ method, input, caller }); return { method, projectId: input.projectId, url: proxy.issue('cardgame-content', input) }; },
           async noteContext() { return ['scoped context']; },
           async close() { releaseMedia(); events.push('close:' + projects[0]!.id); },
         };
@@ -83,7 +87,7 @@ function fixture() {
     });
     managers.push(created); return created;
   }
-  return { host, media, manager, note, notes, configs, records, events, mediaHandlers, setLoad: (value: typeof load) => load = value,
+  return { host, media, manager, note, notes, configs, records, events, invocations, mediaHandlers, setLoad: (value: typeof load) => load = value,
     setWriteFailure(value: boolean) { failWrite = value; }, get createCount() { return createCount; }, get validationCount() { return validationCount; }, get releaseSubscription() { return releaseSubscription; } };
 }
 const mediaInput = (f: ReturnType<typeof fixture>, projectId: string) => ({projectId,projectGeneration:f.records.get(projectId).value.generation});
@@ -332,4 +336,99 @@ test('legacy reconciliation privilege is persisted for one unchanged binding and
  await configure(manager,root);await read(manager,{op:'cards'});expect(seen.allowLegacyReconciliation).toBe(true);
  await configure(manager,await project());await read(manager,{op:'cards',allowLegacyReconciliation:true});expect(seen.allowLegacyReconciliation).toBe(false);
  await configure(manager,root);await read(manager,{op:'cards',allowLegacyReconciliation:true});expect(seen.allowLegacyReconciliation).toBe(false);expect(f.records.get(projectId).value.generation).not.toBe(generation);
+});
+
+
+/** These adapters are test transports only: the manager remains the real authority. */
+function helperTransports(manager: ReturnType<typeof createProjectBindingManager>, caller = user()) {
+  const requests: Array<{ extension: string; method: string; input: unknown }> = [];
+  const reads: ResourceRequest[] = [];
+  const extensions = { request: async (extension: string, method: string, input?: Record<string, unknown>) => {
+    requests.push({ extension, method, input });
+    expect(extension).toBe('cardgame-content');
+    return manager.invoke(method, input ?? {}, caller);
+  } };
+  const resources: Pick<ResourcesClient, 'read'> = { read: async <T>(request: ResourceRequest) => {
+    reads.push(request);
+    expect(request.name).toBe('extension.cardgame-content.query');
+    const data = await manager.resources!.query!.load(request.input, context(caller.noteId));
+    return { key: 'fixture-query', epoch: 'fixture-epoch', version: 1, stale: false, data } as ResourceSnapshot<T>;
+  } };
+  return { extensions, resources, requests, reads };
+}
+
+test('typed configure helper preserves desktop scope through the actual manager guard', async () => {
+  const root = await project(), f = fixture(), manager = f.manager();
+  const transport = helperTransports(manager);
+  await expect(requestExtension(transport.extensions, configureProjectContract, { root, desktopId: 'b' })).rejects.toThrow('另一桌面');
+  expect(transport.requests).toEqual([{ extension: 'cardgame-content', method: 'configureProject', input: { root, desktopId: 'b' } }]);
+  expect(f.validationCount).toBe(0); expect(f.createCount).toBe(0); expect(f.records.size).toBe(0);
+});
+
+test('typed command helpers preserve project and epoch fields so real manager guards reject stale or foreign work', async () => {
+  const root = await project(), f = fixture(), manager = f.manager(); await configure(manager, root);
+  const transport = helperTransports(manager), projectId = desktopProjectId('a');
+  const generation = f.records.get(projectId).value.generation;
+  for (const attack of [
+    { projectId: desktopProjectId('b'), projectGeneration: generation, message: '另一桌面' },
+    { projectId, projectGeneration: 'expired-generation', message: '旧编辑或回执' },
+  ]) {
+    const input = { projectId: attack.projectId, projectGeneration: attack.projectGeneration, path: 'knowledge/example.md', content: 'must not write' };
+    await expect(requestExtension(transport.extensions, contentActions.saveDocument.method, input)).rejects.toThrow(attack.message);
+    expect(transport.requests.at(-1)!.input).toEqual(input);
+  }
+  // Moving the host-owned note to another desktop must also fence its old input.
+  f.notes.get('a-cards').desktopId = 'b';
+  await expect(requestExtension(transport.extensions, contentActions.saveDocument.method, { projectId, projectGeneration: generation, path: 'knowledge/example.md', content: 'must not write' })).rejects.toThrow('另一桌面');
+  expect(f.createCount).toBe(0); expect(f.invocations).toEqual([]);
+});
+
+test('typed resource helper preserves project and epoch through the actual manager resource load', async () => {
+  const root = await project(), f = fixture(), manager = f.manager(); await configure(manager, root);
+  const transport = helperTransports(manager), projectId = desktopProjectId('a');
+  const generation = f.records.get(projectId).value.generation;
+  for (const attack of [
+    { projectId: desktopProjectId('b'), projectGeneration: generation, message: '另一桌面' },
+    { projectId, projectGeneration: 'expired-generation', message: '旧编辑或回执' },
+  ]) {
+    const input = { op: 'cards' as const, projectId: attack.projectId, projectGeneration: attack.projectGeneration, limit: 1 };
+    await expect(readExtension(transport.resources, contentQueries.cards.resource, input)).rejects.toThrow(attack.message);
+    expect(transport.reads.at(-1)!.input).toEqual(input);
+  }
+  expect(f.createCount).toBe(0);
+  let childInput: any;
+  f.setLoad(async input => { childInput = input; return { items: [], total: 0, revision: 'fixture-1' }; });
+  const valid = { op: 'cards' as const, projectId, projectGeneration: generation, limit: 1 };
+  const snapshot = await readExtension(transport.resources, contentQueries.cards.resource, valid);
+  expect(snapshot.data).toEqual({ items: [], total: 0, revision: 'fixture-1', projectGeneration: generation }); expect(transport.reads.at(-1)!.input).toEqual(valid);
+  expect(childInput).toMatchObject({ projectId, projectGeneration: generation, allowLegacyReconciliation: false });
+  expect(f.createCount).toBe(1);
+  f.notes.get('a-cards').desktopId = 'b';
+  await expect(readExtension(transport.resources, contentQueries.cards.resource, valid)).rejects.toThrow('另一桌面');
+});
+
+for (const forged of [
+  { _draftSource: { kind: 'native-session', noteId: 'b-cards', sessionId: 'forged' } },
+  { allowLegacyReconciliation: true },
+  { desktopId: 'b' },
+  { caller: { kind: 'user', noteId: 'b-cards' } },
+  { access: { noteId: 'b-cards' } },
+]) test(`typed helper rejects undeclared authority before dispatch: ${Object.keys(forged)[0]}`, async () => {
+  const root = await project(), f = fixture(), manager = f.manager(); await configure(manager, root);
+  const transport = helperTransports(manager), projectId = desktopProjectId('a');
+  const projectGeneration = f.records.get(projectId).value.generation;
+  await expect(requestExtension(transport.extensions, contentActions.saveDocument.method, { projectId, projectGeneration, path: 'knowledge/example.md', content: 'must not write', ...forged } as never)).rejects.toThrow();
+  await expect(readExtension(transport.resources, contentQueries.cards.resource, { projectId, projectGeneration, op: 'cards', ...forged } as never)).rejects.toThrow();
+  expect(transport.requests).toEqual([]); expect(transport.reads).toEqual([]);
+  expect(f.createCount).toBe(0); expect(f.invocations).toEqual([]);
+});
+
+for (const flag of ['readOnly', 'dryRun', 'replay'] as const) test(`typed configure helper cannot erase the host-bound caller ${flag} restriction`, async () => {
+  const f = fixture(), manager = f.manager();
+  const caller: ReturnType<typeof user> & Partial<Record<'readOnly' | 'dryRun' | 'replay', boolean>> = { ...user(), [flag]: true };
+  const transport = helperTransports(manager, caller);
+  await expect(requestExtension(transport.extensions, configureProjectContract, { root: '/must-not-be-read' })).rejects.toThrow('仅允许');
+  expect(transport.requests).toHaveLength(1);
+  expect(caller[flag]).toBe(true);
+  expect(f.validationCount).toBe(0); expect(f.createCount).toBe(0); expect(f.records.size).toBe(0);
 });

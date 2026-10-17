@@ -1,8 +1,12 @@
 import { mkdir, mkdtemp, rm, rename } from 'node:fs/promises';
 import { prepareDesktopExtension } from '@realiz3r/worka/desktop-package';
 import { resolve } from 'node:path';
+import { materializeContentNotes } from './materialize-content-notes';
 
 const root = resolve(import.meta.dir, '..');
+const content = await materializeContentNotes(resolve(root, '..'));
+console.log(`Prepared ${content.files.length} shared content sources for ${content.notes} notes`);
+for(const change of content.dependencyChanges)console.log(`Aligned ${change.note} ${change.field}.${change.name}: ${JSON.stringify(change.from)} -> ${JSON.stringify(change.to)}`);
 await mkdir(resolve(root, 'dist'), { recursive: true });
 const result = await Bun.build({
   entrypoints: [resolve(root, 'plugin.ts')],

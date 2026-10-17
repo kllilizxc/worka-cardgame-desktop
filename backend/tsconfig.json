@@ -9,8 +9,7 @@
     "allowSyntheticDefaultImports": true,
     "esModuleInterop": true,
     "types": [
-      "bun",
-      "node"
+      "bun"
     ],
     "lib": [
       "ES2023",

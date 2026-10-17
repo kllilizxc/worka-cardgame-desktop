@@ -1,3 +1,4 @@
+import {contentQueries,contentActions} from './contract';
 import {createProductionEvents} from './production-events';
 import { cardgameSelectionLines } from './context';
 import { createPinnedReferenceService, pinnedReferenceLines } from './pinned-references';
@@ -183,8 +184,14 @@ export async function createCardgameProvider(host: WorkaExtensionHost, media: Pi
       },
       resources: { query: {
         version: '1',
-        async load(value, context) {
-          const input = value as Record<string, unknown>;
+        async load(value,context) {
+          const raw=value as Record<string,unknown>;
+          const contract=Object.values(contentQueries).find(query=>query.resource.input.shape.op.value===raw.op);
+          // This field is injected by the project-binding manager, never admitted by the public contract.
+          const {allowLegacyReconciliation:_legacy,...publicInput}=raw;
+          const input:Record<string,unknown>=contract?await contract.resource.input.parseAsync(publicInput):raw;
+          const result=await (async()=>{
+
           if (input.op === 'previewReferenceTarget') {
             await assertProject(input, context.scope.noteId);
             const page = await workflows.query({ projectId: input.projectId, op: 'gameCandidates' }) as { items: GameCandidateRecord[] };
@@ -259,6 +266,9 @@ export async function createCardgameProvider(host: WorkaExtensionHost, media: Pi
             } }) as ResourceValue;
           }
           return await content.query(input as any) as ResourceValue;
+          })();
+          if(contract)await contract.output.parseAsync(result);
+          return result;
         },
         async subscribe(input, invalidate) {
           if (['pinnedReferences', 'pinnedReferenceTarget', 'previewReferenceTarget'].includes(String((input as any).op))) {
@@ -290,7 +300,11 @@ export async function createCardgameProvider(host: WorkaExtensionHost, media: Pi
           } catch (error) { release(); throw error; }
         },
       } },
-      async invoke(method, input, caller) {
+      async invoke(method,rawInput,caller) {
+        const contract=['createCardBatch','saveCardDraft','createTodo'].includes(method)?undefined:Object.values(contentActions).find(action=>action.method.method===method);
+        const {allowLegacyReconciliation:_legacy,...publicInput}=rawInput;
+        const input:Record<string,unknown>=contract?await contract.method.input.parseAsync(publicInput):rawInput;
+        const result=await (async()=>{
         await assertProject(input, caller.noteId, method === 'confirmGameCandidate' || method === 'undoGameCandidate');
         if(method==='prepareProductionEvent')return productionEvents.prepare(input);
         if(method==='productionResult'||method==='receiveResult')return productionEvents.receiveResult(input);
@@ -354,6 +368,10 @@ export async function createCardgameProvider(host: WorkaExtensionHost, media: Pi
         return contentCommands.has(method)
           ? content.command(method as ContentCommandMethod, input)
           : workflows.command(method, input as any);
+        })();
+        // Parsing happens after execution and does not authorize replay on failure.
+        if(contract){try{await contract.output.parseAsync(result);}catch(cause){throw new Error(`CardGame ${method} returned invalid output after invocation; inspect effects before retrying`,{cause});}}
+        return result;
       },
       close,
     } satisfies import('@realiz3r/worka/host').Extension;
