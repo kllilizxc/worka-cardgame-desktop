@@ -330,7 +330,8 @@ if (worka) {
     try {
       expect(active('cards')).toBe(1);expect(active('status')).toBe(0);expect(active('card')).toBe(0);
       await flush(()=>f.show('expanded'));await flush(()=>import('../notes/note-1/view-expanded'));
-      expect(active('status')).toBe(1);expect(active('card')).toBe(1);
+      // The library indicator and creation entry independently own binding status reads.
+      expect(active('status')).toBe(2);expect(active('card')).toBe(1);
       await flush(()=>f.open('card-1'));
       const editor=view.container.querySelector<HTMLTextAreaElement>('[aria-label="卡牌原始 JSON"]')!;
       await flush(()=>{Object.getOwnPropertyDescriptor(HTMLTextAreaElement.prototype,'value')!.set!.call(editor,'{"cost":19}');editor.dispatchEvent(new Event('input',{bubbles:true}));});
@@ -338,7 +339,7 @@ if (worka) {
       expect(active('cards')).toBe(1);expect(active('status')).toBe(0);expect(active('card')).toBe(0);
       expect(view.container.querySelector('.cg-card-fan')).not.toBeNull();
       await flush(()=>f.show('expanded'));
-      expect(active('status')).toBe(1);expect(active('card')).toBe(1);
+      expect(active('status')).toBe(2);expect(active('card')).toBe(1);
       expect((view.container.querySelector('[aria-label="卡牌原始 JSON"]') as HTMLTextAreaElement).value).toBe('{"cost":19}');
       expect(view.container.textContent).toContain('未保存');
       expect(Array.from(f.subscriptions).filter((item:any)=>item.request.name==='card').map((item:any)=>item.request.input.id)).toEqual(['card-1']);

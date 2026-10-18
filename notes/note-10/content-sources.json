@@ -4,7 +4,7 @@
   "sharedSource": "notes/note-1",
   "files": {
     "contract.ts": "a263bf6ec22299ac6baffb5354f8e9c66607c261837bb9287a8a51830b94d889",
-    "actions.ts": "8d0e26a3c35343de2381bf2d3b15e1d1b298201a430dfd75c537b912f91fc70c",
+    "actions.ts": "375e66a4d135b679b7dbb9d9c8af2027f4b5e07e70a3d9f9e2811dc171d5b824",
     "asset-filter-panel.tsx": "289f1fe2ffe5840b37abffc83fe8eaabd2e7091ba68c808312b81d4ed9482fcc",
     "audio-guidance.tsx": "e7c8180e7c15d1537bf3bd57b3897e7d7dd4dd14b741b4615c49db9b92413fcd",
     "audio-preview.tsx": "38899577f2802bd653644288977489f10687445dbcc69963b95190ec6fafb00d",
@@ -31,7 +31,7 @@
     "story-model.ts": "05098a9307d6f732c9f7f08fba07eba466ae4dd186db1e23b1cbcfd49000dc27",
     "story-workspace.tsx": "761e582517ec15681cef1d97d123910352b29abe1ef2c1aa8dfac2a5a4416409",
     "view-compact.tsx": "ce5e0321dd44666af1f8f58fdb9f74641653d1ac52105932f241626071a46613",
-    "view-expanded.tsx": "3f92ac53a82a5f09e43d8a2fb0cca442685271f133de6e5ea9f85f6953840d3a",
+    "view-expanded.tsx": "cbef83be7b5bcaa14a65e6f9b880d89e9b7f8c9cdd7c7b2b86938aff2bc7c326",
     "view.tsx": "6cd95660fb5d998e8c685f51428e6608a30ae26629d6aa565565be3f47232593"
   }
 }

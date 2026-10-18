@@ -251,7 +251,7 @@ export async function createCardgameProvider(host: WorkaExtensionHost, media: Pi
           if (input.op === 'media' && input.variant !== 'waveform') {
             const file = await content.resolveMedia(input as any);
             const { path: _path, absolutePath: _absolutePath, ...metadata } = file;
-            return { ...metadata, url: media.issue('cardgame-content', input) } as ResourceValue;
+            return { ...metadata, url: media.issue('cardgame-content', input, file.revision) } as ResourceValue;
           }
           if (workflowQueries.has(String(input.op))) {
             return await workflows.query(input, { execution: async binding => {

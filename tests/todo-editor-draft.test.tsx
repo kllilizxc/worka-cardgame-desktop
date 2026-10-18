@@ -2,6 +2,7 @@ import {act,createElement,type ReactNode} from 'react';
 import {expect,test} from 'bun:test';
 import {join} from 'node:path';
 import {createHash} from 'node:crypto';
+import {CommandOutcomeError} from '@dsh-workbench/runtime';
 const worka=process.env.WORKA_SOURCE_ROOT;
 if(!worka)throw Error('Set WORKA_SOURCE_ROOT to the checked-out SDK used for the build');
 const {button,deferred}=await import(join(worka,'tests/web/dom-test-helpers.tsx')) as {
@@ -24,18 +25,19 @@ async function mount(element:ReactNode){
 
 const initial=()=>({id:'todo-one',projectId:'game',title:'Original requirement',description:'Original details',images:[{id:'image-one',dataUrl:'data:image/png;base64,AA==',type:'image/png',name:'reference'}],status:'todo',priority:'medium',revision:1,requirementRevision:1,createdAt:'2026-10-17',updatedAt:'2026-10-17'});
 const fingerprint=(item:any)=>createHash('sha256').update(JSON.stringify([item.title,item.description??'',(item.images??[]).map((image:any)=>[image.id,image.dataUrl,image.type??null,image.name??null,image.width??null,image.height??null])])).digest('hex');
-type FixtureOptions={todosPending?:boolean;detailPending?:boolean;categories?:Array<{category:string;count:number}>;categoryError?:boolean;invoke?:(name:string,input:any,options:any,fixture:any)=>Promise<any>;revalidate?:(request:any,fixture:any)=>Promise<any>};
+type FixtureOptions={initialItem?:any;checkpoints?:Map<string,any>;dropReceipt?:boolean;todosPending?:boolean;detailPending?:boolean;categories?:Array<{category:string;count:number}>;categoryError?:boolean;invoke?:(name:string,input:any,options:any,fixture:any)=>Promise<any>;revalidate?:(request:any,fixture:any)=>Promise<any>};
 async function fixture(options:FixtureOptions={}){
   const previousParent=Object.getOwnPropertyDescriptor(window,'parent'),previousContext=Object.getOwnPropertyDescriptor(globalThis,'__DSH_WORKBENCH_CONTEXT__');
   const messages:any[]=[];
   Object.defineProperty(window,'parent',{configurable:true,value:{postMessage:(message:any)=>messages.push(message)}});
   Object.defineProperty(globalThis,'__DSH_WORKBENCH_CONTEXT__',{configurable:true,value:{token:'todo-fixture',parentOrigin:window.location.origin,mode:'expanded'}});
-  let item:any=initial(),projectId='game',projectGeneration='generation-A',version=0,deleted=false;
-  const calls:any[]=[],commands:any[]=[],reads:any[]=[],checkpoints=new Map<string,any>();
+  let item:any=options.initialItem??initial(),projectId='game',projectGeneration='generation-A',version=0,deleted=false;
+  const calls:any[]=[],commands:any[]=[],reads:any[]=[],receiptReads:any[]=[],checkpoints=options.checkpoints??new Map<string,any>();
+  let receiptReady=false,lastReceipt:any,lastFailure:unknown;
   const listeners=new Set<{request:any;listener:(snapshot:any)=>void}>();
   const data=(request:any)=>request.name==='state'?{value:{projectId,notes:{execution:'execution-note'}},revision:'config-1'}:request.name==='todos'?{items:deleted?[]:[{...item,projectGeneration,images:undefined,imageCount:item.images?.length??0,imageNames:(item.images??[]).flatMap((image:any)=>image.name?[image.name]:[])}],revision:projectGeneration+':'+item.revision+':'+deleted,total:deleted?0:1}:request.name==='todo'?{item:{...item,projectGeneration},requirementFingerprint:fingerprint(item),projectGeneration}:request.name==='workflowStatus'?{counts:{todos:1,todo:1,inProgress:0,done:0,blocked:0}}:request.name==='categories'?{items:(options.categories??[]).slice(request.input.cursor?100:0,request.input.cursor?200:100),...(!request.input.cursor&&(options.categories?.length??0)>100?{next:'category-next'}:{}),revision:'categories-1',total:options.categories?.length??0}:{};
   const snapshot=(request:any)=>({key:request.name,epoch:'fixture',version:++version,...(deleted&&request.name==='todo'?{error:'Todo not found',stale:true}:request.name==='categories'&&options.categoryError?{error:'分类读取失败',stale:true}:{data:structuredClone(data(request)),stale:false})});
-  const f={get item(){return item;},set item(value){item=value;},calls,commands,reads,checkpoints,snapshot,
+  const f={get item(){return item;},set item(value){item=value;},calls,commands,reads,receiptReads,checkpoints,snapshot,recoverReceipt(){receiptReady=true;},
     publish(name:string){for(const subscription of listeners)if(subscription.request.name===name)subscription.listener(snapshot(subscription.request));},
     removeSource(){deleted=true;f.publish('todos');f.publish('todo');},
     rebind(){projectId='other-project';f.publish('state');},
@@ -46,8 +48,8 @@ async function fixture(options:FixtureOptions={}){
     item={...item,...input.patch,revision:item.revision+1,requirementRevision:item.requirementRevision+1};return {item:structuredClone(item),revision:item.revision,requirementFingerprint:fingerprint(item)};
   }}};
   const runtime:any={note:{id:'todo-editor'},store:{read:async()=>({value:{projectId},revision:'state-1'}),subscribe:async()=>()=>{}},
-    resources:{subscribe:async(request:any,listener:any)=>{reads.push(request);const subscription={request,listener};listeners.add(subscription);if(!(options.todosPending&&request.name==='todos'||options.detailPending&&request.name==='todo'))listener(snapshot(request));return()=>listeners.delete(subscription);},read:async(request:any)=>snapshot(request),revalidate:async(request:any)=>{reads.push(request);return options.revalidate?options.revalidate(request,f):snapshot(request);}},
-    invokeAction:async(name:string,input:any,actionOptions:any)=>{calls.push({name,input,options:actionOptions});if(options.invoke){const result=await options.invoke(name,input,actionOptions,f);return result.item?{projectId:result.item.projectId,projectGeneration:input.projectGeneration,id:result.item.id,revision:result.item.revision,requirementRevision:result.item.requirementRevision,requirementFingerprint:fingerprint(result.item)}:result;}if(name==='editTodo')return editTodo(context,input);throw Error(`Unexpected action ${name}`);},
+    resources:{subscribe:async(request:any,listener:any)=>{reads.push(request);const subscription={request,listener};listeners.add(subscription);if(!(options.todosPending&&request.name==='todos'||options.detailPending&&request.name==='todo'))listener(snapshot(request));return()=>listeners.delete(subscription);},read:async(request:any)=>snapshot(request),revalidate:async(request:any)=>{if(request.name==='command'){receiptReads.push(request);return {key:'command',epoch:'fixture',version:++version,data:lastFailure?{status:'failed',error:lastFailure instanceof Error?lastFailure.message:String(lastFailure)}:receiptReady?{status:'completed',result:lastReceipt}:{status:'ambiguous',error:'receipt still unknown'},stale:false};}reads.push(request);return options.revalidate?options.revalidate(request,f):snapshot(request);}},
+    invokeAction:async(name:string,input:any,actionOptions:any)=>{calls.push({name,input,options:actionOptions});if(options.invoke){const result=await options.invoke(name,input,actionOptions,f);return result.item?{projectId:result.item.projectId,projectGeneration:input.projectGeneration,id:result.item.id,revision:result.item.revision,requirementRevision:result.item.requirementRevision,requirementFingerprint:fingerprint(result.item)}:result;}if(name==='editTodo'){try{lastReceipt=await editTodo(context,input);}catch(cause){lastFailure=cause;throw new CommandOutcomeError(cause instanceof Error?cause.message:String(cause),`command:${actionOptions.requestId}`,'failed');}if(options.dropReceipt)throw new CommandOutcomeError('receipt lost after normalized save',`command:${actionOptions.requestId}`,'ambiguous');return lastReceipt;}throw Error(`Unexpected action ${name}`);},
   };
   const bridge:any={request:async(method:string,params:any)=>{if(method==='ui.draftRecover')return checkpoints.get(params.key)??null;if(method==='ui.draftCheckpoint'){checkpoints.set(params.key,params.checkpoint);return {accepted:true};}if(method==='ui.draftClear'){checkpoints.delete(params.key);return {accepted:true};}throw Error(method);}};
   const render=(mode:'compact'|'expanded'='expanded')=>createElement(RuntimeProvider,{runtime,bridge,children:createElement(NoteViewContext.Provider,{value:{metadata:{id:'todo-editor',name:'Todo'},mode,layout:{width:900,maxHeight:900},snapshot:{value:{projectId:'game'},revision:'state-1'}},children:createElement(View)})});
@@ -98,7 +100,7 @@ test('Todo edits made after save starts survive the older receipt',async()=>{
   }finally{await f.view.unmount();}
 });
 
-test('remote requirement updates preserve the original title, details and image CAS on retries',async()=>{
+test('definitely rejected Todo saves preserve the original requirement CAS on explicit retries',async()=>{
   const f=await fixture();try{
     await edit(f);
     f.item={...f.item,title:'Another author requirement',description:'Another author details',images:[],revision:2};
@@ -106,8 +108,8 @@ test('remote requirement updates preserve the original title, details and image 
     expect(title(f).value).toBe('Unfinished user requirement');
     await flush(()=>submit(f));expect(f.view.container.textContent).toContain('该需求已被修改');
     expect(f.commands).toHaveLength(0);expect(title(f).value).toBe('Unfinished user requirement');
-    await flush(()=>submit(f));expect(f.calls).toHaveLength(2);
-    expect(f.calls[0].options.requestId).toBe(f.calls[1].options.requestId);
+    await flush(()=>submit(f));expect(f.calls).toHaveLength(2);expect(f.receiptReads).toHaveLength(0);
+    expect(f.calls[0].options.requestId).not.toBe(f.calls[1].options.requestId);
     expect(f.calls[1].input.baseFingerprint).toBe(fingerprint(initial()));
     expect(f.checkpoints.size).toBe(1);
   }finally{await f.view.unmount();}
@@ -349,4 +351,25 @@ test('a source deleted while hidden retains readable large edits and an explicit
   await flush(()=>button(f.view.container,'放弃此编辑').click());expect(f.guard().dirty).toBe(true);await flush(()=>button(f.view.container,'确认放弃').click());
   expect(f.guard()).toEqual({dirty:false,saving:false});expect(f.view.container.textContent).not.toContain('未显示的编辑');expect(f.calls).toHaveLength(0);
  }finally{await f.view.unmount();}
+});
+
+
+test('normalized Todo save recovers its host receipt without matching the untrimmed editor or replaying',async()=>{
+  const first=await fixture({dropReceipt:true});
+  await edit(first,'  Normalized requirement  ');await flush(()=>submit(first));
+  expect(first.commands).toHaveLength(1);expect(first.item.title).toBe('Normalized requirement');
+  const checkpoint=[...first.checkpoints.values()][0],requestId=first.calls[0].options.requestId;
+  expect(checkpoint.command.name).toBe('editTodo');expect(checkpoint.command.input.title).toBe('  Normalized requirement  ');
+  const checkpoints=first.checkpoints,savedItem=first.item;await first.view.unmount();
+  const recovered=await fixture({checkpoints,initialItem:savedItem});
+  // Recreate the host's durable completed receipt independently of current source equality.
+  const revalidate=recovered.runtime.resources.revalidate;
+  recovered.runtime.resources.revalidate=async(request:any)=>request.name==='command'?{key:'command',epoch:'fixture',version:100,data:{status:'completed',result:{projectId:'game',projectGeneration:'generation-A',id:'todo-one',revision:savedItem.revision,requirementRevision:savedItem.requirementRevision,requirementFingerprint:fingerprint(savedItem)}},stale:false}:revalidate(request);
+  try{
+    expect(title(recovered).value).toBe('  Normalized requirement  ');expect(recovered.calls).toHaveLength(0);
+    await flush(()=>submit(recovered));
+    expect(recovered.calls).toHaveLength(0);expect(recovered.commands).toHaveLength(0);expect(recovered.checkpoints.size).toBe(0);
+    expect(title(recovered)?.value).toBe('Normalized requirement');expect(recovered.guard()).toEqual({dirty:false,saving:false});
+    expect(checkpoint.intent.requestId).toBe(requestId);
+  }finally{await recovered.view.unmount();}
 });

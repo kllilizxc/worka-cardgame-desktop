@@ -111,7 +111,7 @@ async function projectFor(ctx: QueryContext | ActionContext, input: Record<strin
  * All display reads go through the single content extension query resource.
  * `snapshot.data` is the backend payload; the snapshot envelope is never exposed.
  */
-function readOp<K extends ContentQueryName>(op:K,rawInput:ContentQueryInput<K>,ctx:QueryContext):Promise<ContentQueryOutput<K>>;
+function readOp<K extends ContentQueryName>(op:K,rawInput:(ContentQueryInput<K> & {projectGeneration?:string}) | null | undefined,ctx:QueryContext):Promise<ContentQueryOutput<K>>;
 async function readOp(op:ContentQueryName,rawInput:unknown,ctx:QueryContext):Promise<ContentQueryOutput<ContentQueryName>> {
   const input = rawInput && typeof rawInput === "object" && !Array.isArray(rawInput)
     ? rawInput as QueryInput
@@ -200,7 +200,7 @@ async function requestContent(method:ContentActionName,input:unknown,ctx:ActionC
   let draftDefinition:z.output<typeof jsonObject>|undefined;
   let draftPresentation:z.output<typeof jsonObject>|undefined;
   if (input.draft) {
-    const source = await readOp('card', { id: input.itemIds[0] }, ctx);
+    const source = await readOp('card', { id: input.itemIds[0], ...(input.projectGeneration ? { projectGeneration: input.projectGeneration } : {}) }, ctx);
     const originalFace = jsonObject.parse(source.json.cardFace??{});
     const requestedFace = jsonObject.parse(input.draft.cardFace??{});
     const { themeId: oldTheme, ...originalStructure } = originalFace ?? {};
@@ -217,6 +217,7 @@ async function requestContent(method:ContentActionName,input:unknown,ctx:ActionC
     ...(input.expectedRevision ? { sourceRevisions: { [input.itemIds[0]!]: input.expectedRevision } } : {}), brief: `卡面制作 · ${input.itemIds.join('、')}` },ctx);
   if (draftDefinition) {
     await requestContent('saveCardDraft', {productionId: result.production.id,
+      ...(input.projectGeneration ? { projectGeneration: input.projectGeneration } : {}),
       cardId: input.itemIds[0], baseRevision: result.production.revision, definition: draftDefinition,
       ...(draftPresentation ? { presentation: draftPresentation } : {}) },ctx);
   }

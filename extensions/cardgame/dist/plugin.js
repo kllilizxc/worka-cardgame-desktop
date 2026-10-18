@@ -3,7 +3,7 @@ import { isNoteController } from "@realiz3r/worka/host";
 import { basename as basename2, dirname as dirname7, resolve as resolve7 } from "node:path";
 import { fileURLToPath } from "node:url";
 
-// ../../worka-authoring-desktop-latest-20261017/node_modules/.bun/zod@4.6.1/node_modules/zod/v4/core/util.js
+// ../../worka-simple-main-integration-20261018/node_modules/.bun/zod@4.6.1/node_modules/zod/v4/core/util.js
 function getEnumValues(entries) {
   const numericValues = Object.values(entries).filter((v) => typeof v === "number");
   const values = Object.entries(entries).filter(([k, _]) => numericValues.indexOf(+k) === -1).map(([_, v]) => v);
@@ -571,7 +571,7 @@ function constantCatch(value) {
   return fn;
 }
 
-// ../../worka-authoring-desktop-latest-20261017/node_modules/.bun/zod@4.6.1/node_modules/zod/v4/core/core.js
+// ../../worka-simple-main-integration-20261018/node_modules/.bun/zod@4.6.1/node_modules/zod/v4/core/core.js
 var _a;
 var _zodDesc = { value: undefined, enumerable: false };
 var _E = "captureStackTrace" in Error ? Error : null;
@@ -690,7 +690,7 @@ function config(newConfig) {
     Object.assign(globalConfig, newConfig);
   return globalConfig;
 }
-// ../../worka-authoring-desktop-latest-20261017/node_modules/.bun/zod@4.6.1/node_modules/zod/v4/core/errors.js
+// ../../worka-simple-main-integration-20261018/node_modules/.bun/zod@4.6.1/node_modules/zod/v4/core/errors.js
 function _getMessage() {
   const internals = this._zod;
   internals.message ?? (internals.message = JSON.stringify(internals.def, jsonStringifyReplacer, 2));
@@ -805,7 +805,7 @@ function formatError(error, mapper = (issue) => issue.message) {
   return fieldErrors;
 }
 
-// ../../worka-authoring-desktop-latest-20261017/node_modules/.bun/zod@4.6.1/node_modules/zod/v4/core/parse.js
+// ../../worka-simple-main-integration-20261018/node_modules/.bun/zod@4.6.1/node_modules/zod/v4/core/parse.js
 function finalizeParams(callee, params) {
   return { callee: params?.callee ?? callee, Err: params?.Err };
 }
@@ -952,7 +952,7 @@ var _safeEncodeAsync = (_Err) => async (schema, value, _ctx) => {
 var _safeDecodeAsync = (_Err) => async (schema, value, _ctx) => {
   return _safeParseAsync(_Err)(schema, value, _ctx);
 };
-// ../../worka-authoring-desktop-latest-20261017/node_modules/.bun/zod@4.6.1/node_modules/zod/v4/core/regexes.js
+// ../../worka-simple-main-integration-20261018/node_modules/.bun/zod@4.6.1/node_modules/zod/v4/core/regexes.js
 var cuid = /^[cC][0-9a-z]{6,}$/;
 var cuid2 = /^[0-9a-z]+$/;
 var ulid = /^[0-7][0-9A-HJKMNP-TV-Za-hjkmnp-tv-z]{25}$/;
@@ -1011,7 +1011,7 @@ var _null = /^null$/i;
 var lowercase = /^[^A-Z]*$/;
 var uppercase = /^[^a-z]*$/;
 
-// ../../worka-authoring-desktop-latest-20261017/node_modules/.bun/zod@4.6.1/node_modules/zod/v4/core/checks.js
+// ../../worka-simple-main-integration-20261018/node_modules/.bun/zod@4.6.1/node_modules/zod/v4/core/checks.js
 var $ZodCheck = /* @__PURE__ */ $constructor("$ZodCheck", (inst, def) => {
   var _a;
   inst._zod ?? (inst._zod = {});
@@ -1327,7 +1327,7 @@ var $ZodCheckOverwrite = /* @__PURE__ */ $constructor("$ZodCheckOverwrite", (ins
   };
 });
 
-// ../../worka-authoring-desktop-latest-20261017/node_modules/.bun/zod@4.6.1/node_modules/zod/v4/core/doc.js
+// ../../worka-simple-main-integration-20261018/node_modules/.bun/zod@4.6.1/node_modules/zod/v4/core/doc.js
 class Doc {
   constructor(args = [], closed = {}) {
     this.content = [];
@@ -1369,14 +1369,14 @@ ${content.join(`
   }
 }
 
-// ../../worka-authoring-desktop-latest-20261017/node_modules/.bun/zod@4.6.1/node_modules/zod/v4/core/versions.js
+// ../../worka-simple-main-integration-20261018/node_modules/.bun/zod@4.6.1/node_modules/zod/v4/core/versions.js
 var version = {
   major: 4,
   minor: 6,
   patch: 1
 };
 
-// ../../worka-authoring-desktop-latest-20261017/node_modules/.bun/zod@4.6.1/node_modules/zod/v4/core/schemas.js
+// ../../worka-simple-main-integration-20261018/node_modules/.bun/zod@4.6.1/node_modules/zod/v4/core/schemas.js
 var $ZodType = /* @__PURE__ */ $constructor("$ZodType", (inst, def) => {
   var _a;
   inst ?? (inst = {});
@@ -2974,7 +2974,7 @@ var $ZodProperties = /* @__PURE__ */ $constructor("$ZodProperties", (inst, def) 
     yield this;
   }
 });
-// ../../worka-authoring-desktop-latest-20261017/node_modules/.bun/zod@4.6.1/node_modules/zod/v4/core/memoizer.js
+// ../../worka-simple-main-integration-20261018/node_modules/.bun/zod@4.6.1/node_modules/zod/v4/core/memoizer.js
 class $ZodCyclicError extends Error {
   constructor() {
     super(`Cannot parse a reference cycle that closes through a transform`);
@@ -3246,7 +3246,7 @@ function isBackEdge(ctx, value) {
   const backEdges = ctx[STATE]?.backEdges;
   return backEdges !== undefined && isRef(value) && backEdges.has(value);
 }
-// ../../worka-authoring-desktop-latest-20261017/node_modules/.bun/zod@4.6.1/node_modules/zod/v4/locales/en.js
+// ../../worka-simple-main-integration-20261018/node_modules/.bun/zod@4.6.1/node_modules/zod/v4/locales/en.js
 var error = () => {
   const Sizable = {
     string: { unit: "characters", verb: "to have" },
@@ -3367,7 +3367,7 @@ function en_default() {
     localeError: error()
   };
 }
-// ../../worka-authoring-desktop-latest-20261017/node_modules/.bun/zod@4.6.1/node_modules/zod/v4/core/registries.js
+// ../../worka-simple-main-integration-20261018/node_modules/.bun/zod@4.6.1/node_modules/zod/v4/core/registries.js
 var _a2;
 class $ZodRegistry {
   constructor() {
@@ -3414,7 +3414,7 @@ function registry() {
 }
 (_a2 = globalThis).__zod_globalRegistry ?? (_a2.__zod_globalRegistry = registry());
 var globalRegistry = globalThis.__zod_globalRegistry;
-// ../../worka-authoring-desktop-latest-20261017/node_modules/.bun/zod@4.6.1/node_modules/zod/v4/core/api.js
+// ../../worka-simple-main-integration-20261018/node_modules/.bun/zod@4.6.1/node_modules/zod/v4/core/api.js
 function _string(Class, params) {
   return new Class({
     type: "string",
@@ -3870,7 +3870,7 @@ function _check(fn, params) {
   ch._zod.check = fn;
   return ch;
 }
-// ../../worka-authoring-desktop-latest-20261017/node_modules/.bun/zod@4.6.1/node_modules/zod/v4/core/to-json-schema.js
+// ../../worka-simple-main-integration-20261018/node_modules/.bun/zod@4.6.1/node_modules/zod/v4/core/to-json-schema.js
 function assignProps(target, ...sources) {
   for (const source of sources) {
     for (const key of Reflect.ownKeys(source)) {
@@ -4393,7 +4393,7 @@ var createStandardJSONSchemaMethod = (schema, io, processors = {}) => (params) =
   extractDefs(ctx, schema);
   return finalize(ctx, schema);
 };
-// ../../worka-authoring-desktop-latest-20261017/node_modules/.bun/zod@4.6.1/node_modules/zod/v4/core/json-schema-processors.js
+// ../../worka-simple-main-integration-20261018/node_modules/.bun/zod@4.6.1/node_modules/zod/v4/core/json-schema-processors.js
 var narrowMin = (agg, key, value) => {
   if (agg[key] === undefined || value > agg[key])
     agg[key] = value;
@@ -4935,7 +4935,7 @@ var lazyProcessor = (schema, ctx, _json, params) => {
   const seen = ctx.seen.get(schema);
   seen.ref = innerType;
 };
-// ../../worka-authoring-desktop-latest-20261017/node_modules/.bun/zod@4.6.1/node_modules/zod/v4/classic/errors.js
+// ../../worka-simple-main-integration-20261018/node_modules/.bun/zod@4.6.1/node_modules/zod/v4/classic/errors.js
 var _installedErrorProtos = /* @__PURE__ */ new WeakSet([Object.prototype, Error.prototype]);
 function _lazyMethod(proto, key, make) {
   Object.defineProperty(proto, key, {
@@ -4980,7 +4980,7 @@ var ZodRealError = /* @__PURE__ */ $constructor("ZodError", initializer2, undefi
   Parent: Error
 });
 
-// ../../worka-authoring-desktop-latest-20261017/node_modules/.bun/zod@4.6.1/node_modules/zod/v4/classic/parse.js
+// ../../worka-simple-main-integration-20261018/node_modules/.bun/zod@4.6.1/node_modules/zod/v4/classic/parse.js
 var parse2 = /* @__PURE__ */ _parse(ZodRealError);
 var parseAsync = /* @__PURE__ */ _parseAsync(ZodRealError);
 var safeParse = /* @__PURE__ */ _safeParse(ZodRealError);
@@ -4994,7 +4994,7 @@ var safeDecode = /* @__PURE__ */ _safeDecode(ZodRealError);
 var safeEncodeAsync = /* @__PURE__ */ _safeEncodeAsync(ZodRealError);
 var safeDecodeAsync = /* @__PURE__ */ _safeDecodeAsync(ZodRealError);
 
-// ../../worka-authoring-desktop-latest-20261017/node_modules/.bun/zod@4.6.1/node_modules/zod/v4/classic/schemas.js
+// ../../worka-simple-main-integration-20261018/node_modules/.bun/zod@4.6.1/node_modules/zod/v4/classic/schemas.js
 function _ensureDefaultLocale() {
   if (!globalConfig.localeError)
     config(en_default());
@@ -5917,10 +5917,10 @@ function json(params) {
   return jsonSchema;
 }
 // ../node_modules/@realiz3r/worka/dist/extension-contracts.js
-function J(t) {
+function O(t) {
   return Object.freeze({ ...t });
 }
-function A(t) {
+function v(t) {
   return Object.freeze({ ...t });
 }
 class m extends Error {
@@ -5932,131 +5932,131 @@ class m extends Error {
     this.name = "JsonLimitError";
   }
 }
-function E(t) {
-  let o = 0;
+function P(t) {
+  let r = 0;
   for (let i = 0;i < t.length; i++) {
     let a = t.charCodeAt(i);
     if (a < 128)
-      o++;
+      r++;
     else if (a < 2048)
-      o += 2;
+      r += 2;
     else if (a >= 55296 && a <= 56319 && i + 1 < t.length && t.charCodeAt(i + 1) >= 56320 && t.charCodeAt(i + 1) <= 57343)
-      o += 4, i++;
+      r += 4, i++;
     else
-      o += 3;
+      r += 3;
   }
-  return o;
+  return r;
 }
-function h(t, o) {
-  if (!Number.isSafeInteger(o) || o < 0)
+function h(t, r) {
+  if (!Number.isSafeInteger(r) || r < 0)
     throw RangeError("Invalid JSON byte limit");
-  let i = [], a = "", u = 0, s = (e, r = e.length) => {
-    if (u + r > o)
-      throw new m(o);
-    if (u += r, a += e, a.length >= 4096)
+  let i = [], a = "", u = 0, o = (e, n = e.length) => {
+    if (u + n > r)
+      throw new m(r);
+    if (u += n, a += e, a.length >= 4096)
       i.push(a), a = "";
-  }, l = (e) => {
-    if (e.length + u + 2 > o)
-      throw new m(o);
-    s('"');
-    for (let r = 0;r < e.length; r++) {
-      let n = e.charCodeAt(r);
-      if (n === 34)
-        s("\\\"");
-      else if (n === 92)
-        s("\\\\");
-      else if (n === 8)
-        s("\\b");
-      else if (n === 9)
-        s("\\t");
-      else if (n === 10)
-        s("\\n");
-      else if (n === 12)
-        s("\\f");
-      else if (n === 13)
-        s("\\r");
-      else if (n < 32)
-        s(`\\u${n.toString(16).padStart(4, "0")}`);
-      else if (n < 128)
-        s(e[r]);
-      else if (n < 2048)
-        s(e[r], 2);
-      else if (n >= 55296 && n <= 56319 && r + 1 < e.length && e.charCodeAt(r + 1) >= 56320 && e.charCodeAt(r + 1) <= 57343)
-        s(e.slice(r, r + 2), 4), r++;
-      else if (n >= 55296 && n <= 57343)
-        s(`\\u${n.toString(16)}`);
+  }, c = (e) => {
+    if (e.length + u + 2 > r)
+      throw new m(r);
+    o('"');
+    for (let n = 0;n < e.length; n++) {
+      let s = e.charCodeAt(n);
+      if (s === 34)
+        o("\\\"");
+      else if (s === 92)
+        o("\\\\");
+      else if (s === 8)
+        o("\\b");
+      else if (s === 9)
+        o("\\t");
+      else if (s === 10)
+        o("\\n");
+      else if (s === 12)
+        o("\\f");
+      else if (s === 13)
+        o("\\r");
+      else if (s < 32)
+        o(`\\u${s.toString(16).padStart(4, "0")}`);
+      else if (s < 128)
+        o(e[n]);
+      else if (s < 2048)
+        o(e[n], 2);
+      else if (s >= 55296 && s <= 56319 && n + 1 < e.length && e.charCodeAt(n + 1) >= 56320 && e.charCodeAt(n + 1) <= 57343)
+        o(e.slice(n, n + 2), 4), n++;
+      else if (s >= 55296 && s <= 57343)
+        o(`\\u${s.toString(16)}`);
       else
-        s(e[r], 3);
+        o(e[n], 3);
     }
-    s('"');
-  }, b = (e, r) => {
+    o('"');
+  }, f = (e, n) => {
     if (e !== null && (typeof e === "object" || typeof e === "bigint") && typeof e.toJSON === "function")
-      e = e.toJSON(r);
+      e = e.toJSON(n);
     if (e instanceof Number || e instanceof String || e instanceof Boolean)
       e = e.valueOf();
     return e;
-  }, y = (e) => e === undefined || typeof e === "function" || typeof e === "symbol", f = [], p = new Set;
-  function* x(e, r) {
-    if (r) {
-      let n = e, g = n.length;
-      for (let d = 0;d < g; d++)
-        yield [String(d), n[d]];
+  }, x = (e) => e === undefined || typeof e === "function" || typeof e === "symbol", l = [], y = new Set;
+  function* b(e, n) {
+    if (n) {
+      let s = e, g = s.length;
+      for (let p = 0;p < g; p++)
+        yield [String(p), s[p]];
     } else
-      for (let n in e)
-        if (Object.hasOwn(e, n))
-          yield [n, e[n]];
+      for (let s in e)
+        if (Object.hasOwn(e, s))
+          yield [s, e[s]];
   }
-  let c = (e) => {
-    if (e === null || y(e)) {
-      s("null");
+  let d = (e) => {
+    if (e === null || x(e)) {
+      o("null");
       return;
     }
     if (typeof e === "string") {
-      l(e);
+      c(e);
       return;
     }
     if (typeof e === "number") {
-      s(Number.isFinite(e) ? String(e) : "null");
+      o(Number.isFinite(e) ? String(e) : "null");
       return;
     }
     if (typeof e === "boolean") {
-      s(String(e));
+      o(String(e));
       return;
     }
     if (typeof e === "bigint")
       throw TypeError("Cannot serialize BigInt as JSON");
-    let r = e;
-    if (p.has(r))
+    let n = e;
+    if (y.has(n))
       throw TypeError("Cannot serialize circular JSON");
-    let n = Array.isArray(r);
-    s(n ? "[" : "{"), p.add(r), f.push({ value: r, iterator: x(r, n), array: n, first: true });
+    let s = Array.isArray(n);
+    o(s ? "[" : "{"), y.add(n), l.push({ value: n, iterator: b(n, s), array: s, first: true });
   };
-  if (t = b(t, ""), y(t))
+  if (t = f(t, ""), x(t))
     throw TypeError("Resource result must be JSON");
-  c(t);
-  while (f.length) {
-    let e = f[f.length - 1], r = e.iterator.next();
-    if (r.done) {
-      s(e.array ? "]" : "}"), p.delete(e.value), f.pop();
+  d(t);
+  while (l.length) {
+    let e = l[l.length - 1], n = e.iterator.next();
+    if (n.done) {
+      o(e.array ? "]" : "}"), y.delete(e.value), l.pop();
       continue;
     }
-    let [n, g] = r.value, d = b(g, n);
-    if (!e.array && y(d))
+    let [s, g] = n.value, p = f(g, s);
+    if (!e.array && x(p))
       continue;
     if (!e.first)
-      s(",");
+      o(",");
     if (e.first = false, !e.array)
-      l(n), s(":");
-    c(d);
+      c(s), o(":");
+    d(p);
   }
   if (a)
     i.push(a);
   return i.join("");
 }
-function k(t, o) {
-  return btoa(JSON.stringify({ signature: t, position: o })).replaceAll("+", "-").replaceAll("/", "_").replace(/=+$/, "");
+function k(t, r) {
+  return btoa(JSON.stringify({ signature: t, position: r })).replaceAll("+", "-").replaceAll("/", "_").replace(/=+$/, "");
 }
-function P(t, o) {
+function A(t, r) {
   if (t === undefined)
     return -1;
   if (typeof t !== "string" || t.length > 32768)
@@ -6067,53 +6067,53 @@ function P(t, o) {
   } catch {
     throw Error("Invalid collection cursor");
   }
-  if (!i || i.signature !== o || !Number.isSafeInteger(i.position) || i.position < 0)
+  if (!i || i.signature !== r || !Number.isSafeInteger(i.position) || i.position < 0)
     throw Object.assign(Error("Collection cursor is stale or belongs to another query; restart pagination"), { code: "collection-stale" });
   return i.position;
 }
-function O(t, o) {
-  return JSON.stringify([t, o], (i, a) => a && typeof a === "object" && !Array.isArray(a) ? Object.fromEntries(Object.entries(a).sort(([u], [s]) => u < s ? -1 : u > s ? 1 : 0)) : a);
+function N(t, r) {
+  return JSON.stringify([t, r], (i, a) => a && typeof a === "object" && !Array.isArray(a) ? Object.fromEntries(Object.entries(a).sort(([u], [o]) => u < o ? -1 : u > o ? 1 : 0)) : a);
 }
-var v = 1048576;
-function C(t = 1048576) {
+var I = 1048576;
+function T(t = 1048576) {
   return t - Math.min(2048, Math.floor(t / 4));
 }
-function T() {
-  return C(C());
+function j() {
+  return T(T());
 }
-async function D(t, o, i) {
+async function z(t, r, i) {
   let a = t.length;
   if (!Number.isSafeInteger(a) || a < 0)
     throw Error("Invalid query row count");
-  let { cursor: u, limit: s = 50, maxBytes: l = T(), ...b } = o;
-  if (!Number.isSafeInteger(s) || s < 1 || s > 100 || !Number.isSafeInteger(l) || l < 256 || l > v)
+  let { cursor: u, limit: o = 50, maxBytes: c = j(), ...f } = r;
+  if (!Number.isSafeInteger(o) || o < 1 || o > 100 || !Number.isSafeInteger(c) || c < 256 || c > I)
     throw Error("Invalid query page budget");
   if (typeof i.revision !== "string" || !i.revision)
     throw Error("A query page requires a source revision");
-  let y = O("query-page", [i.scope, b, i.revision]), f = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(y)), p = [...new Uint8Array(f)].map((r) => r.toString(16).padStart(2, "0")).join(""), x = P(u, p);
-  if (x >= a)
+  let x = N("query-page", [i.scope, f, i.revision]), l = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(x)), y = [...new Uint8Array(l)].map((n) => n.toString(16).padStart(2, "0")).join(""), b = A(u, y);
+  if (b >= a)
     throw Object.assign(Error("Collection cursor is stale or belongs to another query; restart pagination"), { code: "collection-stale" });
-  let c = { items: [], revision: i.revision, total: a }, e = 0;
-  for (let r = x + 1;r < a && c.items.length < s; r++) {
-    let n = r + 1 < a ? k(p, r) : undefined, g = { items: [], revision: c.revision, total: c.total, ...n ? { next: n } : {} }, d = t.at(r), w;
+  let d = { items: [], revision: i.revision, total: a }, e = 0;
+  for (let n = b + 1;n < a && d.items.length < o; n++) {
+    let s = n + 1 < a ? k(y, n) : undefined, g = { items: [], revision: d.revision, total: d.total, ...s ? { next: s } : {} }, p = t.at(n), w;
     try {
-      w = E(h(d, l));
-    } catch (S) {
-      if (!(S instanceof m) || !c.items.length)
-        throw S;
+      w = P(h(p, c));
+    } catch (E) {
+      if (!(E instanceof m) || !d.items.length)
+        throw E;
       break;
     }
-    if (E(h(g, l)) + e + w + c.items.length > l) {
-      if (!c.items.length)
-        throw new m(l);
+    if (P(h(g, c)) + e + w + d.items.length > c) {
+      if (!d.items.length)
+        throw new m(c);
       break;
     }
-    if (c.items.push(d), e += w, n)
-      c.next = n;
+    if (d.items.push(p), e += w, s)
+      d.next = s;
     else
-      delete c.next;
+      delete d.next;
   }
-  return h(c, l), c;
+  return h(d, c), d;
 }
 
 // plugins/cardgame-content/src/contract.ts
@@ -6647,7 +6647,7 @@ var detailInput = object({
 });
 function query(op, input, output) {
   const response = output.and(object({ projectGeneration: textSchema.optional() }));
-  return { input: input.strict().nullish(), output: response, resource: A({
+  return { input: input.strict().nullish(), output: response, resource: v({
     name: "extension.cardgame-content.query",
     input: input.extend({ projectId: textSchema.min(1), projectGeneration: textSchema.optional(), op: literal(op) }).strict(),
     output: response
@@ -6790,7 +6790,7 @@ var registeredCandidate = object({
 var command = (method, input, output) => ({
   input: input.strict(),
   output,
-  method: J({ extension: "cardgame-content", method, input: input.extend({ projectId: textSchema.min(1), projectGeneration: textSchema.optional() }).strict(), output })
+  method: O({ extension: "cardgame-content", method, input: input.extend({ projectId: textSchema.min(1), projectGeneration: textSchema.optional() }).strict(), output })
 });
 var contentActions = {
   prepareFormalPreview: command("prepareFormalPreview", object({ fresh: booleanSchema.optional() }), formalPreviewRecordSchema),
@@ -6911,7 +6911,7 @@ var contentActions = {
     context: jsonObject
   }), object({ item: object({ id: textSchema }) }))
 };
-var configureProjectContract = J({
+var configureProjectContract = O({
   extension: "cardgame-content",
   method: "configureProject",
   input: strictObject({ root: textSchema.trim().min(1), desktopId: textSchema.optional() }),
@@ -15068,15 +15068,15 @@ function createWorkflowService(options) {
         throw new WorkflowError("invalid-input", "未知 Todo 列表视图");
       if (input.view === "text") {
         const source = store.todoTexts(projectId, input);
-        return D(source.rows, input, { revision: source.revision, scope: { projectId, projectGeneration: typeof input.projectGeneration === "string" ? input.projectGeneration : null, query: "todos", view: "text" } });
+        return z(source.rows, input, { revision: source.revision, scope: { projectId, projectGeneration: typeof input.projectGeneration === "string" ? input.projectGeneration : null, query: "todos", view: "text" } });
       }
       const summaries = store.listTodoSummaries(projectId, input).map((item) => ({ ...item, ...typeof input.projectGeneration === "string" ? { projectGeneration: input.projectGeneration } : {} }));
       const revision = digest4(summaries.map((item) => [item.id, item.revision, item.updatedAt]));
-      return D(summaries, input, { revision, scope: { projectId, projectGeneration: typeof input.projectGeneration === "string" ? input.projectGeneration : null, query: "todos", view: input.view === "text" ? "text" : "summary" } });
+      return z(summaries, input, { revision, scope: { projectId, projectGeneration: typeof input.projectGeneration === "string" ? input.projectGeneration : null, query: "todos", view: input.view === "text" ? "text" : "summary" } });
     }
     if (op === "categories") {
       const categories = store.todoCategories(projectId);
-      return D(categories, input, { revision: digest4(categories), scope: { projectId, projectGeneration: typeof input.projectGeneration === "string" ? input.projectGeneration : null, query: "categories" } });
+      return z(categories, input, { revision: digest4(categories), scope: { projectId, projectGeneration: typeof input.projectGeneration === "string" ? input.projectGeneration : null, query: "categories" } });
     }
     if (op === "todo") {
       const id = text(input.id ?? input.itemId, "id");
@@ -18205,7 +18205,7 @@ async function createCardgameProvider(host, media, packageRoot, bunPath, project
             if (input.op === "media" && input.variant !== "waveform") {
               const file = await content.resolveMedia(input);
               const { path: _path, absolutePath: _absolutePath, ...metadata } = file;
-              return { ...metadata, url: media.issue("cardgame-content", input) };
+              return { ...metadata, url: media.issue("cardgame-content", input, file.revision) };
             }
             if (workflowQueries.has(String(input.op))) {
               return await workflows.query(input, { execution: async (binding) => {

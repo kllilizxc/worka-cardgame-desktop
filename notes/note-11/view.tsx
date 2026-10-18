@@ -137,11 +137,16 @@ function RequirementEditor({item,projectGeneration,onSaved}:{item:TodoItem;proje
   const draft=useNoteDraft({key:`todo-requirement:${metadata.id}:${scope.projectId}:${scope.projectGeneration??"legacy"}:${scope.itemId}`,
     source:{...source,ready:source.ready&&Boolean(current),error:source.error??(detail.data!==undefined&&!current?new Error('待办来源无效，请重新读取'):undefined),
       refresh:async()=>{const next=await source.refresh();if(next.revision===undefined)throw new Error('待办来源无效，请重新读取');return next;}},
-    save:async(value,context)=>{
-      if(typeof context.revision!=='string')throw Error('需求来源未就绪');
-      const result=await actions.editTodo({...scope,...value,baseFingerprint:context.revision},context);
-      if(result.projectId!==scope.projectId||result.projectGeneration!==scope.projectGeneration||result.id!==scope.itemId)throw Error('待办保存回执无效，请核对当前事项');
-      return {value:{...value,title:value.title.trim(),description:value.description.trim()},revision:result.requirementFingerprint};
+    command:{
+      action:actions.editTodo,
+      input:(value,context)=>{
+        if(typeof context.revision!=='string')throw Error('需求来源未就绪');
+        return {...scope,...value,baseFingerprint:context.revision};
+      },
+      receipt:(result,value)=>{
+        if(result.projectId!==scope.projectId||result.projectGeneration!==scope.projectGeneration||result.id!==scope.itemId||!result.requirementFingerprint)throw Error('待办保存回执无效，请核对当前事项');
+        return {value:{...value,title:value.title.trim(),description:value.description.trim()},revision:result.requirementFingerprint};
+      },
     }});
   // Recovered drafts reopen their editor; ordinary rows do not read details.
   useEffect(()=>{if(draft.dirty)setEditing(true);},[draft.dirty]);

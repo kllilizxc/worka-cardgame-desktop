@@ -1,1 +1,0 @@
-import"./entry-jkw1465w.js";import{$l}from"./entry-s5pqj47b.js";import{z}from"./entry-bundle.js";var t=$l({compact:()=>(z("hepkgfev"),import("./view-compact-hepkgfev.js")),expanded:()=>(z("vq7mdrdf"),import("./view-expanded-vq7mdrdf.js")),state:"legacy",prerequisites:{configurationInView:!0}});export{t as default};

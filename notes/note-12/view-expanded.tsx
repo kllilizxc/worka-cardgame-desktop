@@ -1,6 +1,6 @@
 import {formatTime,relativeTime,modeLabel} from "./content-format";
 import {ContentCollection,CollectionPagination} from "./content-collection";
-import {jsonObject} from "./contract";
+import {jsonObject,type ContentQueryOutput} from "./contract";
 import {AssetFilterPanel} from "./asset-filter-panel";
 import { DeckWorkspace } from "./deck-workspace";
 import { PinnedReferences } from './pinned-references';
@@ -16,7 +16,7 @@ import { Button, ScrollShadow, SearchField, Spinner, TextField, Label, Input } f
 import Markdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { MarkdownPre } from "./mermaid";
-import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import { useCallback, useEffect, useInsertionEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import type {
   AssetData,
   AssetFilters,
@@ -620,11 +620,6 @@ function plainText(value: ReactNode): string {
   return "";
 }
 
-function cardEditorSource(data: CardData | undefined) {
-  const raw = data && (data.json);
-  return { value: raw ? JSON.stringify(raw, null, 2) : '', revision: data?.revision };
-}
-
 function CardsView({ projectId, state, query, setState, openContent, actions, focusRef, focusRequestId }: LibraryViewProps) {
   const noteApi = useNote<typeof import("./actions")>();
   const workbench = noteApi.host;
@@ -635,23 +630,37 @@ function CardsView({ projectId, state, query, setState, openContent, actions, fo
   const [cardError, setCardError] = useState<Error>();
   const [filterKind, setFilterKind] = useState("");
   const [filterRarity, setFilterRarity] = useState("");
-  const [featureId, setFeatureId] = useState('');
   const featureChoices = noteApi.useQuery('featureChoices', {}, { enabled: Boolean(projectId) });
   const cardListResource = noteApi.usePagedQuery("cards", ({ query, kind: filterKind || undefined, rarity: filterRarity || undefined, limit: PAGE_SIZE }), { enabled: Boolean(projectId) });
   const selectedId = selectedIds.at(-1);
   const cardResource = noteApi.useQuery("card", (selectedId ? { id: selectedId } : {}), { enabled: Boolean(selectedId) });
-  const savedTarget = useRef<{ sourceId: string; noteId: string; itemId: string } | undefined>(undefined);
-  const editor = useNoteDraft({ key: `card:${projectId}:${selectedId ?? ''}`, source: cardResource.draftSource(cardEditorSource),
-    save: async (text, context) => {
-      if (!selectedId || !cardResource.data) throw new Error('请先选择卡牌');
-      if (!featureId) throw new Error('请先选择已有功能');
-      if (typeof context.revision !== 'string') throw new Error('来源版本尚未就绪，请等待卡牌读取完成');
-      const value = jsonObject.parse(JSON.parse(text));
-      const result = await actions.createCardWorkflow({ itemIds: [selectedId], featureId, draft: value, expectedRevision: context.revision, requestId: context.requestId }, context);
-      if (!context.signal.aborted) savedTarget.current = { sourceId: selectedId, noteId: result.noteId, itemId: result.itemId };
-      return { value: text, revision: context.revision };
+  const projectGeneration = cardResource.data?.projectGeneration ?? (cardListResource.data as ContentQueryOutput<'cards'> | undefined)?.projectGeneration;
+  const cardSourceText = cardResource.data ? JSON.stringify(cardResource.data.json, null, 2) : '';
+  const draftKey = `card-workflow:${noteApi.metadata.id}:${projectId}:${projectGeneration ?? 'pending'}:${selectedId ?? ''}`;
+  // This draft creates a production; the source card is never its save target.
+  // Keep every user-selected command input in the recoverable business value.
+  const editor = useNoteDraft({ key: draftKey,
+    value: { text: cardSourceText, featureId: '', itemId: selectedId ?? '', projectId, projectGeneration: projectGeneration ?? '' },
+    revision: cardResource.data?.revision,
+    command: {
+      action: actions.createCardWorkflow,
+      input: (value, context) => {
+        if (!value.itemId) throw new Error('请先选择卡牌');
+        if (!value.featureId) throw new Error('请先选择已有功能');
+        if (!value.projectGeneration || typeof context.revision !== 'string') throw new Error('来源版本尚未就绪，请等待卡牌读取完成');
+        return { itemIds: [value.itemId], featureId: value.featureId, draft: jsonObject.parse(JSON.parse(value.text)), expectedRevision: context.revision, requestId: context.requestId, projectGeneration: value.projectGeneration };
+      },
+      receipt: (result, value) => {
+        const target = decodeContentRef(result.itemId);
+        if (!result.noteId || target?.projectId !== value.projectId || target.kind !== 'production' || !target.id) throw new Error('制作单保存回执无效，请核对创建结果');
+        return { value };
+      },
     } });
-  const cardDraft = editor.value;
+  const featureId = editor.value.featureId;
+  const cardDraft = editor.value.text;
+  const owner = useRef<symbol | undefined>(undefined), displayed = useRef(false), opening = useRef<symbol | undefined>(undefined);
+  useInsertionEffect(() => { const token = Symbol(); owner.current = token; return () => { if (owner.current === token) owner.current = undefined; }; }, [draftKey]);
+  useEffect(() => { displayed.current = true; return () => { displayed.current = false; }; }, []);
   const cardDirty = editor.dirty || editor.saving;
   const visiblePages = cardListResource.items;
   const appliedFocus = useRef<{ref?: ContentRef; requestId?: number} | undefined>(undefined);
@@ -689,17 +698,19 @@ function CardsView({ projectId, state, query, setState, openContent, actions, fo
   }, [setState]);
 
 
-  async function openSavedCard() {
-    const target = savedTarget.current;
-    if (!target || target.sourceId !== selectedId) return;
-    try { await workbench.openNote(target.noteId, target.itemId); setCardError(undefined); }
-    catch (cause) { setCardError(new Error(`制作单已保存，打开失败：${cause instanceof Error ? cause.message : String(cause)}`)); }
+  async function openSavedCard(token = owner.current) {
+    const target = editor.getResult();
+    if (!target || !token || owner.current !== token || !displayed.current || opening.current === token) return;
+    opening.current = token;
+    try { await workbench.openNote(target.noteId, target.itemId); if (owner.current === token && displayed.current) setCardError(undefined); }
+    catch (cause) { if (owner.current === token && displayed.current) setCardError(new Error(`制作单已保存，打开失败：${cause instanceof Error ? cause.message : String(cause)}`)); }
+    finally { if (opening.current === token) opening.current = undefined; }
   }
   async function updateCard() {
+    const token = owner.current;
     setCardError(undefined);
-    if (await editor.save()) await openSavedCard();
+    if (await editor.save()) await openSavedCard(token);
   }
-
 
   const cardViewState = (next: "table" | "grid") => { setView(next); void setState({ views: { cards: next } }); };
 
@@ -711,10 +722,10 @@ function CardsView({ projectId, state, query, setState, openContent, actions, fo
     dirty={cardDirty} page={cardListResource} view={view} onSearch={submitSearch} onView={cardViewState} onSelect={selectCard}
     onFilters={(kind, rarity) => { setFilterKind(kind); setFilterRarity(rarity); }}
     renderRecent={open => <RecentChanges projectId={projectId} mode="cards" onLocate={item => { if (item.kind === "card" && item.id) open(item.id); }} />}
-    renderActions={itemIds => <>{(selectedId || itemIds.length > 0) && <div className="cg-inline-actions cg-selection-actions"><select className="cg-select" aria-label="所属功能" value={featureId} onChange={event => setFeatureId(event.target.value)}><option value="">选择已有功能</option>{(featureChoices.data?.items ?? []).map(item => <option key={item.id} value={item.id}>{item.title}</option>)}</select>{itemIds.length > 0 && <CreateCardWorkflow projectId={projectId} itemIds={itemIds} featureId={featureId} disabled={cardDirty} />}{featureChoices.error && <span className="cg-error" role="alert">{featureChoices.error.message}</span>}</div>}</>}
+    renderActions={itemIds => <>{(selectedId || itemIds.length > 0) && <div className="cg-inline-actions cg-selection-actions"><select className="cg-select" aria-label="所属功能" value={featureId} onChange={event => { const featureId = event.target.value; editor.set(previous => ({ ...previous, featureId })); }}><option value="">选择已有功能</option>{(featureChoices.data?.items ?? []).map(item => <option key={item.id} value={item.id}>{item.title}</option>)}</select>{itemIds.length > 0 && <CreateCardWorkflow projectId={projectId} itemIds={itemIds} featureId={featureId} disabled={editor.saving || cardDraft !== cardSourceText} />}{featureChoices.error && <span className="cg-error" role="alert">{featureChoices.error.message}</span>}</div>}</>}
     renderComparison={cards => <CardComparison cards={cards} />}
-    detail={<>{cardError && savedTarget.current?.sourceId === selectedId && <Button variant="secondary" onPress={() => { void openSavedCard(); }}>打开已保存制作单</Button>}        {cardResource.data && <LibraryCardFace card={cardResource.data} />}
-         {selectedId && <CardDetailPanel card={cardResource.data} fallback={visiblePages.find(item => item.id === selectedId)} draft={cardDraft} dirty={cardDirty} saving={editor.saving} canSave={Boolean(featureId)} error={editor.error || cardError || cardResource.error} onDraft={editor.set} onSave={() => void updateCard()} onOpenKnowledge={(path) => openContent({ kind: "card", id: selectedId, path, intent: "backlinks", context: { cardId: selectedId } }, "knowledge")} onOpenTodo={() => openContent({ kind: "todo", intent: "draft", context: { projectId, kind: "card", id: selectedId, revision: cardResource.data?.revision } }, "todo")} />}</>}
+    detail={<>{editor.result && <Button variant="secondary" onPress={() => { void openSavedCard(); }}>打开已保存制作单</Button>}        {cardResource.data && <LibraryCardFace card={cardResource.data} />}
+         {selectedId && <CardDetailPanel card={cardResource.data} fallback={visiblePages.find(item => item.id === selectedId)} draft={cardDraft} dirty={cardDirty} saving={editor.saving} canSave={Boolean(featureId && editor.value.projectGeneration && editor.value.text)} error={editor.error || cardError || cardResource.error} onDraft={text => editor.set(previous => ({ ...previous, text }))} onSave={() => void updateCard()} onOpenKnowledge={(path) => openContent({ kind: "card", id: selectedId, path, intent: "backlinks", context: { cardId: selectedId } }, "knowledge")} onOpenTodo={() => openContent({ kind: "todo", intent: "draft", context: { projectId, kind: "card", id: selectedId, revision: cardResource.data?.revision } }, "todo")} />}</>}
   />;
 }
 
@@ -734,10 +745,11 @@ function LibraryCardFace({ card }: { card: CardData }) {
 
 
 function CardDetailPanel({ card, fallback, draft, dirty, saving, canSave, error, onDraft, onSave, onOpenKnowledge, onOpenTodo }: { card?: CardData; fallback?: CardItem; draft: string; dirty: boolean; saving: boolean; canSave: boolean; error?: Error | null; onDraft: (value: string) => void; onSave: () => void; onOpenKnowledge: (path: string) => void; onOpenTodo: () => void }) {
+  const sourceEditor = <details className="cg-card-source" open={dirty}><summary>高级：查看与编辑原始数据{dirty ? " · 未保存" : ""}</summary><label className="cg-editor-label">原始 JSON <textarea className="cg-editor cg-json-editor" aria-label="卡牌原始 JSON" value={draft} onChange={event => onDraft(event.target.value)} spellCheck={false} /></label><Button size="sm" variant="primary" isDisabled={!dirty || !canSave || saving} onPress={onSave}>保存到制作单</Button></details>;
   const item = card || fallback;
-  if (!item) return <EmptyState text="卡牌加载中" />;
+  if (!item) return draft ? <div className="cg-detail-panel"><p className="cg-muted">卡牌来源暂不可用，已保留的草稿仍可核对保存结果。</p><ErrorState error={error} />{sourceEditor}</div> : <EmptyState text="卡牌加载中" />;
   const sourcePath = card?.path || fallback?.path;
-  return <div className="cg-detail-panel"><div className="cg-detail-heading"><div><strong>{item.name || item.title || item.id}</strong><span>{item.id} · {item.kind || "未分类"} · {item.rarity || "—"}</span></div>{dirty && <span className="cg-warning">未保存</span>}</div><div className="cg-card-fields"><span>费用 <b>{item.cost ?? "—"}</b></span><span>标签 <b>{item.labels?.join("、") || "—"}</b></span><span>版本 <b>{item.revision?.slice(0, 10) || "—"}</b></span></div><div className="cg-inline-actions">{sourcePath && <Button size="sm" variant="tertiary" onPress={() => onOpenKnowledge(sourcePath)}>在知识库打开</Button>}<TodoShortcut onOpen={onOpenTodo} /></div><ErrorState error={error} /><details className="cg-card-source" open={dirty}><summary>高级：查看与编辑原始数据{dirty ? " · 未保存" : ""}</summary><label className="cg-editor-label">原始 JSON <textarea className="cg-editor cg-json-editor" aria-label="卡牌原始 JSON" value={draft} onChange={event => onDraft(event.target.value)} spellCheck={false} /></label><Button size="sm" variant="primary" isDisabled={!dirty || !canSave || saving} onPress={onSave}>保存到制作单</Button></details></div>;
+  return <div className="cg-detail-panel"><div className="cg-detail-heading"><div><strong>{item.name || item.title || item.id}</strong><span>{item.id} · {item.kind || "未分类"} · {item.rarity || "—"}</span></div>{dirty && <span className="cg-warning">未保存</span>}</div><div className="cg-card-fields"><span>费用 <b>{item.cost ?? "—"}</b></span><span>标签 <b>{item.labels?.join("、") || "—"}</b></span><span>版本 <b>{item.revision?.slice(0, 10) || "—"}</b></span></div><div className="cg-inline-actions">{sourcePath && <Button size="sm" variant="tertiary" onPress={() => onOpenKnowledge(sourcePath)}>在知识库打开</Button>}<TodoShortcut onOpen={onOpenTodo} /></div><ErrorState error={error} />{sourceEditor}</div>;
 }
 
 function CardComparison({ cards }: { cards: CardItem[] }) {
