@@ -25,11 +25,10 @@
     "state.ts",
     "surface.tsx",
     "view.tsx",
-    "worka-prebuilt/view-runtime-b77wbr6t.js",
+    "worka-prebuilt/view-gprdj1qe.js",
     "worka-prebuilt/zod-config.mjs",
     "worka-prebuilt/entry-bundle.css",
     "worka-prebuilt/view-runtime.mjs",
-    "worka-prebuilt/entry-5pvw3tcc.js",
     "worka-prebuilt/contract/SKILL.md",
     "worka-prebuilt/contract/references/api.d.ts",
     "worka-prebuilt/contract/references/types/note-model.d.ts",
@@ -38,11 +37,12 @@
     "worka-prebuilt/contract/references/types/contracts.d.ts",
     "worka-prebuilt/contract/references/types/card-face.d.ts",
     "worka-prebuilt/contract/manifest.json",
+    "worka-prebuilt/entry-2z84ffm8.js",
     "worka-prebuilt/index.html",
     "worka-prebuilt/entry-bundle.js",
     "worka-prebuilt/entry-bundle.tailwind.css",
     "worka-prebuilt/actions.mjs",
-    "worka-prebuilt/view-xdhvxdgh.js",
+    "worka-prebuilt/view-runtime-327yn0yg.js",
     "worka-prebuilt/manifest.json"
   ]
 }

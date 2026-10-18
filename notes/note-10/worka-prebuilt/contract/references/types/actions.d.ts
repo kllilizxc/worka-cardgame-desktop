@@ -1937,6 +1937,7 @@ declare const action_createCardWorkflow: import("@dsh-workbench/runtime").NoteOp
     draft: z.ZodOptional<z.ZodRecord<z.ZodString, z.ZodJSONSchema>>;
     expectedRevision: z.ZodOptional<z.ZodString>;
     requestId: z.ZodOptional<z.ZodString>;
+    projectGeneration: z.ZodOptional<z.ZodString>;
 }, z.core.$strip>, z.ZodObject<{
     noteId: z.ZodString;
     itemId: z.ZodString;

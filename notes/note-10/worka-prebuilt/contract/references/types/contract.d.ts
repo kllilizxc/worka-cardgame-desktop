@@ -4278,6 +4278,7 @@ export declare const localActions: {
             draft: z.ZodOptional<z.ZodRecord<z.ZodString, z.ZodJSONSchema>>;
             expectedRevision: z.ZodOptional<z.ZodString>;
             requestId: z.ZodOptional<z.ZodString>;
+            projectGeneration: z.ZodOptional<z.ZodString>;
         }, z.core.$strip>;
         output: z.ZodObject<{
             noteId: z.ZodString;

@@ -6,6 +6,7 @@ import { DeckWorkspace } from "./deck-workspace";
 import { PinnedReferences } from './pinned-references';
 import { ImagePreview } from './image-preview';
 import { CardsWorkspace } from "./cards-workspace";
+import { CreateCardWorkflow } from "./card-workflow-create";
 import { AudioPreview } from './audio-preview';
 import { AudioGuidance } from './audio-guidance';
 import { StoryWorkspace } from './story-workspace';
@@ -620,7 +621,6 @@ function cardEditorSource(data: CardData | undefined) {
 function CardsView({ projectId, state, query, setState, openContent, actions, focusRef, focusRequestId }: LibraryViewProps) {
   const noteApi = useNote<typeof import("./actions")>();
   const workbench = noteApi.host;
-  const actionLock = useRef(false);
   const [showDecks, setShowDecks] = useState(false);
   const [deckCardFocus, setDeckCardFocus] = useState<string>();
   const [view, setView] = useState<"table" | "grid">(state.views?.cards ?? "grid");
@@ -628,7 +628,6 @@ function CardsView({ projectId, state, query, setState, openContent, actions, fo
   const [cardError, setCardError] = useState<Error>();
   const [filterKind, setFilterKind] = useState("");
   const [filterRarity, setFilterRarity] = useState("");
-  const [creatingWorkflow, setCreatingWorkflow] = useState(false);
   const [featureId, setFeatureId] = useState('');
   const featureChoices = noteApi.useQuery('featureChoices', {}, { enabled: Boolean(projectId) });
   const cardListResource = noteApi.usePagedQuery("cards", ({ query, kind: filterKind || undefined, rarity: filterRarity || undefined, limit: PAGE_SIZE }), { enabled: Boolean(projectId) });
@@ -697,14 +696,6 @@ function CardsView({ projectId, state, query, setState, openContent, actions, fo
   }
 
 
-  async function makeCardWorkflow(itemIds: string[] = selectedIds) {
-    if (actionLock.current) return;
-    actionLock.current = true;
-    setCreatingWorkflow(true); setCardError(undefined);
-    try { const result = await actions.createCardWorkflow({ itemIds, featureId }); await workbench.openNote(result.noteId, result.itemId); }
-    catch (error) { setCardError(error as Error); }
-    finally { actionLock.current = false; setCreatingWorkflow(false); }
-  }
   const cardViewState = (next: "table" | "grid") => { setView(next); void setState({ views: { ...state.views, cards: next } }); };
 
   if (showDecks) return <DeckWorkspace projectId={projectId} onBack={() => setShowDecks(false)} onCard={id => { if (selectCard(id) !== false) { setDeckCardFocus(id); setShowDecks(false); } }} />;
@@ -715,7 +706,7 @@ function CardsView({ projectId, state, query, setState, openContent, actions, fo
     dirty={cardDirty} page={cardListResource} view={view} onSearch={submitSearch} onView={cardViewState} onSelect={selectCard}
     onFilters={(kind, rarity) => { setFilterKind(kind); setFilterRarity(rarity); }}
     renderRecent={open => <RecentChanges projectId={projectId} mode="cards" onLocate={item => { if (item.kind === "card" && item.id) open(item.id); }} />}
-    renderActions={itemIds => <>{(selectedId || itemIds.length > 0) && <div className="cg-inline-actions cg-selection-actions"><select className="cg-select" aria-label="所属功能" value={featureId} onChange={event => setFeatureId(event.target.value)}><option value="">选择已有功能</option>{(featureChoices.data?.items ?? []).map(item => <option key={item.id} value={item.id}>{item.title}</option>)}</select>{itemIds.length > 0 && <Button size="sm" variant="secondary" isDisabled={creatingWorkflow || cardDirty || !featureId} onPress={() => void makeCardWorkflow(itemIds)}>制作卡面</Button>}{featureChoices.error && <span className="cg-error" role="alert">{featureChoices.error.message}</span>}</div>}</>}
+    renderActions={itemIds => <>{(selectedId || itemIds.length > 0) && <div className="cg-inline-actions cg-selection-actions"><select className="cg-select" aria-label="所属功能" value={featureId} onChange={event => setFeatureId(event.target.value)}><option value="">选择已有功能</option>{(featureChoices.data?.items ?? []).map(item => <option key={item.id} value={item.id}>{item.title}</option>)}</select>{itemIds.length > 0 && <CreateCardWorkflow projectId={projectId} itemIds={itemIds} featureId={featureId} disabled={cardDirty} />}{featureChoices.error && <span className="cg-error" role="alert">{featureChoices.error.message}</span>}</div>}</>}
     renderComparison={cards => <CardComparison cards={cards} />}
     detail={<>{cardError && savedTarget.current?.sourceId === selectedId && <Button variant="secondary" onPress={() => { void openSavedCard(); }}>打开已保存制作单</Button>}        {cardResource.data && <LibraryCardFace card={cardResource.data} />}
          {selectedId && <CardDetailPanel card={cardResource.data} fallback={visiblePages.find(item => item.id === selectedId)} draft={cardDraft} dirty={cardDirty} saving={editor.saving} canSave={Boolean(featureId)} error={editor.error || cardError || cardResource.error} onDraft={editor.set} onSave={() => void updateCard()} onOpenKnowledge={(path) => openContent({ kind: "card", id: selectedId, path, intent: "backlinks", context: { cardId: selectedId } }, "knowledge")} onOpenTodo={() => openContent({ kind: "todo", intent: "draft", context: { projectId, kind: "card", id: selectedId, revision: cardResource.data?.revision } }, "todo")} />}</>}

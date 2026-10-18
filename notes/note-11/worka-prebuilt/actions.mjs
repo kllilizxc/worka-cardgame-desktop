@@ -10,7 +10,7 @@ var __esm = (fn, res, err) => () => {
   return res;
 };
 
-// ../../../../worka-authoring-desktop-latest-20261017/node_modules/.bun/zod@4.6.1/node_modules/zod/v4/core/util.js
+// ../../../../../worka-authoring-desktop-latest-20261017/node_modules/.bun/zod@4.6.1/node_modules/zod/v4/core/util.js
 function getEnumValues(entries) {
   const numericValues = Object.values(entries).filter((v) => typeof v === "number");
   const values = Object.entries(entries).filter(([k, _]) => numericValues.indexOf(+k) === -1).map(([_, v]) => v);
@@ -579,7 +579,7 @@ var init_util = __esm(() => {
   };
 });
 
-// ../../../../worka-authoring-desktop-latest-20261017/node_modules/.bun/zod@4.6.1/node_modules/zod/v4/core/core.js
+// ../../../../../worka-authoring-desktop-latest-20261017/node_modules/.bun/zod@4.6.1/node_modules/zod/v4/core/core.js
 function newError(Definition) {
   const E = _E;
   if (E) {
@@ -701,7 +701,7 @@ var init_core = __esm(() => {
   globalConfig = globalThis.__zod_globalConfig;
 });
 
-// ../../../../worka-authoring-desktop-latest-20261017/node_modules/.bun/zod@4.6.1/node_modules/zod/v4/core/errors.js
+// ../../../../../worka-authoring-desktop-latest-20261017/node_modules/.bun/zod@4.6.1/node_modules/zod/v4/core/errors.js
 function _getMessage() {
   const internals = this._zod;
   internals.message ?? (internals.message = JSON.stringify(internals.def, jsonStringifyReplacer, 2));
@@ -820,7 +820,7 @@ var init_errors = __esm(() => {
   });
 });
 
-// ../../../../worka-authoring-desktop-latest-20261017/node_modules/.bun/zod@4.6.1/node_modules/zod/v4/core/parse.js
+// ../../../../../worka-authoring-desktop-latest-20261017/node_modules/.bun/zod@4.6.1/node_modules/zod/v4/core/parse.js
 function finalizeParams(callee, params) {
   return { callee: params?.callee ?? callee, Err: params?.Err };
 }
@@ -959,7 +959,7 @@ var init_parse = __esm(() => {
   COMPILE_FALLBACK = /* @__PURE__ */ Symbol.for("zod.compile.fallback");
 });
 
-// ../../../../worka-authoring-desktop-latest-20261017/node_modules/.bun/zod@4.6.1/node_modules/zod/v4/core/regexes.js
+// ../../../../../worka-authoring-desktop-latest-20261017/node_modules/.bun/zod@4.6.1/node_modules/zod/v4/core/regexes.js
 function nanoidOfLength(length) {
   return new RegExp(`^[a-zA-Z0-9_-]{${length}}$`);
 }
@@ -1018,7 +1018,7 @@ var init_regexes = __esm(() => {
   uppercase = /^[^a-z]*$/;
 });
 
-// ../../../../worka-authoring-desktop-latest-20261017/node_modules/.bun/zod@4.6.1/node_modules/zod/v4/core/checks.js
+// ../../../../../worka-authoring-desktop-latest-20261017/node_modules/.bun/zod@4.6.1/node_modules/zod/v4/core/checks.js
 var $ZodCheck, _whenHasLength = (payload) => {
   const val = payload.value;
   return !nullish(val) && val.length !== undefined;
@@ -1339,7 +1339,7 @@ var init_checks = __esm(() => {
   });
 });
 
-// ../../../../worka-authoring-desktop-latest-20261017/node_modules/.bun/zod@4.6.1/node_modules/zod/v4/core/doc.js
+// ../../../../../worka-authoring-desktop-latest-20261017/node_modules/.bun/zod@4.6.1/node_modules/zod/v4/core/doc.js
 class Doc {
   constructor(args = [], closed = {}) {
     this.content = [];
@@ -1381,7 +1381,7 @@ ${content.join(`
   }
 }
 
-// ../../../../worka-authoring-desktop-latest-20261017/node_modules/.bun/zod@4.6.1/node_modules/zod/v4/core/versions.js
+// ../../../../../worka-authoring-desktop-latest-20261017/node_modules/.bun/zod@4.6.1/node_modules/zod/v4/core/versions.js
 var version;
 var init_versions = __esm(() => {
   version = {
@@ -1391,7 +1391,7 @@ var init_versions = __esm(() => {
   };
 });
 
-// ../../../../worka-authoring-desktop-latest-20261017/node_modules/.bun/zod@4.6.1/node_modules/zod/v4/core/schemas.js
+// ../../../../../worka-authoring-desktop-latest-20261017/node_modules/.bun/zod@4.6.1/node_modules/zod/v4/core/schemas.js
 async function validateAsync2(inst, value) {
   const ctx = { async: true };
   return toStandardResult(await inst._zod.run({ value, issues: [] }, ctx), ctx);
@@ -2996,7 +2996,7 @@ var init_schemas = __esm(() => {
   });
 });
 
-// ../../../../worka-authoring-desktop-latest-20261017/node_modules/.bun/zod@4.6.1/node_modules/zod/v4/core/memoizer.js
+// ../../../../../worka-authoring-desktop-latest-20261017/node_modules/.bun/zod@4.6.1/node_modules/zod/v4/core/memoizer.js
 function isRef(value) {
   return value !== null && (typeof value === "object" || typeof value === "function");
 }
@@ -3268,7 +3268,7 @@ var init_memoizer = __esm(() => {
   };
 });
 
-// ../../../../worka-authoring-desktop-latest-20261017/node_modules/.bun/zod@4.6.1/node_modules/zod/v4/locales/en.js
+// ../../../../../worka-authoring-desktop-latest-20261017/node_modules/.bun/zod@4.6.1/node_modules/zod/v4/locales/en.js
 function en_default() {
   return {
     localeError: error()
@@ -3393,10 +3393,10 @@ var init_en = __esm(() => {
   init_util();
 });
 
-// ../../../../worka-authoring-desktop-latest-20261017/node_modules/.bun/zod@4.6.1/node_modules/zod/v4/locales/index.js
+// ../../../../../worka-authoring-desktop-latest-20261017/node_modules/.bun/zod@4.6.1/node_modules/zod/v4/locales/index.js
 var init_locales = () => {};
 
-// ../../../../worka-authoring-desktop-latest-20261017/node_modules/.bun/zod@4.6.1/node_modules/zod/v4/core/registries.js
+// ../../../../../worka-authoring-desktop-latest-20261017/node_modules/.bun/zod@4.6.1/node_modules/zod/v4/core/registries.js
 class $ZodRegistry {
   constructor() {
     this._map = new WeakMap;
@@ -3446,7 +3446,7 @@ var init_registries = __esm(() => {
   globalRegistry = globalThis.__zod_globalRegistry;
 });
 
-// ../../../../worka-authoring-desktop-latest-20261017/node_modules/.bun/zod@4.6.1/node_modules/zod/v4/core/compile.js
+// ../../../../../worka-authoring-desktop-latest-20261017/node_modules/.bun/zod@4.6.1/node_modules/zod/v4/core/compile.js
 var INVALID, FALLBACK_FLAG, WHEN_DEFAULTED_CHECKS, PATTERN_IS_COMPLETE;
 var init_compile = __esm(() => {
   INVALID = Symbol.for("zod.compile.invalid");
@@ -3487,7 +3487,7 @@ var init_compile = __esm(() => {
   ]);
 });
 
-// ../../../../worka-authoring-desktop-latest-20261017/node_modules/.bun/zod@4.6.1/node_modules/zod/v4/core/api.js
+// ../../../../../worka-authoring-desktop-latest-20261017/node_modules/.bun/zod@4.6.1/node_modules/zod/v4/core/api.js
 function _string(Class, params) {
   return new Class({
     type: "string",
@@ -3948,7 +3948,7 @@ var init_api = __esm(() => {
   init_util();
 });
 
-// ../../../../worka-authoring-desktop-latest-20261017/node_modules/.bun/zod@4.6.1/node_modules/zod/v4/core/to-json-schema.js
+// ../../../../../worka-authoring-desktop-latest-20261017/node_modules/.bun/zod@4.6.1/node_modules/zod/v4/core/to-json-schema.js
 function assignProps(target, ...sources) {
   for (const source of sources) {
     for (const key of Reflect.ownKeys(source)) {
@@ -4475,7 +4475,7 @@ var init_to_json_schema = __esm(() => {
   UNION_KEYS = ["oneOf", "anyOf"];
 });
 
-// ../../../../worka-authoring-desktop-latest-20261017/node_modules/.bun/zod@4.6.1/node_modules/zod/v4/core/json-schema-processors.js
+// ../../../../../worka-authoring-desktop-latest-20261017/node_modules/.bun/zod@4.6.1/node_modules/zod/v4/core/json-schema-processors.js
 function aggregateChecks(schema) {
   const agg = {};
   const def = schema._zod.def;
@@ -5203,10 +5203,10 @@ var init_json_schema_processors = __esm(() => {
   };
 });
 
-// ../../../../worka-authoring-desktop-latest-20261017/node_modules/.bun/zod@4.6.1/node_modules/zod/v4/core/json-schema.js
+// ../../../../../worka-authoring-desktop-latest-20261017/node_modules/.bun/zod@4.6.1/node_modules/zod/v4/core/json-schema.js
 var init_json_schema = () => {};
 
-// ../../../../worka-authoring-desktop-latest-20261017/node_modules/.bun/zod@4.6.1/node_modules/zod/v4/core/index.js
+// ../../../../../worka-authoring-desktop-latest-20261017/node_modules/.bun/zod@4.6.1/node_modules/zod/v4/core/index.js
 var init_core2 = __esm(() => {
   init_util();
   init_regexes();
@@ -5225,12 +5225,12 @@ var init_core2 = __esm(() => {
   init_to_json_schema();
 });
 
-// ../../../../worka-authoring-desktop-latest-20261017/node_modules/.bun/zod@4.6.1/node_modules/zod/v4/classic/checks.js
+// ../../../../../worka-authoring-desktop-latest-20261017/node_modules/.bun/zod@4.6.1/node_modules/zod/v4/classic/checks.js
 var init_checks2 = __esm(() => {
   init_core2();
 });
 
-// ../../../../worka-authoring-desktop-latest-20261017/node_modules/.bun/zod@4.6.1/node_modules/zod/v4/classic/errors.js
+// ../../../../../worka-authoring-desktop-latest-20261017/node_modules/.bun/zod@4.6.1/node_modules/zod/v4/classic/errors.js
 function _lazyMethod(proto, key, make) {
   Object.defineProperty(proto, key, {
     configurable: true,
@@ -5280,7 +5280,7 @@ var init_errors2 = __esm(() => {
   });
 });
 
-// ../../../../worka-authoring-desktop-latest-20261017/node_modules/.bun/zod@4.6.1/node_modules/zod/v4/classic/parse.js
+// ../../../../../worka-authoring-desktop-latest-20261017/node_modules/.bun/zod@4.6.1/node_modules/zod/v4/classic/parse.js
 var parse2, parseAsync, safeParse, safeParseAsync, encode, decode, encodeAsync, decodeAsync, safeEncode, safeDecode, safeEncodeAsync, safeDecodeAsync;
 var init_parse2 = __esm(() => {
   init_core2();
@@ -5300,7 +5300,7 @@ var init_parse2 = __esm(() => {
   safeDecodeAsync = /* @__PURE__ */ _safeDecodeAsync(ZodRealError);
 });
 
-// ../../../../worka-authoring-desktop-latest-20261017/node_modules/.bun/zod@4.6.1/node_modules/zod/v4/classic/schemas.js
+// ../../../../../worka-authoring-desktop-latest-20261017/node_modules/.bun/zod@4.6.1/node_modules/zod/v4/classic/schemas.js
 function _ensureDefaultLocale() {
   if (!globalConfig.localeError)
     config(en_default());
@@ -6241,19 +6241,19 @@ var init_schemas2 = __esm(() => {
   });
 });
 
-// ../../../../worka-authoring-desktop-latest-20261017/node_modules/.bun/zod@4.6.1/node_modules/zod/v4/classic/compat.js
+// ../../../../../worka-authoring-desktop-latest-20261017/node_modules/.bun/zod@4.6.1/node_modules/zod/v4/classic/compat.js
 var ZodFirstPartyTypeKind;
 var init_compat = __esm(() => {
   (function(ZodFirstPartyTypeKind) {})(ZodFirstPartyTypeKind || (ZodFirstPartyTypeKind = {}));
 });
 
-// ../../../../worka-authoring-desktop-latest-20261017/node_modules/.bun/zod@4.6.1/node_modules/zod/v4/classic/iso.js
+// ../../../../../worka-authoring-desktop-latest-20261017/node_modules/.bun/zod@4.6.1/node_modules/zod/v4/classic/iso.js
 var init_iso = () => {};
 
-// ../../../../worka-authoring-desktop-latest-20261017/node_modules/.bun/zod@4.6.1/node_modules/zod/v4/classic/coerce.js
+// ../../../../../worka-authoring-desktop-latest-20261017/node_modules/.bun/zod@4.6.1/node_modules/zod/v4/classic/coerce.js
 var init_coerce = () => {};
 
-// ../../../../worka-authoring-desktop-latest-20261017/node_modules/.bun/zod@4.6.1/node_modules/zod/v4/classic/external.js
+// ../../../../../worka-authoring-desktop-latest-20261017/node_modules/.bun/zod@4.6.1/node_modules/zod/v4/classic/external.js
 var init_external = __esm(() => {
   init_core2();
   init_json_schema_processors();
@@ -6267,14 +6267,14 @@ var init_external = __esm(() => {
   init_compat();
 });
 
-// ../../../../worka-authoring-desktop-latest-20261017/node_modules/.bun/zod@4.6.1/node_modules/zod/index.js
+// ../../../../../worka-authoring-desktop-latest-20261017/node_modules/.bun/zod@4.6.1/node_modules/zod/index.js
 var init_zod = __esm(() => {
   init_external();
   init_external();
 });
 
-// .sdk/runtime/dist/chunk-pafsk3qt.mjs
-function b(o) {
+// .sdk/runtime/dist/chunk-dtdq3neh.mjs
+function x(o) {
   if (!o || typeof o !== "object")
     return false;
   if (o.code === "revision-conflict")
@@ -6285,28 +6285,28 @@ function b(o) {
 function r(o) {
   return `${o}:config`;
 }
-function h(o) {
+function v(o) {
   a(o.state?.schema, o.collections);
-  let l = Object.freeze({ ...o, ...o.collections ? { collections: fe(o.collections) } : {}, ...o.state ? { state: Object.freeze({ ...o.state, initial: fe(o.state.schema.parse(o.state.initial)) }) } : {}, ...o.config ? { config: Object.freeze({ ...o.config, defaults: fe(ve(o.config.schema).parse(o.config.defaults)) }) } : {} }), d = l.config ? (toJSONSchema(l.config.schema, { io: "input" }).required?.length ?? 0) > 0 : false, u = { [Ne]: l, action: (p, O) => ye("action", { ...p, visibility: p.visibility ?? "private", model: u }, async (E, y) => {
-    let N = ge.get(y);
-    if (N && (N.note !== u || N.kind !== "action"))
+  let l = Object.freeze({ ...o, ...o.collections ? { collections: fe(o.collections) } : {}, ...o.state ? { state: Object.freeze({ ...o.state, initial: fe(o.state.schema.parse(o.state.initial)) }) } : {}, ...o.config ? { config: Object.freeze({ ...o.config, defaults: fe(ve(o.config.schema).parse(o.config.defaults)) }) } : {} }), d = l.config ? (toJSONSchema(l.config.schema, { io: "input" }).required?.length ?? 0) > 0 : false, u = { [Ne]: l, action: (p, O) => ye("action", { ...p, visibility: p.visibility ?? "private", model: u }, async (E, m) => {
+    let b = ge.get(m);
+    if (b && (b.note !== u || b.kind !== "action"))
       throw new t("An action requires its own note’s writable context");
-    y = N?.raw ?? y;
-    let T = f(u, y);
+    m = b?.raw ?? m;
+    let T = g(u, m);
     if (p.requiresConfig !== false && d && l.config) {
-      if (!l.config.schema.safeParse((await y.store.read(r(y.note.id))).value).success)
+      if (!l.config.schema.safeParse((await m.store.read(r(m.note.id))).value).success)
         throw new t("Complete this note’s configuration before running this action");
     }
     return O(T, E);
-  }, true), query: (p, O) => ye("query", { ...p, visibility: p.visibility ?? "public", model: u }, (E, y) => O(w(u, y), E), true), event: (p) => Se({ ...p, visibility: p.visibility ?? "private", model: u }), background: (p) => {
+  }, true), query: (p, O) => ye("query", { ...p, visibility: p.visibility ?? "public", model: u }, (E, m) => O(S(u, m), E), true), event: (p) => Se({ ...p, visibility: p.visibility ?? "private", model: u }), background: (p) => {
     let O = { [Pe]: u, ...p.resources ? { resources: fe(p.resources) } : {}, ...p.start ? { start: async (E) => {
-      if (await p.start(f(u, E)) !== undefined)
+      if (await p.start(g(u, E)) !== undefined)
         throw Error("Finite start must not return a cleanup closure or value");
-    } } : {}, ...p.state ? { state: async (E, y) => {
+    } } : {}, ...p.state ? { state: async (E, m) => {
       if (!l.state)
         throw Error("A state handler requires a state model");
-      let N = l.state.schema.parse(y.value);
-      if (await p.state(f(u, E), fe({ ...y, value: N })) !== undefined)
+      let b = l.state.schema.parse(m.value);
+      if (await p.state(g(u, E), fe({ ...m, value: b })) !== undefined)
         throw Error("Finite state handler must not return a cleanup closure or value");
     } } : {} };
     return Object.freeze(O);
@@ -6347,17 +6347,17 @@ function s(o) {
       return d();
     if (l.has(p))
       throw Error("Note data cannot contain cycles");
-    let y = Object.getOwnPropertyDescriptors(p), N = Object.hasOwn(y, "toJSON") ? y.toJSON : E && Object.getOwnPropertyDescriptor(E, "toJSON");
-    if (N && (!Object.hasOwn(N, "value") || typeof N.value === "function"))
+    let m = Object.getOwnPropertyDescriptors(p), b = Object.hasOwn(m, "toJSON") ? m.toJSON : E && Object.getOwnPropertyDescriptor(E, "toJSON");
+    if (b && (!Object.hasOwn(b, "value") || typeof b.value === "function"))
       return d();
     if (l.add(p), O)
       for (let T = 0;T < p.length; T++) {
-        let I = String(T), _ = Object.hasOwn(y, I) ? y[I] : undefined;
+        let I = String(T), _ = Object.hasOwn(m, I) ? m[I] : undefined;
         if (!_ || !Object.hasOwn(_, "value"))
           return d();
         u(_.value);
       }
-    for (let [T, I] of Object.entries(y)) {
+    for (let [T, I] of Object.entries(m)) {
       if (O) {
         if (T === "length")
           continue;
@@ -6383,10 +6383,10 @@ function ze(o, l, d) {
   };
   return { read: u, update: async (p, O) => {
     for (let E = 1;; E++) {
-      let y = await u();
-      if (O?.expectedRevision !== undefined && y.revision !== O.expectedRevision)
+      let m = await u();
+      if (O?.expectedRevision !== undefined && m.revision !== O.expectedRevision)
         throw Object.assign(Error("State revision conflict"), { code: "revision-conflict" });
-      let N = structuredClone(y.value), T = p(N);
+      let b = structuredClone(m.value), T = p(b);
       if (T !== undefined) {
         if (T && typeof T.then === "function")
           Promise.resolve(T).catch(() => {
@@ -6394,17 +6394,17 @@ function ze(o, l, d) {
           });
         throw Error("State update callbacks must be synchronous and return nothing");
       }
-      let I = o.parse(N);
-      if (s(I), JSON.stringify(I) === JSON.stringify(y.value))
-        return y;
+      let I = o.parse(b);
+      if (s(I), JSON.stringify(I) === JSON.stringify(m.value))
+        return m;
       try {
-        let _ = { baseRevision: y.revision, patch: {}, ops: [{ path: [], value: I }] };
+        let _ = { baseRevision: m.revision, patch: {}, ops: [{ path: [], value: I }] };
         if (!l.update)
           throw Error("Read-only note context cannot update state");
         let pe = await l.update(d, _);
         return fe({ ...pe, value: o.parse(pe.value) });
       } catch (_) {
-        if (O?.expectedRevision !== undefined || E >= 8 || !b(_))
+        if (O?.expectedRevision !== undefined || E >= 8 || !x(_))
           throw _;
       }
     }
@@ -6419,22 +6419,22 @@ function Te(o, l, d) {
     let E = u[O];
     if (!E)
       continue;
-    let y = O === "state" ? typeof l.note.stateRef === "string" ? l.note.stateRef : l.note.stateRef?.id : r(l.note.id), N = ze(O === "state" ? E.schema : ve(E.schema), l.store, y);
-    p[O] = Object.freeze(d ? N : { read: N.read });
+    let m = O === "state" ? typeof l.note.stateRef === "string" ? l.note.stateRef : l.note.stateRef?.id : r(l.note.id), b = ze(O === "state" ? E.schema : ve(E.schema), l.store, m);
+    p[O] = Object.freeze(d ? b : { read: b.read });
   }
   return p;
 }
-function f(o, l) {
+function g(o, l) {
   let d = ge.get(l);
   if (d) {
     if (d.note !== o || d.kind !== "action")
       throw new t("An action requires its own note’s writable context");
     return l;
   }
-  let { agent: u, schedules: p, notifications: O, previews: E, extensions: y, quip: N, slack: T, subprocess: I } = l, _ = Object.freeze({ note: Oe(l.note), id: () => crypto.randomUUID(), caller: l.caller, ...l.replay ? { replay: true } : {}, signal: l.signal, progress: l.progress, db: l.db, files: l.files, notes: l.notes, resources: l.resources, events: l.events, host: Object.freeze({ agent: u, schedules: p, notifications: O, previews: E, extensions: y, quip: N, slack: T, subprocess: I }), ...Te(o, l, true) });
+  let { agent: u, schedules: p, notifications: O, previews: E, extensions: m, quip: b, slack: T, subprocess: I } = l, _ = Object.freeze({ note: Oe(l.note), id: () => crypto.randomUUID(), caller: l.caller, ...l.replay ? { replay: true } : {}, signal: l.signal, progress: l.progress, db: l.db, files: l.files, notes: l.notes, resources: l.resources, events: l.events, host: Object.freeze({ agent: u, schedules: p, notifications: O, previews: E, extensions: m, quip: b, slack: T, subprocess: I }), ...Te(o, l, true) });
   return ge.set(_, { note: o, raw: l, kind: "action" }), _;
 }
-function w(o, l) {
+function S(o, l) {
   let d = ge.get(l);
   if (d) {
     if (d.note !== o)
@@ -6443,7 +6443,7 @@ function w(o, l) {
       return l;
     l = d.raw;
   }
-  let u = Object.freeze({ note: Oe(l.note), db: Object.freeze({ read: l.db?.read?.bind(l.db), list: l.db?.list?.bind(l.db), stats: l.db?.stats?.bind(l.db) }), files: l.files && Object.freeze({ info: l.files.info.bind(l.files), read: l.files.read.bind(l.files) }), notes: Object.freeze({ lookup: l.notes?.lookup?.bind(l.notes), read: l.notes?.read?.bind(l.notes), query: l.notes?.query?.bind(l.notes) }), resources: Object.freeze({ read: l.resources?.read?.bind(l.resources) }), host: Object.freeze({ previews: l.previews && Object.freeze({ get: l.previews.get?.bind(l.previews), list: l.previews.list?.bind(l.previews) }) }), ...Te(o, l, false) });
+  let u = Object.freeze({ note: Oe(l.note), signal: l.signal, db: Object.freeze({ read: l.db?.read?.bind(l.db), list: l.db?.list?.bind(l.db), stats: l.db?.stats?.bind(l.db) }), files: l.files && Object.freeze({ info: l.files.info.bind(l.files), read: l.files.read.bind(l.files) }), notes: Object.freeze({ lookup: l.notes?.lookup?.bind(l.notes), read: l.notes?.read?.bind(l.notes), query: l.notes?.query?.bind(l.notes) }), resources: Object.freeze({ read: l.resources?.read?.bind(l.resources) }), host: Object.freeze({ previews: l.previews && Object.freeze({ get: l.previews.get?.bind(l.previews), list: l.previews.list?.bind(l.previews) }) }), ...Te(o, l, false) });
   return ge.set(u, { note: o, raw: l, kind: "query" }), u;
 }
 function Fe(o) {
@@ -6482,24 +6482,24 @@ function a(o, l = {}) {
     let E = Fe(o.shape[O]);
     if (!(E instanceof ZodArray) || !(E.element instanceof ZodObject))
       throw Error(`Collection ${u} must contain objects`);
-    let y = E.element, N = [...p.lazy ?? []];
-    if (!Object.hasOwn(y.shape, p.key) || !(y.shape[p.key] instanceof ZodString))
+    let m = E.element, b = [...p.lazy ?? []];
+    if (!Object.hasOwn(m.shape, p.key) || !(m.shape[p.key] instanceof ZodString))
       throw Error(`Collection ${u} requires a string key field`);
-    if (N.length > 32 || new Set(N).size !== N.length || N.some((I) => typeof I !== "string" || I === p.key || !I || I.split(".").some((_) => !_) || N.some((_) => _ !== I && I.startsWith(_ + "."))))
+    if (b.length > 32 || new Set(b).size !== b.length || b.some((I) => typeof I !== "string" || I === p.key || !I || I.split(".").some((_) => !_) || b.some((_) => _ !== I && I.startsWith(_ + "."))))
       throw Error(`Invalid lazy fields for collection ${u}`);
-    let T = y;
-    for (let I of N)
+    let T = m;
+    for (let I of b)
       T = me(T, I.split("."));
-    return { name: u, contract: { field: O, key: p.key, lazy: N }, item: y, summary: T };
+    return { name: u, contract: { field: O, key: p.key, lazy: b }, item: m, summary: T };
   });
 }
 function ye(o, l, d, u = false) {
-  let p = async (y, N) => {
-    let T = await d(y, N), I = await O.output.safeParseAsync(T);
+  let p = async (m, b) => {
+    let T = await d(m, b), I = await O.output.safeParseAsync(T);
     if (!I.success)
       throw Error(`Capability output is invalid after execution; inspect effects before retrying: ${I.error.message}`);
     return I.data;
-  }, O = Object.freeze({ ...l, kind: o, execute: p }), E = u ? async (y, N) => p(await O.input.parseAsync(N), y) : async (y, N) => p(await O.input.parseAsync(y), N);
+  }, O = Object.freeze({ ...l, kind: o, execute: p }), E = u ? async (m, b) => p(await O.input.parseAsync(b), m) : async (m, b) => p(await O.input.parseAsync(m), b);
   return Object.defineProperty(E, ke, { value: O }), E;
 }
 function Se(o) {
@@ -6509,7 +6509,7 @@ function Se(o) {
   return Object.defineProperty(d, ke, { value: l }), Object.freeze(d);
 }
 var t, Ne, Pe, he, xe, ge, De, U, K, H, je, Re, ke, c;
-var init_chunk_pafsk3qt = __esm(() => {
+var init_chunk_dtdq3neh = __esm(() => {
   init_zod();
   init_zod();
   init_zod();
@@ -6543,39 +6543,39 @@ var init_chunk_nn2sykgs = __esm(() => {
   m = Symbol.for("worka.preview.project");
 });
 
-// .sdk/runtime/dist/chunk-vrx42qmb.mjs
-function u(t) {
-  return Object.freeze({ ...t });
-}
+// .sdk/runtime/dist/chunk-t34a3vey.mjs
 function d(t) {
   return Object.freeze({ ...t });
 }
-async function p(t, e, n) {
+function l(t) {
+  return Object.freeze({ ...t });
+}
+async function m2(t, e, n) {
   let a = await e.input.parseAsync(n), c = await t.read({ name: e.name, input: json().parse(a) });
   if (c.data === undefined) {
     let { data: i, ...f } = c;
     return f;
   }
-  return { ...c, data: await R(e.output, c.data) };
+  return { ...c, data: await w(e.output, c.data) };
 }
-async function R(t, e) {
+async function w(t, e) {
   return t.parseAsync(e);
 }
-var init_chunk_vrx42qmb = __esm(() => {
+var init_chunk_t34a3vey = __esm(() => {
   init_zod();
 });
 
-// .sdk/runtime/dist/chunk-s2zj8zzt.mjs
-var init_chunk_s2zj8zzt = __esm(() => {
-  init_chunk_vrx42qmb();
+// .sdk/runtime/dist/chunk-e7ht0p6a.mjs
+var init_chunk_e7ht0p6a = __esm(() => {
+  init_chunk_t34a3vey();
 });
 
 // .sdk/runtime/dist/index.mjs
 var init_dist = __esm(() => {
-  init_chunk_pafsk3qt();
+  init_chunk_dtdq3neh();
   init_chunk_nn2sykgs();
-  init_chunk_vrx42qmb();
-  init_chunk_s2zj8zzt();
+  init_chunk_t34a3vey();
+  init_chunk_e7ht0p6a();
   init_zod();
 });
 
@@ -7204,7 +7204,7 @@ var init_model = __esm(() => {
     notes: record(string2(), string2()).optional(),
     filter: _enum(["all", "active", "completed"]).optional()
   });
-  note = h({
+  note = v({
     state: { schema: todoDataSchema, initial: { items: [] } },
     config: { schema: todoConfigSchema, defaults: {} },
     update: {
@@ -7349,8 +7349,8 @@ var init_contracts = __esm(() => {
 init_dist();
 
 // .sdk/runtime/dist/extension-contracts.mjs
-init_chunk_vrx42qmb();
-init_chunk_s2zj8zzt();
+init_chunk_t34a3vey();
+init_chunk_e7ht0p6a();
 init_zod();
 // contract.ts
 var textSchema = string2();
@@ -7883,7 +7883,7 @@ var detailInput = object({
 });
 function query(op, input, output) {
   const response = output.and(object({ projectGeneration: textSchema.optional() }));
-  return { input: input.strict().nullish(), output: response, resource: d({
+  return { input: input.strict().nullish(), output: response, resource: l({
     name: "extension.cardgame-content.query",
     input: input.extend({ projectId: textSchema.min(1), projectGeneration: textSchema.optional(), op: literal(op) }).strict(),
     output: response
@@ -8026,7 +8026,7 @@ var registeredCandidate = object({
 var command = (method, input, output) => ({
   input: input.strict(),
   output,
-  method: u({ extension: "cardgame-content", method, input: input.extend({ projectId: textSchema.min(1), projectGeneration: textSchema.optional() }).strict(), output })
+  method: d({ extension: "cardgame-content", method, input: input.extend({ projectId: textSchema.min(1), projectGeneration: textSchema.optional() }).strict(), output })
 });
 var contentActions = {
   prepareFormalPreview: command("prepareFormalPreview", object({ fresh: booleanSchema.optional() }), formalPreviewRecordSchema),
@@ -8147,7 +8147,7 @@ var contentActions = {
     context: jsonObject
   }), object({ item: object({ id: textSchema }) }))
 };
-var configureProjectContract = u({
+var configureProjectContract = d({
   extension: "cardgame-content",
   method: "configureProject",
   input: strictObject({ root: textSchema.trim().min(1), desktopId: textSchema.optional() }),
@@ -8187,7 +8187,8 @@ var localActions = {
     featureId: textSchema,
     draft: jsonObject.optional(),
     expectedRevision: textSchema.optional(),
-    requestId: textSchema.optional()
+    requestId: textSchema.optional(),
+    projectGeneration: textSchema.optional()
   }), output: object({ noteId: textSchema, itemId: textSchema }) },
   switchCardTheme: { input: object({
     id: textSchema,
@@ -8241,7 +8242,7 @@ function queryData(snapshot) {
   return snapshot.data;
 }
 async function readTodo(projectId, id, ctx, projectGeneration) {
-  const result = queryData(await p(ctx.resources, workflowReadContracts.todo.resource, { op: "todo", projectId, id, ...projectGeneration ? { projectGeneration } : {} }));
+  const result = queryData(await m2(ctx.resources, workflowReadContracts.todo.resource, { op: "todo", projectId, id, ...projectGeneration ? { projectGeneration } : {} }));
   if (projectGeneration !== undefined && result.projectGeneration !== projectGeneration)
     throw Error("CardGame 项目绑定已变化，请重新打开编辑");
   return result;
@@ -8259,7 +8260,7 @@ async function readAllTodos(projectId, ctx, expected) {
   const cursors = new Set;
   let cursor;
   for (;; ) {
-    const page = queryData(await p(ctx.resources, workflowReadContracts.todoTexts.resource, { op: "todos", view: "text", projectId, limit: 100, ...source?.projectGeneration ? { projectGeneration: source.projectGeneration } : {}, ...cursor ? { cursor } : {} }));
+    const page = queryData(await m2(ctx.resources, workflowReadContracts.todoTexts.resource, { op: "todos", view: "text", projectId, limit: 100, ...source?.projectGeneration ? { projectGeneration: source.projectGeneration } : {}, ...cursor ? { cursor } : {} }));
     if (!page || !Array.isArray(page.items))
       throw new Error("Todo 查询结果无效");
     if (source && page.projectGeneration !== source.projectGeneration)
@@ -8447,23 +8448,23 @@ var operationQueries = {
   async todos(input, ctx) {
     const value = input ?? {}, projectId = await project(value, ctx);
     if ("view" in value && value.view === "text")
-      return queryData(await p(ctx.resources, workflowReadContracts.todoTexts.resource, { ...value, op: "todos", projectId, view: "text" }));
-    return queryData(await p(ctx.resources, workflowReadContracts.todos.resource, { ...value, op: "todos", projectId }));
+      return queryData(await m2(ctx.resources, workflowReadContracts.todoTexts.resource, { ...value, op: "todos", projectId, view: "text" }));
+    return queryData(await m2(ctx.resources, workflowReadContracts.todos.resource, { ...value, op: "todos", projectId }));
   },
   async todo(input, ctx) {
     if (!input)
       throw Error("需要 Todo ID");
     const projectId = await project(input, ctx);
     if ("view" in input && input.view === "history")
-      return queryData(await p(ctx.resources, workflowReadContracts.todoHistory.resource, { ...input, op: "todo", projectId }));
+      return queryData(await m2(ctx.resources, workflowReadContracts.todoHistory.resource, { ...input, op: "todo", projectId }));
     return readTodo(projectId, input.id, ctx, input.projectGeneration);
   },
   async categories(input, ctx) {
     const value = input ?? {};
-    return queryData(await p(ctx.resources, workflowReadContracts.categories.resource, { ...value, op: "categories", projectId: await project(value, ctx) }));
+    return queryData(await m2(ctx.resources, workflowReadContracts.categories.resource, { ...value, op: "categories", projectId: await project(value, ctx) }));
   },
   async workflowStatus(input, ctx) {
-    return queryData(await p(ctx.resources, workflowReadContracts.workflowStatus.resource, { op: "workflowStatus", projectId: await project(input, ctx) }));
+    return queryData(await m2(ctx.resources, workflowReadContracts.workflowStatus.resource, { op: "workflowStatus", projectId: await project(input, ctx) }));
   }
 };
 function jsonResult(value) {

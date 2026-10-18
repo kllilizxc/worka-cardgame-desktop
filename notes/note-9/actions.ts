@@ -152,7 +152,7 @@ async function readReferenceDocument(input: QueryInput, ctx: QueryContext): Prom
 
 type ContentActionName=keyof typeof contentActions;
 type ActionOutput<K extends ContentActionName>=z.output<(typeof contentActions)[K]['output']>;
-function requestContent<K extends ContentActionName>(method:K,input:z.input<(typeof contentActions)[K]['input']>,ctx:ActionContext):Promise<ActionOutput<K>>;
+function requestContent<K extends ContentActionName>(method:K,input:z.input<(typeof contentActions)[K]['input']> & {projectGeneration?:string},ctx:ActionContext):Promise<ActionOutput<K>>;
 async function requestContent(method:ContentActionName,input:unknown,ctx:ActionContext):Promise<ActionOutput<ContentActionName>> {
   const contract=contentActions[method];
   const parsed=await contract.method.input.parseAsync({...((input&&typeof input==='object')?input:{}),projectId:await projectFor(ctx)});
@@ -211,7 +211,9 @@ async function requestContent(method:ContentActionName,input:unknown,ctx:ActionC
     draftDefinition = definition;
     if (typeof nextTheme === 'string' && nextTheme !== oldTheme) draftPresentation = { themeId: nextTheme };
   }
-  const result = await requestContent('createCardBatch', {cardIds: input.itemIds, featureId: input.featureId, ...(input.requestId ? { requestId: input.requestId } : {}),
+  const requestId = input.requestId?.trim() || ctx.caller?.requestId;
+  const result = await requestContent('createCardBatch', {cardIds: input.itemIds, featureId: input.featureId, ...(requestId ? { requestId } : {}),
+    ...(input.projectGeneration ? { projectGeneration: input.projectGeneration } : {}),
     ...(input.expectedRevision ? { sourceRevisions: { [input.itemIds[0]!]: input.expectedRevision } } : {}), brief: `卡面制作 · ${input.itemIds.join('、')}` },ctx);
   if (draftDefinition) {
     await requestContent('saveCardDraft', {productionId: result.production.id,

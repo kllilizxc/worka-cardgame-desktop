@@ -284,7 +284,7 @@ export const localActions = {
     discussAudio: { input: emptyInputSchema, output: z.object({ sessionId: textSchema }) }, discussSelection: { input: z.object({ itemIds: stringListSchema.optional() }), output: z.object({ sessionId: textSchema }) }, addResource: { input: z.object({ path: textSchema, title: textSchema.optional() }), output: referenceResourceSchema }, rejectAssetVersion: { input: z.object({ assetId: textSchema, reason: textSchema.optional() }), output: z.object({
             reverted: booleanSchema, versionId: textSchema.optional(), todoId: textSchema.optional()
         }) }, createCardWorkflow: { input: z.object({
-            itemIds: stringListSchema, featureId: textSchema, draft: jsonObject.optional(), expectedRevision: textSchema.optional(), requestId: textSchema.optional()
+            itemIds: stringListSchema, featureId: textSchema, draft: jsonObject.optional(), expectedRevision: textSchema.optional(), requestId: textSchema.optional(), projectGeneration:textSchema.optional()
         }), output: z.object({ noteId: textSchema, itemId: textSchema }) }, switchCardTheme: { input: z.object({
             id: textSchema, themeId: textSchema, expectedRevision: textSchema
         }), output: cardSchema }

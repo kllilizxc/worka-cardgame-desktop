@@ -3,8 +3,8 @@
   "contractSource": "backend/plugins/cardgame-content/src/contract.ts",
   "sharedSource": "notes/note-1",
   "files": {
-    "contract.ts": "2c9b6379ea6d1147b4f5762b1b70bdc9fabebcfbdbe3612483084abf3d84dc68",
-    "actions.ts": "ffb690c3e4b9f3312ed68aeec48a069fd12887c38cf89fab6807667d001488c2",
+    "contract.ts": "a263bf6ec22299ac6baffb5354f8e9c66607c261837bb9287a8a51830b94d889",
+    "actions.ts": "60c047c95ee1e302ddcfe76595bec22fd12ce5bf499759a6ca8551274ace4f5b",
     "asset-filter-panel.tsx": "289f1fe2ffe5840b37abffc83fe8eaabd2e7091ba68c808312b81d4ed9482fcc",
     "audio-guidance.tsx": "e7c8180e7c15d1537bf3bd57b3897e7d7dd4dd14b741b4615c49db9b92413fcd",
     "audio-preview.tsx": "38899577f2802bd653644288977489f10687445dbcc69963b95190ec6fafb00d",
@@ -13,6 +13,7 @@
     "balance-workspace.tsx": "611fb6b1f61107c8c714dc2225b280424b65184e4c960aaa4568c67b8777c4da",
     "battle-experiments.tsx": "97c2818acefa813437a2e0087fa3770e7d63eccf27516ff14c9d88790ee7f80d",
     "battle-summary.tsx": "847468d1f0b3a52337d1382bf6bd3c1a580db41d5a2e17f222aa2b8975ec7ff1",
+    "card-workflow-create.tsx": "de2fec75d0a632ca7d9ff2abc9bf6a6017d1476633425f33709120fe67feeb17",
     "cards-workspace.tsx": "bead87285593b14a2159146f19b8e8f798d6abfe026a8ebb4f0f448124d7eac3",
     "compact-gallery.tsx": "16366ac880925c73facecf7a88627173a65e820fe117d56a38e12db47526fef4",
     "content-collection.tsx": "a6c01904101a407fe9421ed113ed90ec063f5918370652ef3c65b8e5686620e7",
@@ -30,7 +31,7 @@
     "story-model.ts": "05098a9307d6f732c9f7f08fba07eba466ae4dd186db1e23b1cbcfd49000dc27",
     "story-workspace.tsx": "761e582517ec15681cef1d97d123910352b29abe1ef2c1aa8dfac2a5a4416409",
     "view-compact.tsx": "91b0f27a55817c9d3bdf93fee56531b8e4f591a5bdf66849e31be6227884a155",
-    "view-expanded.tsx": "898625da13731b486fa1b327f81cadcdc6c474062b9757d558b9892345221763",
+    "view-expanded.tsx": "a4734c0f87a50771cd663d04dc0bed652ca342c41c56179261164cbf105ca9da",
     "view.tsx": "6cd95660fb5d998e8c685f51428e6608a30ae26629d6aa565565be3f47232593"
   }
 }

@@ -5916,11 +5916,11 @@ function json(params) {
   });
   return jsonSchema;
 }
-// ../node_modules/@realiz3r/worka/dist/extension-contracts.js
+// ../../worka-runtime-simplification-evidence-20261018/desktop-e812f18/packed/package/dist/extension-contracts.js
 function J(t) {
   return Object.freeze({ ...t });
 }
-function N(t) {
+function A(t) {
   return Object.freeze({ ...t });
 }
 class m extends Error {
@@ -6647,7 +6647,7 @@ var detailInput = object({
 });
 function query(op, input, output) {
   const response = output.and(object({ projectGeneration: textSchema.optional() }));
-  return { input: input.strict().nullish(), output: response, resource: N({
+  return { input: input.strict().nullish(), output: response, resource: A({
     name: "extension.cardgame-content.query",
     input: input.extend({ projectId: textSchema.min(1), projectGeneration: textSchema.optional(), op: literal(op) }).strict(),
     output: response
@@ -6951,7 +6951,8 @@ var localActions = {
     featureId: textSchema,
     draft: jsonObject.optional(),
     expectedRevision: textSchema.optional(),
-    requestId: textSchema.optional()
+    requestId: textSchema.optional(),
+    projectGeneration: textSchema.optional()
   }), output: object({ noteId: textSchema, itemId: textSchema }) },
   switchCardTheme: { input: object({
     id: textSchema,
