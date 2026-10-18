@@ -1922,7 +1922,6 @@ export declare const setViewState: import("@dsh-workbench/runtime").NoteOperatio
         query: z.ZodOptional<z.ZodOptional<z.ZodString>>;
         selectedId: z.ZodOptional<z.ZodOptional<z.ZodString>>;
     }, z.core.$strip>;
-    expectedRevision: z.ZodString;
 }, z.core.$strip>, z.ZodObject<{
     revision: z.ZodString;
 }, z.core.$strip>, NoteActionContext<import("@dsh-workbench/runtime").NoteModel<z.ZodObject<{

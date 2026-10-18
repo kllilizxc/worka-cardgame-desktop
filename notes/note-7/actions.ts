@@ -4,7 +4,7 @@ import {contentQueries,contentActions,jsonObject,localActions,configureProjectCo
 import { realpath, stat, readFile } from 'node:fs/promises';
 import { basename, extname, isAbsolute, relative, resolve, sep } from 'node:path';
 import type { NoteActionContext, NoteQueryContext, JsonValue } from "@dsh-workbench/runtime";
-import {note,stateSchema} from "./note-model";
+import {note,viewStateInputSchema} from "./note-model";
 export { note } from "./note-model";
 type ActionContext = NoteActionContext<typeof note>;
 type QueryContext = NoteQueryContext<typeof note>;
@@ -305,7 +305,25 @@ storyScenePage:note.query({...{"description":"storyScenePage","visibility":"publ
 media:note.query({...{"description":"media","visibility":"public"},input:contentQueries.media.input,output:contentQueries.media.output},(ctx,input)=>readOp('media',input,ctx))
 };
 
-export const setViewState=note.action({description:'保存本便笺的界面选择，核对当前修订。',visibility:'private',requiresConfig:false,input:z.object({patch:stateSchema.partial(),expectedRevision:z.string()}),output:z.object({revision:z.string()})},async(ctx,input)=>{const saved=await ctx.state.update(draft=>{Object.assign(draft,input.patch);},{expectedRevision:input.expectedRevision});return {revision:saved.revision};});
+export const setViewState=note.action({description:'保存本便笺的界面选择。',visibility:'private',requiresConfig:false,input:viewStateInputSchema,output:z.object({revision:z.string()})},async(ctx,input)=>{
+  const saved=await ctx.state.update(draft=>{
+    if(input.patch){
+      const {views,...fields}=input.patch;
+      Object.assign(draft,fields);
+      if(views)Object.assign(draft.views??={},views);
+    }
+    if(input.bookmark){
+      const {key,saved}=input.bookmark;
+      const bookmarks=(draft.bookmarks??[]).filter(value=>value!==key);
+      draft.bookmarks=(saved?[...bookmarks,key]:bookmarks).slice(-200);
+    }
+    if(input.filter){
+      const views=draft.views??={},filter=input.filter;
+      views.assetsFilters=[...(views.assetsFilters??[]).filter(value=>value.name!==filter.name),filter].slice(-20);
+    }
+  });
+  return {revision:saved.revision};
+});
 
 /** Explicit owner selection binds this desktop; imported config never grants filesystem access. */
 export const configureProject = note.action({

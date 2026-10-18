@@ -5796,10 +5796,9 @@ export declare const queries: {
     }, z.core.$loose>, {}>>>;
 };
 export declare const setViewState: import("@dsh-workbench/runtime").NoteOperation<z.ZodObject<{
-    patch: z.ZodObject<{
+    patch: z.ZodOptional<z.ZodObject<{
         query: z.ZodOptional<z.ZodOptional<z.ZodString>>;
-        bookmarks: z.ZodOptional<z.ZodOptional<z.ZodArray<z.ZodString>>>;
-        views: z.ZodOptional<z.ZodOptional<z.ZodObject<{
+        views: z.ZodOptional<z.ZodObject<{
             storySelection: z.ZodOptional<z.ZodString>;
             storyNodeSelection: z.ZodOptional<z.ZodObject<{
                 storyId: z.ZodString;
@@ -5840,20 +5839,23 @@ export declare const setViewState: import("@dsh-workbench/runtime").NoteOperatio
                 list: "list";
             }>>;
             assetsSelection: z.ZodOptional<z.ZodString>;
-            assetsFilters: z.ZodOptional<z.ZodArray<z.ZodObject<{
-                name: z.ZodString;
-                kind: z.ZodOptional<z.ZodString>;
-                mimeType: z.ZodOptional<z.ZodString>;
-                format: z.ZodOptional<z.ZodString>;
-                minWidth: z.ZodOptional<z.ZodNumber>;
-                maxWidth: z.ZodOptional<z.ZodNumber>;
-                minDurationMs: z.ZodOptional<z.ZodNumber>;
-                maxDurationMs: z.ZodOptional<z.ZodNumber>;
-                status: z.ZodOptional<z.ZodString>;
-            }, z.core.$strip>>>;
-        }, z.core.$strip>>>;
-    }, z.core.$strip>;
-    expectedRevision: z.ZodString;
+        }, z.core.$strip>>;
+    }, z.core.$strip>>;
+    bookmark: z.ZodOptional<z.ZodObject<{
+        key: z.ZodString;
+        saved: z.ZodBoolean;
+    }, z.core.$strip>>;
+    filter: z.ZodOptional<z.ZodObject<{
+        name: z.ZodString;
+        kind: z.ZodOptional<z.ZodString>;
+        mimeType: z.ZodOptional<z.ZodString>;
+        format: z.ZodOptional<z.ZodString>;
+        minWidth: z.ZodOptional<z.ZodNumber>;
+        maxWidth: z.ZodOptional<z.ZodNumber>;
+        minDurationMs: z.ZodOptional<z.ZodNumber>;
+        maxDurationMs: z.ZodOptional<z.ZodNumber>;
+        status: z.ZodOptional<z.ZodString>;
+    }, z.core.$strip>>;
 }, z.core.$strip>, z.ZodObject<{
     revision: z.ZodString;
 }, z.core.$strip>, NoteActionContext<import("@dsh-workbench/runtime").NoteModel<z.ZodObject<{

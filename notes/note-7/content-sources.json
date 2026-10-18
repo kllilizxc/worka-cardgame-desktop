@@ -4,7 +4,7 @@
   "sharedSource": "notes/note-1",
   "files": {
     "contract.ts": "a263bf6ec22299ac6baffb5354f8e9c66607c261837bb9287a8a51830b94d889",
-    "actions.ts": "60c047c95ee1e302ddcfe76595bec22fd12ce5bf499759a6ca8551274ace4f5b",
+    "actions.ts": "8d0e26a3c35343de2381bf2d3b15e1d1b298201a430dfd75c537b912f91fc70c",
     "asset-filter-panel.tsx": "289f1fe2ffe5840b37abffc83fe8eaabd2e7091ba68c808312b81d4ed9482fcc",
     "audio-guidance.tsx": "e7c8180e7c15d1537bf3bd57b3897e7d7dd4dd14b741b4615c49db9b92413fcd",
     "audio-preview.tsx": "38899577f2802bd653644288977489f10687445dbcc69963b95190ec6fafb00d",
@@ -18,11 +18,11 @@
     "compact-gallery.tsx": "16366ac880925c73facecf7a88627173a65e820fe117d56a38e12db47526fef4",
     "content-collection.tsx": "a6c01904101a407fe9421ed113ed90ec063f5918370652ef3c65b8e5686620e7",
     "content-format.ts": "d95da678c315df4dc7cfd0026bd79111f5b83898c158c4bb3331d8b40e20fcf8",
-    "content-model.ts": "71ac6e63a47e8c7e1c8006ee3154cb27035ae39545c59faae6d7c64330867814",
+    "content-model.ts": "d183e983d79ef6701938c2c84018604fef316bbf0ab06c2ffc45d4324751bb36",
     "deck-workspace.tsx": "1b03fa2eebce9aa96e590ce87d5b9a8e3b26dd98b67cc24b776cf0bb51fdb4f5",
     "image-preview.tsx": "270c9f8fe2014326277344bcdb09a7aefa7d87a216226a147fd9aff7f1cb6f13",
     "mermaid.tsx": "342fb9c97baf716946aeb6c2f03b02186b67f7a96570f6f9ac24c784e8932420",
-    "note-model.ts": "2d0e386dc1bb023dfdb6e2287dc9b0937a69ec85e6d6b1b49a186ca79c8c62af",
+    "note-model.ts": "5b0db5871d3a5d02e5f0da159000e8e4388d2e1dea910b078d36c288da43f179",
     "pinned-references.tsx": "c7c8d489706b8029ab525de854903d64b97aab228ea66027bcf54538169a6b50",
     "reference-collection.tsx": "daed080baf5a96dfa803a1cb86845054bcf12c0e7d6958aa75614d5fa36cde33",
     "story-compact.tsx": "7df421c2b7437407a3416ee70ba03e75f1528302ed6d8e9303e5c6e86cfd9ceb",
@@ -30,8 +30,8 @@
     "story-map.tsx": "3a8d9642435a1a6cc9424a2e388c3b620ceb92fae411256e64269e31771a62b4",
     "story-model.ts": "05098a9307d6f732c9f7f08fba07eba466ae4dd186db1e23b1cbcfd49000dc27",
     "story-workspace.tsx": "761e582517ec15681cef1d97d123910352b29abe1ef2c1aa8dfac2a5a4416409",
-    "view-compact.tsx": "91b0f27a55817c9d3bdf93fee56531b8e4f591a5bdf66849e31be6227884a155",
-    "view-expanded.tsx": "a4734c0f87a50771cd663d04dc0bed652ca342c41c56179261164cbf105ca9da",
+    "view-compact.tsx": "ce5e0321dd44666af1f8f58fdb9f74641653d1ac52105932f241626071a46613",
+    "view-expanded.tsx": "3f92ac53a82a5f09e43d8a2fb0cca442685271f133de6e5ea9f85f6953840d3a",
     "view.tsx": "6cd95660fb5d998e8c685f51428e6608a30ae26629d6aa565565be3f47232593"
   }
 }

@@ -10,7 +10,7 @@
     ".gitattributes": "d6504560a89539dfc9e0a7d9d0b37e48d526efd4b5d52f12d836704ba5545256",
     "LICENSE": "b51593dd875fcde7a5af0c84ca7b67b96ed5c2d174d9f5ca178d8bd07a2a6a50",
     "README.md": "1d97a64c03e913813ac8964639a3a455dd829d179dfb5590d8dfbb420af05f55",
-    "dist/plugin.js": "660bc2d20a617dc7878417e12528dbddd2c37fcc094a2b6aff4483cd31cc5095",
+    "dist/plugin.js": "d354b997b206d565093c8ae49a458fd691752ee8ac1f1dfc05ee681192a896de",
     "package.json": "2164bc24e83999dfffdfad2e839e6b037934d5cc4b098cade6e324b623f2ce34",
     "plugins/cardgame-content/analysis/battle-browser-adapter.ts": "73f0ef40e256fa6ffc5c7e17d3066a290206a3d7b06e8310893c73bf7bfe950c",
     "plugins/cardgame-content/analysis/battle-server.ts": "e0e5fcec36215a41ca86767da390a8cbc0c449e55a9d7b18f09a9758e7762cbe",
@@ -45,5 +45,5 @@
     "plugins/cardgame-content/src/types.ts": "8339c06fe12195e63b58a8017130d29f1b707192201f9244e2975d03782d36de",
     "plugins/cardgame-content/src/workflow.ts": "c5770db6f99d33e0694633810035be0148d8cfb1c8ad9bd061a9a97b43606fe7"
   },
-  "integrity": "sha256-ecec6ead505e80bb3936b8a5c7789abd4d6a02d6b0446e524a014de775c8cb5b"
+  "integrity": "sha256-46687c2efdd4f32df85f128ef42edec22d051e2f0f2334af761aa1946ebc81a0"
 }

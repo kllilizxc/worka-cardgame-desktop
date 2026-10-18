@@ -1,1 +1,0 @@
-import"./entry-4wq0gfyy.js";import{et}from"./entry-39dyfdvt.js";import{K}from"./entry-bundle.js";var e=et({compact:()=>(K("0fccmkyp"),import("./view-compact-0fccmkyp.js")),expanded:()=>(K("ra4xzh5t"),import("./view-local-expanded-ra4xzh5t.js"))}),p=e;export{e as View,p as default};

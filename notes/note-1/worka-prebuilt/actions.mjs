@@ -1,4 +1,4 @@
-// ../../../../../worka-authoring-desktop-latest-20261017/node_modules/.bun/zod@4.6.1/node_modules/zod/v4/core/util.js
+// node_modules/zod/v4/core/util.js
 function getEnumValues(entries) {
   const numericValues = Object.values(entries).filter((v) => typeof v === "number");
   const values = Object.entries(entries).filter(([k, _]) => numericValues.indexOf(+k) === -1).map(([_, v]) => v);
@@ -566,7 +566,7 @@ function constantCatch(value) {
   return fn;
 }
 
-// ../../../../../worka-authoring-desktop-latest-20261017/node_modules/.bun/zod@4.6.1/node_modules/zod/v4/core/core.js
+// node_modules/zod/v4/core/core.js
 var _a;
 var _zodDesc = { value: undefined, enumerable: false };
 var _E = "captureStackTrace" in Error ? Error : null;
@@ -685,7 +685,7 @@ function config(newConfig) {
     Object.assign(globalConfig, newConfig);
   return globalConfig;
 }
-// ../../../../../worka-authoring-desktop-latest-20261017/node_modules/.bun/zod@4.6.1/node_modules/zod/v4/core/errors.js
+// node_modules/zod/v4/core/errors.js
 function _getMessage() {
   const internals = this._zod;
   internals.message ?? (internals.message = JSON.stringify(internals.def, jsonStringifyReplacer, 2));
@@ -800,7 +800,7 @@ function formatError(error, mapper = (issue) => issue.message) {
   return fieldErrors;
 }
 
-// ../../../../../worka-authoring-desktop-latest-20261017/node_modules/.bun/zod@4.6.1/node_modules/zod/v4/core/parse.js
+// node_modules/zod/v4/core/parse.js
 function finalizeParams(callee, params) {
   return { callee: params?.callee ?? callee, Err: params?.Err };
 }
@@ -947,7 +947,7 @@ var _safeEncodeAsync = (_Err) => async (schema, value, _ctx) => {
 var _safeDecodeAsync = (_Err) => async (schema, value, _ctx) => {
   return _safeParseAsync(_Err)(schema, value, _ctx);
 };
-// ../../../../../worka-authoring-desktop-latest-20261017/node_modules/.bun/zod@4.6.1/node_modules/zod/v4/core/regexes.js
+// node_modules/zod/v4/core/regexes.js
 var cuid = /^[cC][0-9a-z]{6,}$/;
 var cuid2 = /^[0-9a-z]+$/;
 var ulid = /^[0-7][0-9A-HJKMNP-TV-Za-hjkmnp-tv-z]{25}$/;
@@ -1006,7 +1006,7 @@ var _null = /^null$/i;
 var lowercase = /^[^A-Z]*$/;
 var uppercase = /^[^a-z]*$/;
 
-// ../../../../../worka-authoring-desktop-latest-20261017/node_modules/.bun/zod@4.6.1/node_modules/zod/v4/core/checks.js
+// node_modules/zod/v4/core/checks.js
 var $ZodCheck = /* @__PURE__ */ $constructor("$ZodCheck", (inst, def) => {
   var _a;
   inst._zod ?? (inst._zod = {});
@@ -1322,7 +1322,7 @@ var $ZodCheckOverwrite = /* @__PURE__ */ $constructor("$ZodCheckOverwrite", (ins
   };
 });
 
-// ../../../../../worka-authoring-desktop-latest-20261017/node_modules/.bun/zod@4.6.1/node_modules/zod/v4/core/doc.js
+// node_modules/zod/v4/core/doc.js
 class Doc {
   constructor(args = [], closed = {}) {
     this.content = [];
@@ -1364,14 +1364,14 @@ ${content.join(`
   }
 }
 
-// ../../../../../worka-authoring-desktop-latest-20261017/node_modules/.bun/zod@4.6.1/node_modules/zod/v4/core/versions.js
+// node_modules/zod/v4/core/versions.js
 var version = {
   major: 4,
   minor: 6,
   patch: 1
 };
 
-// ../../../../../worka-authoring-desktop-latest-20261017/node_modules/.bun/zod@4.6.1/node_modules/zod/v4/core/schemas.js
+// node_modules/zod/v4/core/schemas.js
 var $ZodType = /* @__PURE__ */ $constructor("$ZodType", (inst, def) => {
   var _a;
   inst ?? (inst = {});
@@ -2969,7 +2969,7 @@ var $ZodProperties = /* @__PURE__ */ $constructor("$ZodProperties", (inst, def) 
     yield this;
   }
 });
-// ../../../../../worka-authoring-desktop-latest-20261017/node_modules/.bun/zod@4.6.1/node_modules/zod/v4/core/memoizer.js
+// node_modules/zod/v4/core/memoizer.js
 class $ZodCyclicError extends Error {
   constructor() {
     super(`Cannot parse a reference cycle that closes through a transform`);
@@ -3241,7 +3241,7 @@ function isBackEdge(ctx, value) {
   const backEdges = ctx[STATE]?.backEdges;
   return backEdges !== undefined && isRef(value) && backEdges.has(value);
 }
-// ../../../../../worka-authoring-desktop-latest-20261017/node_modules/.bun/zod@4.6.1/node_modules/zod/v4/locales/en.js
+// node_modules/zod/v4/locales/en.js
 var error = () => {
   const Sizable = {
     string: { unit: "characters", verb: "to have" },
@@ -3362,7 +3362,7 @@ function en_default() {
     localeError: error()
   };
 }
-// ../../../../../worka-authoring-desktop-latest-20261017/node_modules/.bun/zod@4.6.1/node_modules/zod/v4/core/registries.js
+// node_modules/zod/v4/core/registries.js
 var _a2;
 class $ZodRegistry {
   constructor() {
@@ -3409,7 +3409,7 @@ function registry() {
 }
 (_a2 = globalThis).__zod_globalRegistry ?? (_a2.__zod_globalRegistry = registry());
 var globalRegistry = globalThis.__zod_globalRegistry;
-// ../../../../../worka-authoring-desktop-latest-20261017/node_modules/.bun/zod@4.6.1/node_modules/zod/v4/core/api.js
+// node_modules/zod/v4/core/api.js
 function _string(Class, params) {
   return new Class({
     type: "string",
@@ -3865,7 +3865,7 @@ function _check(fn, params) {
   ch._zod.check = fn;
   return ch;
 }
-// ../../../../../worka-authoring-desktop-latest-20261017/node_modules/.bun/zod@4.6.1/node_modules/zod/v4/core/to-json-schema.js
+// node_modules/zod/v4/core/to-json-schema.js
 function assignProps(target, ...sources) {
   for (const source of sources) {
     for (const key of Reflect.ownKeys(source)) {
@@ -4388,7 +4388,7 @@ var createStandardJSONSchemaMethod = (schema, io, processors = {}) => (params) =
   extractDefs(ctx, schema);
   return finalize(ctx, schema);
 };
-// ../../../../../worka-authoring-desktop-latest-20261017/node_modules/.bun/zod@4.6.1/node_modules/zod/v4/core/json-schema-processors.js
+// node_modules/zod/v4/core/json-schema-processors.js
 var narrowMin = (agg, key, value) => {
   if (agg[key] === undefined || value > agg[key])
     agg[key] = value;
@@ -5159,7 +5159,7 @@ function toJSONSchema(input, params) {
   extractDefs(ctx, input);
   return finalize(ctx, input);
 }
-// ../../../../../worka-authoring-desktop-latest-20261017/node_modules/.bun/zod@4.6.1/node_modules/zod/v4/classic/errors.js
+// node_modules/zod/v4/classic/errors.js
 var _installedErrorProtos = /* @__PURE__ */ new WeakSet([Object.prototype, Error.prototype]);
 function _lazyMethod(proto, key, make) {
   Object.defineProperty(proto, key, {
@@ -5204,7 +5204,7 @@ var ZodRealError = /* @__PURE__ */ $constructor("ZodError", initializer2, undefi
   Parent: Error
 });
 
-// ../../../../../worka-authoring-desktop-latest-20261017/node_modules/.bun/zod@4.6.1/node_modules/zod/v4/classic/parse.js
+// node_modules/zod/v4/classic/parse.js
 var parse2 = /* @__PURE__ */ _parse(ZodRealError);
 var parseAsync = /* @__PURE__ */ _parseAsync(ZodRealError);
 var safeParse = /* @__PURE__ */ _safeParse(ZodRealError);
@@ -5218,7 +5218,7 @@ var safeDecode = /* @__PURE__ */ _safeDecode(ZodRealError);
 var safeEncodeAsync = /* @__PURE__ */ _safeEncodeAsync(ZodRealError);
 var safeDecodeAsync = /* @__PURE__ */ _safeDecodeAsync(ZodRealError);
 
-// ../../../../../worka-authoring-desktop-latest-20261017/node_modules/.bun/zod@4.6.1/node_modules/zod/v4/classic/schemas.js
+// node_modules/zod/v4/classic/schemas.js
 function _ensureDefaultLocale() {
   if (!globalConfig.localeError)
     config(en_default());
@@ -6148,7 +6148,7 @@ function json(params) {
   });
   return jsonSchema;
 }
-// .sdk/runtime/dist/chunk-dtdq3neh.mjs
+// node_modules/@dsh-workbench/runtime/dist/chunk-dtdq3neh.mjs
 function x(o) {
   if (!o || typeof o !== "object")
     return false;
@@ -6406,10 +6406,10 @@ function Se(o) {
 }
 var c = object({ id: string2().regex(/^note-file:[a-f0-9]{64}$/) });
 
-// .sdk/runtime/dist/chunk-nn2sykgs.mjs
+// node_modules/@dsh-workbench/runtime/dist/chunk-nn2sykgs.mjs
 var m = Symbol.for("worka.preview.project");
 
-// .sdk/runtime/dist/chunk-t34a3vey.mjs
+// node_modules/@dsh-workbench/runtime/dist/chunk-t34a3vey.mjs
 function d(t) {
   return Object.freeze({ ...t });
 }
@@ -7304,6 +7304,14 @@ import { basename, extname, isAbsolute, relative, resolve, sep } from "node:path
 // note-model.ts
 var configSchema = looseObject({ projectId: string2().min(1).optional(), projectRoot: string2().optional(), mode: _enum(["knowledge", "cards", "assets"]).optional(), presentation: _enum(["story", "balance", "changes"]).optional(), assetScope: _enum(["art", "audio"]).optional(), notes: record(string2(), string2()).optional(), resources: array(looseObject({ path: string2(), title: string2(), root: string2().optional(), linkBase: string2().optional(), revision: string2().optional() })).optional() });
 var stateSchema = object({ query: string2().optional(), bookmarks: array(string2()).optional(), views: object({ storySelection: string2().optional(), storyNodeSelection: object({ storyId: string2(), nodeId: string2() }).optional(), balanceMetricSelection: object({ kind: string2(), metric: _enum(["attack", "health"]) }).optional(), battleComparisonSelection: object({ before: object({ experimentId: string2(), reportId: string2() }), after: object({ experimentId: string2(), reportId: string2() }) }).nullable().optional(), knowledge: _enum(["reader", "source"]).optional(), knowledgeSelection: object({ id: string2().optional(), path: string2() }).optional(), cards: _enum(["table", "grid"]).optional(), cardsSelection: array(string2()).optional(), assets: _enum(["grid", "list"]).optional(), assetsSelection: string2().optional(), assetsFilters: array(object({ name: string2(), kind: string2().optional(), mimeType: string2().optional(), format: string2().optional(), minWidth: number2().optional(), maxWidth: number2().optional(), minDurationMs: number2().optional(), maxDurationMs: number2().optional(), status: string2().optional() })).optional() }).optional() });
+var viewPatchSchema = stateSchema.omit({ bookmarks: true }).partial().extend({
+  views: stateSchema.shape.views.unwrap().omit({ assetsFilters: true }).optional()
+});
+var viewStateInputSchema = object({
+  patch: viewPatchSchema.optional(),
+  bookmark: object({ key: string2().min(1), saved: boolean2() }).optional(),
+  filter: stateSchema.shape.views.unwrap().shape.assetsFilters.unwrap().element.optional()
+});
 var note = v({ state: { schema: stateSchema, initial: {} }, config: { schema: configSchema, defaults: {} }, update: { dataVersion: "cardgame-library@1", compatibleFrom: ["cardgame-library@1"] } });
 // content-model.ts
 function encodeContentRef(ref) {
@@ -7566,10 +7574,24 @@ var queries = {
   storyScenePage: note.query({ ...{ description: "storyScenePage", visibility: "public" }, input: contentQueries.storyScenePage.input, output: contentQueries.storyScenePage.output }, (ctx, input) => readOp("storyScenePage", input, ctx)),
   media: note.query({ ...{ description: "media", visibility: "public" }, input: contentQueries.media.input, output: contentQueries.media.output }, (ctx, input) => readOp("media", input, ctx))
 };
-var setViewState = note.action({ description: "保存本便笺的界面选择，核对当前修订。", visibility: "private", requiresConfig: false, input: object({ patch: stateSchema.partial(), expectedRevision: string2() }), output: object({ revision: string2() }) }, async (ctx, input) => {
+var setViewState = note.action({ description: "保存本便笺的界面选择。", visibility: "private", requiresConfig: false, input: viewStateInputSchema, output: object({ revision: string2() }) }, async (ctx, input) => {
   const saved = await ctx.state.update((draft) => {
-    Object.assign(draft, input.patch);
-  }, { expectedRevision: input.expectedRevision });
+    if (input.patch) {
+      const { views, ...fields } = input.patch;
+      Object.assign(draft, fields);
+      if (views)
+        Object.assign(draft.views ??= {}, views);
+    }
+    if (input.bookmark) {
+      const { key, saved } = input.bookmark;
+      const bookmarks = (draft.bookmarks ?? []).filter((value) => value !== key);
+      draft.bookmarks = (saved ? [...bookmarks, key] : bookmarks).slice(-200);
+    }
+    if (input.filter) {
+      const views = draft.views ??= {}, filter = input.filter;
+      views.assetsFilters = [...(views.assetsFilters ?? []).filter((value) => value.name !== filter.name), filter].slice(-20);
+    }
+  });
   return { revision: saved.revision };
 });
 var configureProject = note.action({

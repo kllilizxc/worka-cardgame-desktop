@@ -1,1 +1,0 @@
-import"./entry-pan03rcr.js";import{$l}from"./entry-2fmhnr1q.js";import{z}from"./entry-bundle.js";var t=$l({compact:()=>(z("wf4821w3"),import("./view-compact-wf4821w3.js")),expanded:()=>(z("95zh809t"),import("./view-expanded-95zh809t.js")),state:"legacy",prerequisites:{configurationInView:!0}});export{t as default};

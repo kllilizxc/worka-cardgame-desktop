@@ -94,7 +94,7 @@ export const queries={
   media:note.query({description:'解析已登记资源的只读媒体预览。',input:queryInputs.media,output:queryOutputs.media},(ctx,input)=>readOp('media',input,ctx,queryOutputs.media)),
   workflowStatus:note.query({description:'读取制作与待办工作流概要。',input:queryInputs.workflowStatus,output:queryOutputs.workflowStatus},(ctx,input)=>readOp('workflowStatus',input,ctx,queryOutputs.workflowStatus)),
 };
-export const setViewState=note.action({description:'保存本便笺界面选择。',visibility:'private',requiresConfig:false,input:z.object({patch:stateSchema.partial(),expectedRevision:z.string()}),output:z.object({revision:z.string()})},async(ctx,input)=>{const saved=await ctx.state.update(draft=>{Object.assign(draft,input.patch);},{expectedRevision:input.expectedRevision});return {revision:saved.revision};});
+export const setViewState=note.action({description:'保存本便笺界面选择。',visibility:'private',requiresConfig:false,input:z.object({patch:stateSchema.partial()}),output:z.object({revision:z.string()})},async(ctx,input)=>{const saved=await ctx.state.update(draft=>{Object.assign(draft,input.patch);});return {revision:saved.revision};});
 export const events={
   generation:note.event({name:'cardgame.production.generationRequested',description:'准确轮次已持久化，等待执行台接收。',objectRef:'/productionId',revision:'/round',visibility:'public',payload:record}),
   candidates:note.event({name:'cardgame.production.candidatesRequested',description:'登记候选文件并回填实际版本。',objectRef:'/productionId',visibility:'public',payload:record}),

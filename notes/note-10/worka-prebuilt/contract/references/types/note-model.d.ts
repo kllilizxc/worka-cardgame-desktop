@@ -82,6 +82,113 @@ export declare const stateSchema: z.ZodObject<{
         }, z.core.$strip>>>;
     }, z.core.$strip>>;
 }, z.core.$strip>;
+export declare const viewPatchSchema: z.ZodObject<{
+    query: z.ZodOptional<z.ZodOptional<z.ZodString>>;
+    views: z.ZodOptional<z.ZodObject<{
+        storySelection: z.ZodOptional<z.ZodString>;
+        storyNodeSelection: z.ZodOptional<z.ZodObject<{
+            storyId: z.ZodString;
+            nodeId: z.ZodString;
+        }, z.core.$strip>>;
+        balanceMetricSelection: z.ZodOptional<z.ZodObject<{
+            kind: z.ZodString;
+            metric: z.ZodEnum<{
+                attack: "attack";
+                health: "health";
+            }>;
+        }, z.core.$strip>>;
+        battleComparisonSelection: z.ZodOptional<z.ZodNullable<z.ZodObject<{
+            before: z.ZodObject<{
+                experimentId: z.ZodString;
+                reportId: z.ZodString;
+            }, z.core.$strip>;
+            after: z.ZodObject<{
+                experimentId: z.ZodString;
+                reportId: z.ZodString;
+            }, z.core.$strip>;
+        }, z.core.$strip>>>;
+        knowledge: z.ZodOptional<z.ZodEnum<{
+            reader: "reader";
+            source: "source";
+        }>>;
+        knowledgeSelection: z.ZodOptional<z.ZodObject<{
+            id: z.ZodOptional<z.ZodString>;
+            path: z.ZodString;
+        }, z.core.$strip>>;
+        cards: z.ZodOptional<z.ZodEnum<{
+            grid: "grid";
+            table: "table";
+        }>>;
+        cardsSelection: z.ZodOptional<z.ZodArray<z.ZodString>>;
+        assets: z.ZodOptional<z.ZodEnum<{
+            grid: "grid";
+            list: "list";
+        }>>;
+        assetsSelection: z.ZodOptional<z.ZodString>;
+    }, z.core.$strip>>;
+}, z.core.$strip>;
+export declare const viewStateInputSchema: z.ZodObject<{
+    patch: z.ZodOptional<z.ZodObject<{
+        query: z.ZodOptional<z.ZodOptional<z.ZodString>>;
+        views: z.ZodOptional<z.ZodObject<{
+            storySelection: z.ZodOptional<z.ZodString>;
+            storyNodeSelection: z.ZodOptional<z.ZodObject<{
+                storyId: z.ZodString;
+                nodeId: z.ZodString;
+            }, z.core.$strip>>;
+            balanceMetricSelection: z.ZodOptional<z.ZodObject<{
+                kind: z.ZodString;
+                metric: z.ZodEnum<{
+                    attack: "attack";
+                    health: "health";
+                }>;
+            }, z.core.$strip>>;
+            battleComparisonSelection: z.ZodOptional<z.ZodNullable<z.ZodObject<{
+                before: z.ZodObject<{
+                    experimentId: z.ZodString;
+                    reportId: z.ZodString;
+                }, z.core.$strip>;
+                after: z.ZodObject<{
+                    experimentId: z.ZodString;
+                    reportId: z.ZodString;
+                }, z.core.$strip>;
+            }, z.core.$strip>>>;
+            knowledge: z.ZodOptional<z.ZodEnum<{
+                reader: "reader";
+                source: "source";
+            }>>;
+            knowledgeSelection: z.ZodOptional<z.ZodObject<{
+                id: z.ZodOptional<z.ZodString>;
+                path: z.ZodString;
+            }, z.core.$strip>>;
+            cards: z.ZodOptional<z.ZodEnum<{
+                grid: "grid";
+                table: "table";
+            }>>;
+            cardsSelection: z.ZodOptional<z.ZodArray<z.ZodString>>;
+            assets: z.ZodOptional<z.ZodEnum<{
+                grid: "grid";
+                list: "list";
+            }>>;
+            assetsSelection: z.ZodOptional<z.ZodString>;
+        }, z.core.$strip>>;
+    }, z.core.$strip>>;
+    bookmark: z.ZodOptional<z.ZodObject<{
+        key: z.ZodString;
+        saved: z.ZodBoolean;
+    }, z.core.$strip>>;
+    filter: z.ZodOptional<z.ZodObject<{
+        name: z.ZodString;
+        kind: z.ZodOptional<z.ZodString>;
+        mimeType: z.ZodOptional<z.ZodString>;
+        format: z.ZodOptional<z.ZodString>;
+        minWidth: z.ZodOptional<z.ZodNumber>;
+        maxWidth: z.ZodOptional<z.ZodNumber>;
+        minDurationMs: z.ZodOptional<z.ZodNumber>;
+        maxDurationMs: z.ZodOptional<z.ZodNumber>;
+        status: z.ZodOptional<z.ZodString>;
+    }, z.core.$strip>>;
+}, z.core.$strip>;
 export declare const note: import("@dsh-workbench/runtime").NoteModel<z.ZodObject<{
     query: z.ZodOptional<z.ZodString>;
     bookmarks: z.ZodOptional<z.ZodArray<z.ZodString>>;

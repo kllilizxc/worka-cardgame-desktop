@@ -10,7 +10,7 @@ var __esm = (fn, res, err) => () => {
   return res;
 };
 
-// ../../../../../worka-authoring-desktop-latest-20261017/node_modules/.bun/zod@4.6.1/node_modules/zod/v4/core/util.js
+// node_modules/zod/v4/core/util.js
 function getEnumValues(entries) {
   const numericValues = Object.values(entries).filter((v) => typeof v === "number");
   const values = Object.entries(entries).filter(([k, _]) => numericValues.indexOf(+k) === -1).map(([_, v]) => v);
@@ -579,7 +579,7 @@ var init_util = __esm(() => {
   };
 });
 
-// ../../../../../worka-authoring-desktop-latest-20261017/node_modules/.bun/zod@4.6.1/node_modules/zod/v4/core/core.js
+// node_modules/zod/v4/core/core.js
 function newError(Definition) {
   const E = _E;
   if (E) {
@@ -701,7 +701,7 @@ var init_core = __esm(() => {
   globalConfig = globalThis.__zod_globalConfig;
 });
 
-// ../../../../../worka-authoring-desktop-latest-20261017/node_modules/.bun/zod@4.6.1/node_modules/zod/v4/core/errors.js
+// node_modules/zod/v4/core/errors.js
 function _getMessage() {
   const internals = this._zod;
   internals.message ?? (internals.message = JSON.stringify(internals.def, jsonStringifyReplacer, 2));
@@ -820,7 +820,7 @@ var init_errors = __esm(() => {
   });
 });
 
-// ../../../../../worka-authoring-desktop-latest-20261017/node_modules/.bun/zod@4.6.1/node_modules/zod/v4/core/parse.js
+// node_modules/zod/v4/core/parse.js
 function finalizeParams(callee, params) {
   return { callee: params?.callee ?? callee, Err: params?.Err };
 }
@@ -959,7 +959,7 @@ var init_parse = __esm(() => {
   COMPILE_FALLBACK = /* @__PURE__ */ Symbol.for("zod.compile.fallback");
 });
 
-// ../../../../../worka-authoring-desktop-latest-20261017/node_modules/.bun/zod@4.6.1/node_modules/zod/v4/core/regexes.js
+// node_modules/zod/v4/core/regexes.js
 function nanoidOfLength(length) {
   return new RegExp(`^[a-zA-Z0-9_-]{${length}}$`);
 }
@@ -1018,7 +1018,7 @@ var init_regexes = __esm(() => {
   uppercase = /^[^a-z]*$/;
 });
 
-// ../../../../../worka-authoring-desktop-latest-20261017/node_modules/.bun/zod@4.6.1/node_modules/zod/v4/core/checks.js
+// node_modules/zod/v4/core/checks.js
 var $ZodCheck, _whenHasLength = (payload) => {
   const val = payload.value;
   return !nullish(val) && val.length !== undefined;
@@ -1339,7 +1339,7 @@ var init_checks = __esm(() => {
   });
 });
 
-// ../../../../../worka-authoring-desktop-latest-20261017/node_modules/.bun/zod@4.6.1/node_modules/zod/v4/core/doc.js
+// node_modules/zod/v4/core/doc.js
 class Doc {
   constructor(args = [], closed = {}) {
     this.content = [];
@@ -1381,7 +1381,7 @@ ${content.join(`
   }
 }
 
-// ../../../../../worka-authoring-desktop-latest-20261017/node_modules/.bun/zod@4.6.1/node_modules/zod/v4/core/versions.js
+// node_modules/zod/v4/core/versions.js
 var version;
 var init_versions = __esm(() => {
   version = {
@@ -1391,7 +1391,7 @@ var init_versions = __esm(() => {
   };
 });
 
-// ../../../../../worka-authoring-desktop-latest-20261017/node_modules/.bun/zod@4.6.1/node_modules/zod/v4/core/schemas.js
+// node_modules/zod/v4/core/schemas.js
 async function validateAsync2(inst, value) {
   const ctx = { async: true };
   return toStandardResult(await inst._zod.run({ value, issues: [] }, ctx), ctx);
@@ -2996,7 +2996,7 @@ var init_schemas = __esm(() => {
   });
 });
 
-// ../../../../../worka-authoring-desktop-latest-20261017/node_modules/.bun/zod@4.6.1/node_modules/zod/v4/core/memoizer.js
+// node_modules/zod/v4/core/memoizer.js
 function isRef(value) {
   return value !== null && (typeof value === "object" || typeof value === "function");
 }
@@ -3268,7 +3268,7 @@ var init_memoizer = __esm(() => {
   };
 });
 
-// ../../../../../worka-authoring-desktop-latest-20261017/node_modules/.bun/zod@4.6.1/node_modules/zod/v4/locales/en.js
+// node_modules/zod/v4/locales/en.js
 function en_default() {
   return {
     localeError: error()
@@ -3393,10 +3393,10 @@ var init_en = __esm(() => {
   init_util();
 });
 
-// ../../../../../worka-authoring-desktop-latest-20261017/node_modules/.bun/zod@4.6.1/node_modules/zod/v4/locales/index.js
+// node_modules/zod/v4/locales/index.js
 var init_locales = () => {};
 
-// ../../../../../worka-authoring-desktop-latest-20261017/node_modules/.bun/zod@4.6.1/node_modules/zod/v4/core/registries.js
+// node_modules/zod/v4/core/registries.js
 class $ZodRegistry {
   constructor() {
     this._map = new WeakMap;
@@ -3446,7 +3446,7 @@ var init_registries = __esm(() => {
   globalRegistry = globalThis.__zod_globalRegistry;
 });
 
-// ../../../../../worka-authoring-desktop-latest-20261017/node_modules/.bun/zod@4.6.1/node_modules/zod/v4/core/compile.js
+// node_modules/zod/v4/core/compile.js
 var INVALID, FALLBACK_FLAG, WHEN_DEFAULTED_CHECKS, PATTERN_IS_COMPLETE;
 var init_compile = __esm(() => {
   INVALID = Symbol.for("zod.compile.invalid");
@@ -3487,7 +3487,7 @@ var init_compile = __esm(() => {
   ]);
 });
 
-// ../../../../../worka-authoring-desktop-latest-20261017/node_modules/.bun/zod@4.6.1/node_modules/zod/v4/core/api.js
+// node_modules/zod/v4/core/api.js
 function _string(Class, params) {
   return new Class({
     type: "string",
@@ -3948,7 +3948,7 @@ var init_api = __esm(() => {
   init_util();
 });
 
-// ../../../../../worka-authoring-desktop-latest-20261017/node_modules/.bun/zod@4.6.1/node_modules/zod/v4/core/to-json-schema.js
+// node_modules/zod/v4/core/to-json-schema.js
 function assignProps(target, ...sources) {
   for (const source of sources) {
     for (const key of Reflect.ownKeys(source)) {
@@ -4475,7 +4475,7 @@ var init_to_json_schema = __esm(() => {
   UNION_KEYS = ["oneOf", "anyOf"];
 });
 
-// ../../../../../worka-authoring-desktop-latest-20261017/node_modules/.bun/zod@4.6.1/node_modules/zod/v4/core/json-schema-processors.js
+// node_modules/zod/v4/core/json-schema-processors.js
 function aggregateChecks(schema) {
   const agg = {};
   const def = schema._zod.def;
@@ -5203,10 +5203,10 @@ var init_json_schema_processors = __esm(() => {
   };
 });
 
-// ../../../../../worka-authoring-desktop-latest-20261017/node_modules/.bun/zod@4.6.1/node_modules/zod/v4/core/json-schema.js
+// node_modules/zod/v4/core/json-schema.js
 var init_json_schema = () => {};
 
-// ../../../../../worka-authoring-desktop-latest-20261017/node_modules/.bun/zod@4.6.1/node_modules/zod/v4/core/index.js
+// node_modules/zod/v4/core/index.js
 var init_core2 = __esm(() => {
   init_util();
   init_regexes();
@@ -5225,12 +5225,12 @@ var init_core2 = __esm(() => {
   init_to_json_schema();
 });
 
-// ../../../../../worka-authoring-desktop-latest-20261017/node_modules/.bun/zod@4.6.1/node_modules/zod/v4/classic/checks.js
+// node_modules/zod/v4/classic/checks.js
 var init_checks2 = __esm(() => {
   init_core2();
 });
 
-// ../../../../../worka-authoring-desktop-latest-20261017/node_modules/.bun/zod@4.6.1/node_modules/zod/v4/classic/errors.js
+// node_modules/zod/v4/classic/errors.js
 function _lazyMethod(proto, key, make) {
   Object.defineProperty(proto, key, {
     configurable: true,
@@ -5280,7 +5280,7 @@ var init_errors2 = __esm(() => {
   });
 });
 
-// ../../../../../worka-authoring-desktop-latest-20261017/node_modules/.bun/zod@4.6.1/node_modules/zod/v4/classic/parse.js
+// node_modules/zod/v4/classic/parse.js
 var parse2, parseAsync, safeParse, safeParseAsync, encode, decode, encodeAsync, decodeAsync, safeEncode, safeDecode, safeEncodeAsync, safeDecodeAsync;
 var init_parse2 = __esm(() => {
   init_core2();
@@ -5300,7 +5300,7 @@ var init_parse2 = __esm(() => {
   safeDecodeAsync = /* @__PURE__ */ _safeDecodeAsync(ZodRealError);
 });
 
-// ../../../../../worka-authoring-desktop-latest-20261017/node_modules/.bun/zod@4.6.1/node_modules/zod/v4/classic/schemas.js
+// node_modules/zod/v4/classic/schemas.js
 function _ensureDefaultLocale() {
   if (!globalConfig.localeError)
     config(en_default());
@@ -6241,19 +6241,19 @@ var init_schemas2 = __esm(() => {
   });
 });
 
-// ../../../../../worka-authoring-desktop-latest-20261017/node_modules/.bun/zod@4.6.1/node_modules/zod/v4/classic/compat.js
+// node_modules/zod/v4/classic/compat.js
 var ZodFirstPartyTypeKind;
 var init_compat = __esm(() => {
   (function(ZodFirstPartyTypeKind) {})(ZodFirstPartyTypeKind || (ZodFirstPartyTypeKind = {}));
 });
 
-// ../../../../../worka-authoring-desktop-latest-20261017/node_modules/.bun/zod@4.6.1/node_modules/zod/v4/classic/iso.js
+// node_modules/zod/v4/classic/iso.js
 var init_iso = () => {};
 
-// ../../../../../worka-authoring-desktop-latest-20261017/node_modules/.bun/zod@4.6.1/node_modules/zod/v4/classic/coerce.js
+// node_modules/zod/v4/classic/coerce.js
 var init_coerce = () => {};
 
-// ../../../../../worka-authoring-desktop-latest-20261017/node_modules/.bun/zod@4.6.1/node_modules/zod/v4/classic/external.js
+// node_modules/zod/v4/classic/external.js
 var init_external = __esm(() => {
   init_core2();
   init_json_schema_processors();
@@ -6267,13 +6267,13 @@ var init_external = __esm(() => {
   init_compat();
 });
 
-// ../../../../../worka-authoring-desktop-latest-20261017/node_modules/.bun/zod@4.6.1/node_modules/zod/index.js
+// node_modules/zod/index.js
 var init_zod = __esm(() => {
   init_external();
   init_external();
 });
 
-// .sdk/runtime/dist/chunk-dtdq3neh.mjs
+// node_modules/@dsh-workbench/runtime/dist/chunk-dtdq3neh.mjs
 function x(o) {
   if (!o || typeof o !== "object")
     return false;
@@ -6537,13 +6537,13 @@ var init_chunk_dtdq3neh = __esm(() => {
   c = object({ id: string2().regex(/^note-file:[a-f0-9]{64}$/) });
 });
 
-// .sdk/runtime/dist/chunk-nn2sykgs.mjs
+// node_modules/@dsh-workbench/runtime/dist/chunk-nn2sykgs.mjs
 var m;
 var init_chunk_nn2sykgs = __esm(() => {
   m = Symbol.for("worka.preview.project");
 });
 
-// .sdk/runtime/dist/chunk-t34a3vey.mjs
+// node_modules/@dsh-workbench/runtime/dist/chunk-t34a3vey.mjs
 function d(t) {
   return Object.freeze({ ...t });
 }
@@ -6565,12 +6565,12 @@ var init_chunk_t34a3vey = __esm(() => {
   init_zod();
 });
 
-// .sdk/runtime/dist/chunk-e7ht0p6a.mjs
+// node_modules/@dsh-workbench/runtime/dist/chunk-e7ht0p6a.mjs
 var init_chunk_e7ht0p6a = __esm(() => {
   init_chunk_t34a3vey();
 });
 
-// .sdk/runtime/dist/index.mjs
+// node_modules/@dsh-workbench/runtime/dist/index.mjs
 var init_dist = __esm(() => {
   init_chunk_dtdq3neh();
   init_chunk_nn2sykgs();
@@ -7348,7 +7348,7 @@ var init_contracts = __esm(() => {
 // actions.ts
 init_dist();
 
-// .sdk/runtime/dist/extension-contracts.mjs
+// node_modules/@dsh-workbench/runtime/dist/extension-contracts.mjs
 init_chunk_t34a3vey();
 init_chunk_e7ht0p6a();
 init_zod();

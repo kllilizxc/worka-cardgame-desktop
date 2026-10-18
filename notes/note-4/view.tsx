@@ -13,7 +13,11 @@ export default function View(){return <ProductionScope><ProductionView/></Produc
 function ProductionView(){
   const api=useProductionNote();
   const { state:data, mode, metadata, config, actions, host:workbench, useQuery, usePagedQuery, projectId, scopeGeneration }=api;
-  const updateData=(patch:Partial<ProductionState>)=>actions.setViewState({patch,expectedRevision:api.stateRevision});
+  const preferenceWrites=useRef<Promise<unknown>>(Promise.resolve());
+  const updateData=(patch:Partial<ProductionState>)=>{
+    const pending=preferenceWrites.current.then(()=>actions.setViewState({patch}));
+    preferenceWrites.current=pending.catch(()=>undefined);return pending;
+  };
   const navigation=useAction();
   const [cardDirty,setCardDirty]=useState(false);
   const [query, setQuery] = useState(data?.query ?? "");
@@ -45,7 +49,10 @@ function ProductionView(){
     if((requirement.dirty||cardDirty)&&!window.confirm('切换制作单会关闭未保存的编辑，确定继续吗？'))return false;
     setSelectedId(id);void navigation.run(()=>saveState({selectedId:id}));return true;
   }
-  async function saveState(patch: Partial<ProductionState>) { await updateData(patch); }
+  async function saveState(patch: Partial<ProductionState>) {
+    try{await updateData(patch);}
+    catch(cause){throw new Error(`界面选择尚未确认保存：${cause instanceof Error?cause.message:String(cause)}`);}
+  }
 
   const created=useRef<string|undefined>(undefined);
   const newRequest=useNoteDraft({key:`create-production:${metadata.id}:${scopeGeneration}`,value:requirementFields(),save:async(value,context)=>{

@@ -36,8 +36,8 @@
     "model.ts",
     "package.json",
     "view.tsx",
-    "worka-prebuilt/view-runtime-y2bxg84f.js",
     "worka-prebuilt/zod-config.mjs",
+    "worka-prebuilt/view-runtime-j5xks2hy.js",
     "worka-prebuilt/entry-bundle.css",
     "worka-prebuilt/view-runtime.mjs",
     "worka-prebuilt/contract/SKILL.md",
@@ -47,11 +47,11 @@
     "worka-prebuilt/contract/references/types/forecast.d.ts",
     "worka-prebuilt/contract/manifest.json",
     "worka-prebuilt/index.html",
+    "worka-prebuilt/entry-sss4dn6t.js",
     "worka-prebuilt/entry-bundle.js",
     "worka-prebuilt/entry-bundle.tailwind.css",
-    "worka-prebuilt/view-40dxtm96.js",
     "worka-prebuilt/actions.mjs",
-    "worka-prebuilt/entry-dvte94fv.js",
+    "worka-prebuilt/view-xsa73zvq.js",
     "worka-prebuilt/manifest.json"
   ]
 }

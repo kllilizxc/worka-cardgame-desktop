@@ -32,6 +32,7 @@ import type {
   LibraryItem,
   LibraryMode,
   LibraryState,
+  ViewStatePatch,
   MediaData,
   RecentChangeItem,
   StatusData,
@@ -83,7 +84,16 @@ function ResourceRegistration() {
 function LibraryView({mode}: {mode: 'compact' | 'expanded'}) {
   const noteApi = useNote<typeof import("./actions")>();
   const {state: data, metadata, focus, focusRequestId} = noteApi;
-  const updateData = useCallback((patch: Partial<LibraryState>) => noteApi.actions.setViewState({patch, expectedRevision: noteApi.stateRevision}), [noteApi.actions, noteApi.stateRevision]);
+  const [preferenceError,setPreferenceError]=useState<Error>();
+  // Keep this surface’s write/receipt order, including after a rejected save.
+  const preferenceWrites=useRef<Promise<unknown>>(Promise.resolve());
+  const savePreferences=useCallback(async(input:Parameters<Actions['setViewState']>[0])=>{
+    const pending=preferenceWrites.current.then(()=>noteApi.actions.setViewState(input));
+    preferenceWrites.current=pending.catch(()=>undefined);
+    try { const saved=await pending;setPreferenceError(undefined);return saved; }
+    catch(cause){setPreferenceError(new Error(`界面选择尚未确认保存：${cause instanceof Error?cause.message:String(cause)}`));throw cause;}
+  },[noteApi.actions]);
+  const updateData=useCallback((patch:ViewStatePatch)=>savePreferences({patch}),[savePreferences]);
   const config = noteApi.config;
   const workbench = noteApi.host;
   const actions = noteApi.actions;
@@ -94,13 +104,10 @@ function LibraryView({mode}: {mode: 'compact' | 'expanded'}) {
   const focusRef = useMemo(() => decodeContentRef(focus), [focus]);
   const status = noteApi.useQuery("status", {}, { enabled: Boolean(projectId) && libraryMode !== "knowledge" && config.presentation !== "story" && config.presentation !== "balance" });
 
-  const saveState = useCallback(async (patch: Partial<LibraryState>) => {
-    try {
-      await updateData(patch);
-    } catch (error) {
-      console.error("保存 CardGame 视图状态失败", error);
-    }
-  }, [updateData]);
+  // Event handlers may fire-and-forget, but a rejected save remains visible above the view.
+  const saveState=useCallback(async(patch:ViewStatePatch)=>{await updateData(patch).catch(()=>undefined);},[updateData]);
+  const saveBookmark=useCallback(async(key:string,saved:boolean)=>{await savePreferences({bookmark:{key,saved}}).catch(()=>undefined);},[savePreferences]);
+  const saveNamedFilter=useCallback(async(filter:AssetFilters)=>{await savePreferences({filter}).catch(()=>undefined);},[savePreferences]);
 
   const openContent = useCallback((ref: Omit<ContentRef, "projectId"> & { projectId?: string }, noteKind?: keyof NonNullable<CardGameConfig["notes"]>) => {
     const targetNote = noteKind ? config?.notes?.[noteKind] || noteApi.metadata.id : noteApi.metadata.id;
@@ -111,30 +118,32 @@ function LibraryView({mode}: {mode: 'compact' | 'expanded'}) {
 
   if (!config?.projectId) return <SetupView mode={mode} metadata={metadata} />;
 
-  if (config.presentation === 'balance') return <BalanceWorkspace selectedMetric={state.views?.balanceMetricSelection}
+  if (config.presentation === 'balance') return <><ErrorState error={preferenceError}/><BalanceWorkspace selectedMetric={state.views?.balanceMetricSelection}
     battleSelection={state.views?.battleComparisonSelection}
-    onSelectBattle={async selection => { await updateData({ views: { ...state.views, battleComparisonSelection: selection } }); }}
-    onSelectMetric={async (kind, metric) => { await updateData({ views: { ...state.views, balanceMetricSelection: { kind, metric } } }); }}
-    />;
+    onSelectBattle={async selection => { await updateData({ views: { battleComparisonSelection: selection } }); }}
+    onSelectMetric={async (kind, metric) => { await updateData({ views: { balanceMetricSelection: { kind, metric } } }); }}
+    /></>;
 
-  if (config.presentation === 'story') return <StoryWorkspace selected={state.views?.storySelection}
+  if (config.presentation === 'story') return <><ErrorState error={preferenceError}/><StoryWorkspace selected={state.views?.storySelection}
     onSource={async source => {
       if (!config.notes?.knowledge) throw Error('尚未关联知识便笺，请配置项目便笺关系');
       await workbench.openNote(config.notes?.knowledge, encodeContentRef({ projectId, kind: 'document', id: source.id, path: source.path, revision: source.revision }));
     }}
     selectedNode={state.views?.storyNodeSelection?.storyId === state.views?.storySelection ? state.views?.storyNodeSelection?.nodeId : undefined}
-    onNodeSelect={async nodeId => { if (state.views?.storySelection) { await updateData({ views: { ...state.views, storyNodeSelection: { storyId: state.views.storySelection, nodeId } } }); if (mode === 'compact') await workbench.openNote(noteApi.metadata.id); } }}
-    onSelect={async id => { await updateData({ views: { ...state.views, storySelection: id } }); if (mode === 'compact') await workbench.openNote(noteApi.metadata.id); }} />;
+    onNodeSelect={async nodeId => { if (state.views?.storySelection) { await updateData({ views: { storyNodeSelection: { storyId: state.views.storySelection, nodeId } } }); if (mode === 'compact') await workbench.openNote(noteApi.metadata.id); } }}
+    onSelect={async id => { await updateData({ views: { storySelection: id } }); if (mode === 'compact') await workbench.openNote(noteApi.metadata.id); }} /></>;
 
   if (libraryMode === "knowledge") {
     return <section className="cg-library reference-reader" data-library-mode="knowledge">
       <style>{STYLES}{READER_STYLES}</style>
-      <KnowledgeView projectId={projectId} state={state} query={query} setState={saveState} openContent={openContent} actions={actions} config={config} focusRef={focusRef} focusRequestId={focusRequestId} />
+      <ErrorState error={preferenceError}/>
+      <KnowledgeView projectId={projectId} state={state} query={query} setState={saveState} saveBookmark={saveBookmark} saveNamedFilter={saveNamedFilter} openContent={openContent} actions={actions} config={config} focusRef={focusRef} focusRequestId={focusRequestId} />
     </section>;
   }
 
   return <section className="cg-library" data-library-mode={libraryMode}>
     <style>{STYLES + CARD_REFINEMENTS}</style>
+    <ErrorState error={preferenceError}/>
     <header className="cg-topbar">
       <div className="cg-brand">
         <span className="cg-brand-icon"><NoteIcon icon={metadata.icon} size={15} /></span>
@@ -149,8 +158,8 @@ function LibraryView({mode}: {mode: 'compact' | 'expanded'}) {
       </div>
     </header>
     {config.assetScope === 'audio' && <AudioGuidance />}
-    {libraryMode === "cards" && <CardsView projectId={projectId} state={state} query={query} setState={saveState} openContent={openContent} actions={actions} focusRef={focusRef} focusRequestId={focusRequestId} />}
-    {libraryMode === "assets" && <AssetsView projectId={projectId} state={state} query={query} setState={saveState} openContent={openContent} actions={actions} focusRef={focusRef} focusRequestId={focusRequestId} />}
+    {libraryMode === "cards" && <CardsView projectId={projectId} state={state} query={query} setState={saveState} saveBookmark={saveBookmark} saveNamedFilter={saveNamedFilter} openContent={openContent} actions={actions} focusRef={focusRef} focusRequestId={focusRequestId} />}
+    {libraryMode === "assets" && <AssetsView projectId={projectId} state={state} query={query} setState={saveState} saveBookmark={saveBookmark} saveNamedFilter={saveNamedFilter} openContent={openContent} actions={actions} focusRef={focusRef} focusRequestId={focusRequestId} />}
   </section>;
 }
 
@@ -245,7 +254,9 @@ interface LibraryViewProps {
   projectId: string;
   state: LibraryState;
   query: string;
-  setState: (patch: Partial<LibraryState>) => Promise<void>;
+  setState: (patch: ViewStatePatch) => Promise<void>;
+  saveBookmark: (key:string,saved:boolean) => Promise<void>;
+  saveNamedFilter: (filter:AssetFilters) => Promise<void>;
   openContent: (ref: Omit<ContentRef, "projectId"> & { projectId?: string }, noteKind?: keyof NonNullable<CardGameConfig["notes"]>) => void;
   actions: Actions;
   config?: CardGameConfig;
@@ -276,7 +287,7 @@ function referenceTargetFromFocus(ref: ContentRef | undefined, projectId: string
 
 type ReaderLocation = { id?: string; path: string; line?: number; anchor?: string; resourcePath?: string; title?: string };
 
-function KnowledgeView({ projectId, state, setState, openContent, config, focusRef, focusRequestId }: LibraryViewProps) {
+function KnowledgeView({ projectId, state, setState, saveBookmark, openContent, config, focusRef, focusRequestId }: LibraryViewProps) {
   const noteApi = useNote<typeof import("./actions")>();
   const [selected, setSelected] = useState<ReaderLocation>();
   const [selectedReference, setSelectedReference] = useState<{ resourcePath: string; path?: string; title: string } | undefined>(() => !focusRef && config?.resources?.[0] ? {resourcePath: config.resources[0].path, title: config.resources[0].title} : undefined);
@@ -314,11 +325,11 @@ function KnowledgeView({ projectId, state, setState, openContent, config, focusR
     setSelected({ id: item.id, path: item.path, line: item.line, anchor: item.anchor });
     setScriptMode(undefined);
     setScriptReloadToken(0);
-    void setState({ views: { ...state.views, knowledgeSelection: { id: item.id, path: item.path } } });
+    void setState({ views: { knowledgeSelection: { id: item.id, path: item.path } } });
     setSelectedReference(undefined);
     setReferenceTarget(undefined);
     setShowRelations("none");
-  }, [selected, selectedReference, setState, state.views]);
+  }, [selected, selectedReference, setState]);
 
   useEffect(() => {
     if (appliedFocus.current?.ref === focusRef && appliedFocus.current?.requestId === focusRequestId) return;
@@ -411,8 +422,8 @@ function KnowledgeView({ projectId, state, setState, openContent, config, focusR
   const bookmarked = Boolean(bookmarkKey && bookmarks.includes(bookmarkKey));
   const toggleBookmark = useCallback(() => {
     if (!bookmarkKey) return;
-    void setState({ bookmarks: bookmarked ? bookmarks.filter(value => value !== bookmarkKey) : [...bookmarks, bookmarkKey].slice(-200) });
-  }, [bookmarkKey, bookmarked, bookmarks, setState]);
+    void saveBookmark(bookmarkKey,!bookmarked);
+  }, [bookmarkKey, bookmarked, saveBookmark]);
 
   const busy = selected ? metaResource.loading || (!readingScript && docResource.loading) : referenceResource.loading;
   const selectedIsScene = selectedMeta?.isScene === true;
@@ -585,10 +596,6 @@ function GraphPanel({ data, loading, depth, onDepthChange, onOpen }: { data?: Gr
   return <div className="cg-relation-panel"><div className="cg-panel-heading"><span>局部关系图</span><span>{nodes.length}{data?.truncated ? "+" : ""} 节点 · {depth} 层</span></div><div className="cg-graph-actions"><Button size="sm" variant={depth === 1 ? "primary" : "tertiary"} onPress={() => onDepthChange(1)}>1 层</Button><Button size="sm" variant={depth === 2 ? "primary" : "tertiary"} onPress={() => onDepthChange(2)}>2 层</Button></div>{loading && <Spinner size="sm" />}{!loading && !nodes.length && <span className="cg-muted">暂无关系</span>}{Boolean(nodes.length) && <svg className="cg-graph-svg" viewBox="0 0 640 244" role="img" aria-label={`包含 ${nodes.length} 个节点和 ${graphEdges.length} 条有向边的局部关系图`}><defs><marker id="cg-graph-arrow" markerWidth="8" markerHeight="8" refX="7" refY="3" orient="auto"><path d="M0,0 L0,6 L7,3 z" fill="var(--wb-accent)" /></marker></defs>{graphEdges.map((edge, index) => <line key={`${edge.source?.node.id}:${edge.target?.node.id}:${index}`} x1={edge.source?.x} y1={edge.source?.y} x2={edge.target?.x} y2={edge.target?.y} markerEnd="url(#cg-graph-arrow)" />)}{positions.map(position => <g key={position.node.id} className="cg-graph-svg-node" role="button" tabIndex={0} aria-label={`打开 ${itemLabel(position.node)}`} onClick={() => onOpen(position.node)} onKeyDown={event => { if (event.key === "Enter" || event.key === " ") { event.preventDefault(); onOpen(position.node); } }}><circle cx={position.x} cy={position.y} r="19" /><text x={position.x} y={position.y + 3} textAnchor="middle">{truncateGraphLabel(itemLabel(position.node))}</text></g>)}</svg>}</div>;
 }
 
-function toggleBookmarkKey(bookmarks: string[], key: string): string[] {
-  return bookmarks.includes(key) ? bookmarks.filter(value => value !== key) : [...bookmarks, key].slice(-200);
-}
-
 
 function sourceLineProps(node: unknown): { "data-source-line"?: number } {
   const position = recordValue(node && typeof node === "object" ? (node as Record<string, unknown>).position : undefined);
@@ -649,7 +656,7 @@ function CardsView({ projectId, state, query, setState, openContent, actions, fo
   const visiblePages = cardListResource.items;
   const appliedFocus = useRef<{ref?: ContentRef; requestId?: number} | undefined>(undefined);
 
-  const selectCard = useCallback((id: string) => {
+  const selectCard = useCallback((id: string, query?:string) => {
     if (selectedId !== id && cardDirty && typeof window !== "undefined" && !window.confirm("当前卡牌 JSON 有未保存草稿，确定切换卡牌吗？")) return false;
     if (selectedId !== id && cardDirty) {
       editor.reset();
@@ -657,8 +664,8 @@ function CardsView({ projectId, state, query, setState, openContent, actions, fo
     }
     const next = [id];
     setSelectedIds(next);
-    void setState({ views: { ...state.views, cardsSelection: next } });
-  }, [cardDirty, selectedId, setState, state.views]);
+    void setState({ ...(query!==undefined?{query}:{}),views:{cardsSelection:next} });
+  }, [cardDirty, selectedId, setState]);
 
 
 
@@ -673,10 +680,8 @@ function CardsView({ projectId, state, query, setState, openContent, actions, fo
     cardListResource.reset();
     setShowDecks(false);
     setDeckCardFocus(undefined);
-    if (focusRef.path) {
-      void setState({ query: focusRef.path });
-    }
-    if (focusRef.id) selectCard(focusRef.id);
+    if (focusRef.id) selectCard(focusRef.id,focusRef.path);
+    else if(focusRef.path)void setState({query:focusRef.path});
   }, [focusRef, focusRequestId, projectId, selectCard, setState]);
 
   const submitSearch = useCallback((value: string) => {
@@ -696,7 +701,7 @@ function CardsView({ projectId, state, query, setState, openContent, actions, fo
   }
 
 
-  const cardViewState = (next: "table" | "grid") => { setView(next); void setState({ views: { ...state.views, cards: next } }); };
+  const cardViewState = (next: "table" | "grid") => { setView(next); void setState({ views: { cards: next } }); };
 
   if (showDecks) return <DeckWorkspace projectId={projectId} onBack={() => setShowDecks(false)} onCard={id => { if (selectCard(id) !== false) { setDeckCardFocus(id); setShowDecks(false); } }} />;
 
@@ -745,7 +750,7 @@ function ComparedCard({ card }: { card: CardItem }) {
   return <div><strong>{card.name || card.title || card.id}</strong>{detail.loading && <Spinner size="sm" />}<ErrorState error={detail.error} />{detail.data && <pre>{JSON.stringify(detail.data.json, null, 2)}</pre>}</div>;
 }
 
-function AssetsView({ projectId, state, query, setState, openContent, actions, focusRef, focusRequestId }: LibraryViewProps) {
+function AssetsView({ projectId, state, query, setState, saveBookmark, saveNamedFilter, openContent, actions, focusRef, focusRequestId }: LibraryViewProps) {
   const noteApi = useNote<typeof import("./actions")>();
   const [view, setView] = useState<"grid" | "list">(state.views?.assets ?? "grid");
   const [selectedId, setSelectedId] = useState<string | undefined>(() => state.views?.assetsSelection);
@@ -774,7 +779,7 @@ function AssetsView({ projectId, state, query, setState, openContent, actions, f
     if (focusRef.context?.changeKind === 'version') {setVersionTarget(focusRef.id); return;}
     setVersionTarget(undefined);
     setSelectedId(focusRef.id);
-    void setState({ views: { ...state.views, assetsSelection: focusRef.id } });
+    void setState({ views: { assetsSelection: focusRef.id } });
     setSelectedVersionId(undefined);
     setPlayingAudioId(undefined);
   }, [focusRef, focusRequestId, projectId, setState, state.views]);
@@ -789,16 +794,16 @@ function AssetsView({ projectId, state, query, setState, openContent, actions, f
     void setState({ query: value });
   }, [setState]);
 
-  const changeView = (next: "grid" | "list") => { setView(next); void setState({ views: { ...state.views, assets: next } }); };
+  const changeView = (next: "grid" | "list") => { setView(next); void setState({ views: { assets: next } }); };
   const applyFilter = (next: AssetFilters) => { setFilter(next); setShowFilter(false); };
-  const saveFilter = (value: AssetFilters) => { const next = [...filters.filter(item => item.name !== value.name), value].slice(-20); void setState({ views: { ...state.views, assetsFilters: next } }); };
-  const selectAsset = (id: string) => { setVersionTarget(undefined); setSelectedId(id); void setState({ views: { ...state.views, assetsSelection: id } }); setSelectedVersionId(undefined); setPlayingAudioId(undefined); };
+  const saveFilter = (value: AssetFilters) => { void saveNamedFilter(value); };
+  const selectAsset = (id: string) => { setVersionTarget(undefined); setSelectedId(id); void setState({ views: { assetsSelection: id } }); setSelectedVersionId(undefined); setPlayingAudioId(undefined); };
   const locateChange = (item: RecentChangeItem) => { if (!item.id) return; if (item.kind === 'version') setVersionTarget(item.id); else if (item.kind === 'asset') selectAsset(item.id); };
   const selected = visibleAssets.find(item => item.id === selectedId);
   const selectedAsset = assetResource.data ?? selected;
   const bookmarkKey = selectedAsset ? encodeContentRef({ projectId, kind: "asset", id: selectedAsset.id, path: selectedAsset.path, revision: selectedAsset.revision }) : "";
   const bookmarked = Boolean(bookmarkKey && (state.bookmarks ?? []).includes(bookmarkKey));
-  const toggleBookmark = () => { if (!bookmarkKey) return; const bookmarks = state.bookmarks ?? []; void setState({ bookmarks: toggleBookmarkKey(bookmarks, bookmarkKey) }); };
+  const toggleBookmark = () => { if(bookmarkKey)void saveBookmark(bookmarkKey,!bookmarked); };
 
   return <div className="cg-workspace cg-assets">
     <RecentChanges projectId={projectId} mode="assets" onLocate={locateChange} />

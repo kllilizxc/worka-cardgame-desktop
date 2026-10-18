@@ -5916,7 +5916,7 @@ function json(params) {
   });
   return jsonSchema;
 }
-// ../../worka-runtime-simplification-evidence-20261018/desktop-e812f18/packed/package/dist/extension-contracts.js
+// ../node_modules/@realiz3r/worka/dist/extension-contracts.js
 function J(t) {
   return Object.freeze({ ...t });
 }

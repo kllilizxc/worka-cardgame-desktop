@@ -87,4 +87,29 @@ if(worka){
    await flush(()=>f.candidate('unregistered-sha'));await flush(()=>button(view.container,'复制候选引用').click());expect(f.copies).toHaveLength(1);expect(view.container.textContent).toContain('候选资源尚未核验');expect(view.container.textContent).not.toContain('候选引用已复制');
   }finally{await view.unmount();}
  });
+ test('production search preferences preserve local order and remain usable after a failed save',async()=>{
+  const f=fixture();let release!:()=>void;
+  const first=new Promise<void>(resolve=>{release=resolve;});
+  const invoke=f.runtime.invokeAction;
+  f.runtime.invokeAction=async(name:string,input:any,options:any)=>{
+   const result=await invoke(name,input,options);
+   if(name==='setViewState'&&input.patch.query==='a')await first;
+   if(name==='setViewState'&&input.patch.query==='ab')throw Error('preference disk unavailable');
+   return result;
+  };
+  const view=await mount(f.render(<View/>));
+  try{
+   const field=view.container.querySelector('.cg-toolbar input') as HTMLInputElement;
+   const enter=async(value:string)=>flush(()=>{Object.getOwnPropertyDescriptor(HTMLInputElement.prototype,'value')!.set!.call(field,value);field.dispatchEvent(new Event('input',{bubbles:true}));});
+   await enter('a');await enter('ab');
+   expect(f.calls.filter((call:any)=>call.name==='setViewState')).toHaveLength(1);
+   await flush(()=>release());
+   expect(f.calls.filter((call:any)=>call.name==='setViewState').map((call:any)=>call.input)).toEqual([{patch:{query:'a'}},{patch:{query:'ab'}}]);
+   expect(field.value).toBe('ab');
+   expect(view.container.querySelector('[role="alert"]')?.textContent).toContain('界面选择尚未确认保存：preference disk unavailable');
+   await enter('abc');
+   expect(f.calls.filter((call:any)=>call.name==='setViewState').at(-1).input).toEqual({patch:{query:'abc'}});
+   expect(view.container.querySelector('[role="alert"]')).toBeNull();
+  }finally{release();await view.unmount();}
+ });
 }else test.skip('production draft integration needs WORKA_SOURCE_ROOT',()=>{});

@@ -18,7 +18,14 @@ async function contractTypes(extensions:Parameters<typeof requestExtension>[0],r
   const noteInput:import('../plugins/cardgame-content/src/contract').ContentQueryInput<'cards'>={projectId:'another'};
   await actions.createCardWorkflow({itemIds:['card'],featureId:'feature',draft:{name:'Title',attack:0}});
   // @ts-expect-error State patches are derived from the declared view state.
-  await actions.setViewState({expectedRevision:'r1',patch:{unregisteredField:true}});
+  await actions.setViewState({patch:{unregisteredField:true}});
+  await actions.setViewState({patch:{views:{cards:'table'}},bookmark:{key:'card',saved:true},filter:{name:'large',minWidth:100}});
+  // @ts-expect-error View preferences do not accept a whole-state UI revision.
+  await actions.setViewState({expectedRevision:'r1',patch:{query:'cards'}});
+  // @ts-expect-error Bookmarks are changed by key, never by replacing an old array.
+  await actions.setViewState({patch:{bookmarks:['card']}});
+  // @ts-expect-error Named filters are changed by name, never by replacing an old array.
+  await actions.setViewState({patch:{views:{assetsFilters:[]}}});
   return {text,wrongSaved,noteInput};
 }
 function moveSource(move:ContentQueryOutput<'movePreview'>) {

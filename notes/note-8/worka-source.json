@@ -1,0 +1,25 @@
+{
+  "generatedBuildLock": {
+    "schemaVersion": 1,
+    "sha256": "2287c0f31cf3a750f1953343dc74e849005589cf0b3efa864ebaa2554513d93d",
+    "inputs": {
+      "dependencies": {
+        "react-aria-components": "1.21.1",
+        "react-markdown": "10.1.0",
+        "remark-gfm": "4.0.1",
+        "mermaid": "12.0.0"
+      },
+      "devDependencies": {},
+      "optionalDependencies": {},
+      "peerDependencies": {},
+      "peerDependenciesMeta": {},
+      "overrides": {},
+      "patchedDependencies": {},
+      "catalog": {},
+      "catalogs": {},
+      "packageExtensions": {},
+      "workspaces": []
+    },
+    "localInputs": {}
+  }
+}

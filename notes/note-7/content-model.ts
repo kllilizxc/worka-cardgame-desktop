@@ -1,5 +1,5 @@
 import type {NoteState,NoteConfig,z} from '@dsh-workbench/runtime';
-import type {note} from './note-model';
+import type {note,viewPatchSchema} from './note-model';
 import type {libraryItemSchema,pageSchema,documentItemSchema,documentSchema,documentMetaSchema,directorySchema,backlinkSchema,graphSchema,movePreviewSchema,cardItemSchema,cardSchema,assetSchema,assetVersionSchema,mediaSchema,statusSchema,recentChangeSchema,referenceResourceSchema,contentQueries} from './contract';
 /** The three domain views share one template and differ only by instance config. */
 export type LibraryMode = "knowledge" | "cards" | "assets";
@@ -20,6 +20,7 @@ export type ReferenceResource=z.output<typeof referenceResourceSchema>;
 
 /** Persistent view state. It deliberately contains no document, card, or media payload. */
 export type LibraryState=NoteState<typeof note>;
+export type ViewStatePatch=z.input<typeof viewPatchSchema>;
 
 export type AssetFilters=NonNullable<NonNullable<LibraryState['views']>['assetsFilters']>[number];
 

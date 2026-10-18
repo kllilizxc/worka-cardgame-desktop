@@ -98,9 +98,10 @@ if (worka) {
 
   const {RuntimeProvider, NoteViewContext} = await import('@dsh-workbench/react/internal');
   const {default: View} = await import('../notes/note-1/view');
+  const {setViewState}=await import('../notes/note-1/actions');
   const {encodeContentRef} = await import('../notes/note-1/content-model');
   function fixture(mode: 'cards' | 'assets' | 'knowledge', initialId?: string, pageSize = 100, configPatch: Record<string,unknown> = {}) {
-    let version = 0, contentRevision = 1, state: any = {}, displayMode: 'compact' | 'expanded' = 'expanded', focusRequestId = 1, tick = () => {};
+    let version = 0, stateRevision=1, saveFailure:Error|undefined, saveGate:Promise<void>|undefined, contentRevision = 1, state: any = {}, displayMode: 'compact' | 'expanded' = 'expanded', focusRequestId = 1, tick = () => {};
     let focus = initialId ? locator(initialId) : undefined;
     const subscriptions = new Set<any>(), calls: any[] = [], reads: any[] = [];
     let changes: any[] = [];
@@ -129,10 +130,20 @@ if (worka) {
     }
     const snapshot = (request: any) => {const data = result(request.name, request.input); return {key: request.name, epoch: 'fixture', version: ++version, ...(request.name === 'card' && !data ? {error: '卡牌已删除', errorCode: 'NOT_FOUND'} : {data: structuredClone(data)}), stale: false};};
     const publish = () => {for (const sub of subscriptions) sub.listener(snapshot(sub.request));};
+    // Exercise the actual preference action and CAS contract, not a second UI patch implementation.
+    const raw:any={note:{id:'library',version:'fixture',stateRef:'view-state'},caller:{kind:'user'},db:{},files:{},notes:{},resources:{},events:{},store:{
+      read:async(ref:string)=>({value:structuredClone(ref==='library:config'?config:state),revision:String(stateRevision)}),
+      update:async(_ref:string,request:any)=>{
+        if(saveGate){const gate=saveGate;saveGate=undefined;await gate;}
+        if(saveFailure){const error=saveFailure;saveFailure=undefined;throw error;}
+        if(request.baseRevision!==String(stateRevision))throw Object.assign(Error('State revision conflict'),{code:'revision-conflict'});
+        state=structuredClone(request.ops[0].value);stateRevision++;tick();return {value:structuredClone(state),revision:String(stateRevision)};
+      },
+    }};
     const runtime: any = {note: {id: 'library', stateRef: 'view-state'}, resources: {subscribe: async (request: any, listener: any) => {reads.push(request); const sub = {request, listener}; subscriptions.add(sub); listener(snapshot(request)); return () => subscriptions.delete(sub);}, revalidate: async (request: any) => snapshot(request)}, resolvePreviewUrl: (url: string) => url,
-      invokeAction: async (name: string, input: any) => {calls.push({name, input}); if (name === 'setViewState') {state = {...state, ...input.patch}; tick(); return {revision: String(version)};} return {};}, openNote: async (id: string, ref?: string) => {calls.push({openNote: id, ref});}};
-    function Frame() {const [, update] = useState(0); tick = () => update(value => value + 1); return <RuntimeProvider runtime={runtime}><NoteViewContext.Provider value={{metadata: {id: 'library', name: 'Library'}, mode: displayMode, focus, focusRequestId, layout: {width: 900, maxHeight: 700}, snapshot: {value: state, revision: String(version)}}}><View /></NoteViewContext.Provider></RuntimeProvider>;}
-    return {element: <Frame />, cards, calls, reads, setChanges(items: any[]) {changes = items; publish();}, openVersion(id: string) {focus = encodeContentRef({projectId: 'p', kind: 'asset', id, context: {changeKind: 'version'}}); focusRequestId++; tick();}, state: () => state, open(id: string) {focus = locator(id); focusRequestId++; tick();}, show(mode: 'compact' | 'expanded') {displayMode = mode; tick();}, subscriptions, update(id: string, patch: any) {Object.assign(cards.find(card => card.id === id)!, patch); contentRevision++; publish();}, delete(id: string) {const index = cards.findIndex(card => card.id === id); cards.splice(index, 1); contentRevision++; publish();}};
+      invokeAction: async (name: string, input: any) => {calls.push({name, input}); if(name==='setViewState')return setViewState(raw,input); return {};}, openNote: async (id: string, ref?: string) => {calls.push({openNote: id, ref});}};
+    function Frame() {const [, update] = useState(0); tick = () => update(value => value + 1); return <RuntimeProvider runtime={runtime}><NoteViewContext.Provider value={{metadata: {id: 'library', name: 'Library'}, mode: displayMode, focus, focusRequestId, layout: {width: 900, maxHeight: 700}, snapshot: {value: state, revision: String(stateRevision)}}}><View /></NoteViewContext.Provider></RuntimeProvider>;}
+    return {element: <Frame />, cards, calls, reads, rejectNextSave(message:string){saveFailure=Error(message);}, delayNextSave(){let release!:()=>void;saveGate=new Promise<void>(resolve=>{release=resolve;});return release;}, openRef(ref:Parameters<typeof encodeContentRef>[0]){focus=encodeContentRef(ref);focusRequestId++;tick();}, setChanges(items: any[]) {changes = items; publish();}, openVersion(id: string) {focus = encodeContentRef({projectId: 'p', kind: 'asset', id, context: {changeKind: 'version'}}); focusRequestId++; tick();}, state: () => state, open(id: string) {focus = locator(id); focusRequestId++; tick();}, show(mode: 'compact' | 'expanded') {displayMode = mode; tick();}, subscriptions, update(id: string, patch: any) {Object.assign(cards.find(card => card.id === id)!, patch); contentRevision++; publish();}, delete(id: string) {const index = cards.findIndex(card => card.id === id); cards.splice(index, 1); contentRevision++; publish();}};
   }
   async function mountLibrary(element: import('react').ReactNode, mode: 'compact' | 'expanded' = 'expanded') {
     const view=await mount(element);
@@ -140,6 +151,42 @@ if (worka) {
     await flush(()=>mode==='expanded'?import('../notes/note-1/view-expanded'):import('../notes/note-1/view-compact'));
     return view;
   }
+  test('one card focus saves its path and selection together through the real action',async()=>{
+    const f=fixture('cards'),view=await mountLibrary(f.element);
+    try{
+      await flush(()=>f.openRef({projectId:'p',kind:'card',id:'card-0',path:'data/units.json'}));
+      const saves=f.calls.filter(call=>call.name==='setViewState');
+      expect(saves).toHaveLength(1);
+      expect(saves[0].input).toEqual({patch:{query:'data/units.json',views:{cardsSelection:['card-0']}}});
+      expect(f.state()).toMatchObject({query:'data/units.json',views:{cardsSelection:['card-0']}});
+      expect(view.container.textContent).toContain('Card 0');
+      expect(view.container.querySelector('[role="alert"]')).toBeNull();
+    }finally{await view.unmount();}
+  });
+  test('newer choices queue behind an in-flight save and finish with the latest local intent',async()=>{
+    const f=fixture('cards'),view=await mountLibrary(f.element);
+    const release=f.delayNextSave();
+    try{
+      await flush(()=>button(view.container,'表格').click());
+      await flush(()=>button(view.container,'网格').click());
+      expect(f.calls.filter(call=>call.name==='setViewState')).toHaveLength(1);
+      await flush(()=>release());
+      expect(f.calls.filter(call=>call.name==='setViewState').map(call=>call.input.patch.views.cards)).toEqual(['table','grid']);
+      expect(f.state().views.cards).toBe('grid');
+    }finally{release();await view.unmount();}
+  });
+  test('a rejected preference save stays visible instead of disappearing into console',async()=>{
+    const f=fixture('cards'),view=await mountLibrary(f.element);
+    try{
+      f.rejectNextSave('preference disk unavailable');
+      await flush(()=>button(view.container,'表格').click());
+      expect(view.container.querySelector('[role="alert"]')?.textContent).toContain('preference disk unavailable');
+      expect(f.state().views?.cards).toBeUndefined();
+      await flush(()=>button(view.container,'网格').click());
+      expect(f.state().views.cards).toBe('grid');
+      expect(view.container.querySelector('[role="alert"]')).toBeNull();
+    }finally{await view.unmount();}
+  });
   test('card compare selection uses GridList and refuses a fourth card without dropping existing choices', async () => {
     const f = fixture('cards'), view = await mountLibrary(f.element);
     try {
