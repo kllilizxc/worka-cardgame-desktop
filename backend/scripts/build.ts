@@ -5,7 +5,7 @@ import { materializeContentNotes } from './materialize-content-notes';
 
 const root = resolve(import.meta.dir, '..');
 const content = await materializeContentNotes(resolve(root, '..'));
-console.log(`Prepared ${content.files.length} shared content sources for ${content.notes} notes`);
+console.log(`Prepared ${content.files.length} shared content sources for ${content.notes} content notes and ${content.contractNotes} contract-only notes`);
 for(const change of content.dependencyChanges)console.log(`Aligned ${change.note} ${change.field}.${change.name}: ${JSON.stringify(change.from)} -> ${JSON.stringify(change.to)}`);
 await mkdir(resolve(root, 'dist'), { recursive: true });
 const result = await Bun.build({

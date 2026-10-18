@@ -1,4 +1,4 @@
-import { defineNote, z } from '@dsh-workbench/runtime';
+import { defineNote, z, type NoteCollectionQueries } from '@dsh-workbench/runtime';
 import { candidateInputSchema, candidateSchema, dataSchema, feedbackSchema } from './schemas';
 import { candidateSnapshot, rowState } from './projection';
 export { validateCandidateIdentity, previewRows, rowState } from './projection';
@@ -32,7 +32,7 @@ export const note = defineNote({
     compatibleFrom: ['legacy', 'candidate-preview@1'],
     checks: [{
       name: '关键能力与稳定身份',
-      async run(ctx) {
+      async run(ctx):Promise<boolean> {
         const state = await ctx.state.read();
         for (const candidate of state.value.candidates) {
           if (candidateSnapshot(state, candidate.key)?.candidate.key !== candidate.key) return false;
@@ -49,3 +49,13 @@ export const note = defineNote({
     }],
   },
 });
+
+// Presentation uses the SDK's lazy summary shapes; persisted state stays complete.
+type CollectionQueries=NoteCollectionQueries<typeof note>;
+export type CandidateSummary=Awaited<ReturnType<CollectionQueries['candidates.page']>>['items'][number];
+export type FeedbackSummary=Awaited<ReturnType<CollectionQueries['outbox.page']>>['items'][number];
+export type CandidateDisplay=CandidateSpec|CandidateSummary;
+export type SurfaceDisplay=NonNullable<CandidateDisplay['status']>[string];
+export type DisplayData=Pick<Data,'title'|'attached'|'feedbackError'>&{
+  candidates:CandidateDisplay[];archivedCandidates?:CandidateDisplay[];outbox?:Array<Feedback|FeedbackSummary>;
+};

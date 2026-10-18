@@ -78,11 +78,11 @@ export const queries={
   productionContext:note.query({description:'读取制作单关联的功能、待办与配套来源。',input:queryInputs.productionContext,output:queryOutputs.productionContext},async(ctx,input)=>{
     const [detail,choices]=await Promise.all([readOp('production',input,ctx,queryOutputs.production),featureChoices(ctx)]);
     const p=detail.production;
-    const [todo,source]=await Promise.all([p.todoId?readOp('todo',{...input,id:p.todoId},ctx,z.object({item:queryOutputs.companionChoices.shape.todos.element})):undefined,isCardBatch(p.batch)&&p.batch.companion?readOp('card',{...input,id:p.batch.companion.cardId},ctx,queryOutputs.sourceCard):undefined]);
+    const [todo,source]=await Promise.all([p.todoId?readOp('todo',{...input,id:p.todoId,view:'summary'},ctx,z.object({item:queryOutputs.companionChoices.shape.todos.element})):undefined,isCardBatch(p.batch)&&p.batch.companion?readOp('card',{...input,id:p.batch.companion.cardId},ctx,queryOutputs.sourceCard):undefined]);
     return {feature:choices.items.find(item=>item.id===p.featureId),todo:todo?.item,source};
   }),
   companionChoices:note.query({description:'读取可关联的功能、单位和未绑定待办。',input:queryInputs.companionChoices,output:queryOutputs.companionChoices},async(ctx,input)=>{
-    const [features,units,todos]=await Promise.all([featureChoices(ctx),readOp('cards',{...input,kind:'unit',limit:200},ctx,z.object({items:queryOutputs.companionChoices.shape.units})),readOp('todos',{...input,limit:200},ctx,z.object({items:queryOutputs.companionChoices.shape.todos}))]);
+    const [features,units,todos]=await Promise.all([featureChoices(ctx),readOp('cards',{...input,kind:'unit',limit:200},ctx,z.object({items:queryOutputs.companionChoices.shape.units})),readOp('todos',{...input,limit:100},ctx,z.object({items:queryOutputs.companionChoices.shape.todos}))]);
     return {features:features.items,units:units.items.filter(item=>item.kind==='unit'),todos:todos.items.filter(item=>!item.productionId&&item.status!=='done')};
   }),
   featureChoices:note.query({description:'读取当前桌面的可选功能项。',input:queryInputs.featureChoices,output:queryOutputs.featureChoices},ctx=>featureChoices(ctx)),

@@ -1,4 +1,4 @@
-import { z } from '@dsh-workbench/runtime';
+import { z, type NoteCollectionQueries } from '@dsh-workbench/runtime';
 import { candidateInputSchema, candidateSchema, dataSchema, feedbackSchema } from './schemas';
 export { validateCandidateIdentity, previewRows, rowState } from './projection';
 export type { PreviewRow } from './projection';
@@ -271,3 +271,13 @@ export declare const note: import("@dsh-workbench/runtime").NoteModel<z.ZodObjec
         readonly lazy: readonly ["diagnostics"];
     };
 }>;
+type CollectionQueries = NoteCollectionQueries<typeof note>;
+export type CandidateSummary = Awaited<ReturnType<CollectionQueries['candidates.page']>>['items'][number];
+export type FeedbackSummary = Awaited<ReturnType<CollectionQueries['outbox.page']>>['items'][number];
+export type CandidateDisplay = CandidateSpec | CandidateSummary;
+export type SurfaceDisplay = NonNullable<CandidateDisplay['status']>[string];
+export type DisplayData = Pick<Data, 'title' | 'attached' | 'feedbackError'> & {
+    candidates: CandidateDisplay[];
+    archivedCandidates?: CandidateDisplay[];
+    outbox?: Array<Feedback | FeedbackSummary>;
+};

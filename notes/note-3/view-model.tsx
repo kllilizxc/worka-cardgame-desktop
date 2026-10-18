@@ -1,15 +1,14 @@
-import {useViewProps} from './surface';
-import {NoteGuidance,withNotePrerequisites,NoteIcon} from '@dsh-workbench/react';
+import {NoteIcon,composeQueries,QueryState} from '@dsh-workbench/react';
 import {useNote} from '@dsh-workbench/react';
 import {Button} from '@heroui/react';
 import {previewRows as hostRows,rowState} from './projection';
-import type {SurfaceStatus} from './model';
+import type {SurfaceDisplay} from './model';
 type PreviewTask={id:string;label:string;surfaces:string[];status:'pending'|'running'|'completed'|'failed'|'unknown'|'skipped';error?:string};
 import type {PreviewProgress} from '@dsh-workbench/runtime';
-import {Component,lazy,Suspense,useEffect,useRef,useState,type ReactNode} from 'react';
+import {useEffect,useRef,useState} from 'react';
 import {useBackgroundHold} from '@dsh-workbench/react';
 
-import type {CandidateSpec,Data} from './actions';
+import type {CandidateDisplay,DisplayData} from './model';
 
 export const STATUS:Record<string,string>={repairing:'自动修复中',waiting:'需要你处理',stopFailed:'停止失败',checking:'检查中',unchecked:'已启动，未核验',verificationFailed:'检查失败',unverified:'版本待核验',blocked:'依赖阻塞',stale:'版本待更新',declared:'待启动',ready:'可预览',starting:'启动中',stopped:'已停止',stopping:'停止中',failed:'启动失败',unknown:'需要核对',disconnected:'待启动'};
 export const TONE:Record<string,string>={repairing:'var(--wb-accent)',waiting:'var(--wb-warning)',checking:'var(--wb-accent)',unchecked:'var(--wb-warning)',verificationFailed:'var(--wb-danger)',unverified:'var(--wb-warning)',blocked:'var(--wb-danger)',stale:'var(--wb-warning)',declared:'var(--wb-warning)',ready:'var(--wb-success)',starting:'var(--wb-accent)',stopped:'var(--wb-muted-light)',stopping:'var(--wb-muted-light)',failed:'var(--wb-danger)',unknown:'var(--wb-warning)',disconnected:'var(--wb-muted-light)'};
@@ -25,7 +24,7 @@ export const DEVICES=[
 type DeviceKey=typeof DEVICES[number]['key'];
 
 type PendingOperation={status:string;startedAt:number;operationId?:string};
-type Row={operationId?:string;activeOperation?:boolean;tasks?:PreviewTask[];diagnostics?:{stage?:string;log?:string};logPath?:string;startedAt?:number;progress?:PreviewProgress;feedback?:{state:string;summary?:string;checkedAt?:number};surface?:string;spec:CandidateSpec;owner:CandidateSpec;name:string;group:string;groupName:string;status:string;url:string;error?:string;live:boolean;host?:SurfaceStatus};
+type Row={operationId?:string;activeOperation?:boolean;tasks?:PreviewTask[];diagnostics?:{stage?:string;log?:string};logPath?:string;startedAt?:number;progress?:PreviewProgress;feedback?:{state:string;summary?:string;checkedAt?:number};surface?:string;spec:CandidateDisplay;owner:CandidateDisplay;name:string;group:string;groupName:string;status:string;url:string;error?:string;live:boolean;host?:SurfaceDisplay};
 
 /** A deep link must never silently fall back to another candidate/version. */
 export function selectPreviewRow(rows: Row[], activeKey?: string, focus?: string | null): Row | undefined {
@@ -46,13 +45,13 @@ export function previewWantsVersions(focus?: string | null): boolean {
   catch { return false; }
 }
 
-function surfaceName(name:string, candidate:CandidateSpec):string{
+function surfaceName(name:string, candidate:CandidateDisplay):string{
   const commit=candidate.repos?.game?.commit;
   return commit&&/^[0-9a-f]{40}$/i.test(commit)?`${name} · ${commit.slice(0,8)}`:name;
 }
 
 /** Rows render the host's status as-is; the view never infers process state. */
-export function previewRows(data:Data,pending:Record<string,PendingOperation>={}):Row[]{
+export function previewRows(data:DisplayData,pending:Record<string,PendingOperation>={}):Row[]{
   return hostRows(data).map(row=>{
     const host=row.status;const owner=row.candidate;
     const local=pending[owner.key];
@@ -179,35 +178,31 @@ export function failureMessage(row:Row,error:string){
   return {title:row.status==='waiting'?'需要你处理后才能启动':row.status==='repairing'?'正在自动修复':'预览暂时无法启动',description:note||'具体原因见下方；可重新启动当前端。',reason:detail};
 }
 
-export function usePreviewModel({data:storedData,mode,layout,metadata,focus:requestedFocus}:ReturnType<typeof useViewProps<Data>>){
+export function usePreviewModel(){
   const note=useNote<typeof import('./actions')>();
-  const {config,useQuery,actions,host:workbench}=note;
+  const {config,useQuery,usePagedQuery,actions,host:workbench,mode,layout,metadata,focus:requestedFocus,focusRequestId}=note;
   const runtime={note:{id:note.metadata.id},resolvePreviewUrl:workbench.resolvePreviewUrl};
-  const [cursors,setCursors]=useState<Array<string|undefined>>([undefined]);
   const [showArchive,setShowArchive]=useState(false);
-  const [archiveCursors,setArchiveCursors]=useState<Array<string|undefined>>([undefined]);
-  const root=useQuery<any>('state.summary');
-  const page=useQuery<any>('candidates.page',{cursor:cursors.at(-1),limit:30,maxBytes:256*1024});
-  const archivePage=useQuery<any>('archivedCandidates.page',{cursor:archiveCursors.at(-1),limit:20,maxBytes:256*1024},{enabled:mode==='expanded'&&showArchive});
-  const outbox=useQuery<any>('outbox.page',{limit:20,maxBytes:128*1024},{enabled:mode==='expanded'});
+  const root=useQuery('state.summary',{});
+  const page=usePagedQuery('candidates.page',{limit:30,maxBytes:256*1024});
+  const archivePage=usePagedQuery('archivedCandidates.page',{limit:20,maxBytes:256*1024},{enabled:mode==='expanded'&&showArchive});
+  const outbox=useQuery('outbox.page',{limit:20,maxBytes:128*1024},{enabled:mode==='expanded'});
   const focus=requestedFocus ?? (typeof window==='undefined'?null:new URLSearchParams(window.location.search).get('focus'));
   let focusKey='';
   try{if(focus?.startsWith('cg:')){const ref=JSON.parse(decodeURIComponent(focus.slice(3)));if(ref.kind==='preview')focusKey=ref.id;}
       else if(focus?.startsWith('preview:'))focusKey=JSON.parse(decodeURIComponent(focus.slice(8)))[0];
       else focusKey=focus??'';}catch{}
   const [externalKey,setExternalKey]=useState('');
-  const lookupKey=externalKey||focusKey;
-  const exact=useQuery<any>('candidates.detail',{key:lookupKey},{enabled:mode==='expanded'&&Boolean(lookupKey)&&!page.data?.items?.some((x:any)=>x.key===lookupKey)});
+  const defaultCandidate=!focus?(config.projectId?page.items.find(candidate=>candidate.options?.formalPreview===true):undefined)??page.items[0]:undefined;
+  const lookupKey=externalKey||focusKey||defaultCandidate?.key||'';
+  const exact=useQuery('candidates.detail',{key:lookupKey},{enabled:mode==='expanded'&&Boolean(lookupKey)});
   const fallbackKey=lookupKey.includes(':')?lookupKey.slice(0,lookupKey.lastIndexOf(':')):'';
-  const fallback=useQuery<any>('candidates.detail',{key:fallbackKey},{enabled:mode==='expanded'&&Boolean(fallbackKey)&&exact.data===null});
-  const extra=exact.data??fallback.data;
-  const data:Data={...root.data,title:root.data?.title??metadata.name,candidates:[...(page.data?.items??[]),...(extra&&!page.data?.items?.some((x:any)=>x.key===extra.key)?[extra]:[])],archivedCandidates:archivePage.data?.items,outbox:outbox.data?.items};
-  const resource={loading:root.loading||page.loading||exact.loading||fallback.loading,error:root.error??page.error??exact.error??fallback.error};
-  const nextPage=()=>{if(page.data?.next)setCursors(value=>[...value,page.data.next]);};
-  const previousPage=()=>setCursors(value=>value.length>1?value.slice(0,-1):value);
-  const resetPage=()=>{setCursors([undefined]);void page.refresh();};
-  const nextArchive=()=>{if(archivePage.data?.next)setArchiveCursors(value=>[...value,archivePage.data.next]);};
-  const previousArchive=()=>setArchiveCursors(value=>value.length>1?value.slice(0,-1):value);
+  const fallback=useQuery('candidates.detail',{key:fallbackKey},{enabled:mode==='expanded'&&Boolean(fallbackKey)&&exact.data===null});
+  const extra=exact.data??(exact.data===null?fallback.data:undefined);
+  const data:DisplayData={...root.data,title:root.data?.title??metadata.name,attached:root.data?.attached??[],candidates:[...(page.data?.items??[]),...(extra&&!page.data?.items?.some(x=>x.key===extra.key)?[extra]:[])],archivedCandidates:archivePage.data?.items,outbox:outbox.data?.items};
+  const resource=composeQueries({candidates:page,...(mode==='expanded'&&lookupKey?{focus:exact}:{}),...(mode==='expanded'&&fallbackKey&&exact.data===null?{fallback}:{})},{summary:root,...(mode==='expanded'&&showArchive?{archive:archivePage}:{}),...(mode==='expanded'?{outbox}:{})});
+  const nextPage=page.next, previousPage=page.previous, resetPage=page.reset;
+  const nextArchive=archivePage.next, previousArchive=archivePage.previous;
 
 
   const stage=useRef<HTMLDivElement>(null);
@@ -233,7 +228,9 @@ export function usePreviewModel({data:storedData,mode,layout,metadata,focus:requ
   useEffect(()=>{const change=()=>setFullscreen(document.fullscreenElement===stage.current);document.addEventListener('fullscreenchange',change);return()=>document.removeEventListener('fullscreenchange',change);},[]);
   const [error,setError]=useState('');
   const [activeKey,updateActiveKey]=useState<string|undefined>(undefined);
-  const setActiveKey=(key:string|undefined)=>{updateActiveKey(key);if(key&&!previewRows(data).some(row=>row.spec.key===key))setExternalKey(key);};
+  const setActiveKey=(key:string|undefined)=>{updateActiveKey(key);setExternalKey(rows.find(row=>row.spec.key===key)?.owner.key??key??'');};
+  // A new navigation request takes precedence over the local version selection.
+  useEffect(()=>{updateActiveKey(undefined);setExternalKey('');},[focus,focusRequestId]);
   // Keep only previews opened in this document; durable history must not boot hidden apps.
   const [loaded,setLoaded]=useState<string[]>([]);
   const [reload,setReload]=useState<Record<string,number>>({});
@@ -243,14 +240,16 @@ export function usePreviewModel({data:storedData,mode,layout,metadata,focus:requ
   const archived=(data.archivedCandidates??[]).filter(spec=>!(data.candidates??[]).some(active=>active.key===spec.key));
   const rows=previewRows(data,operations);
   const preferredKey=activeKey??(!focus&&config?.projectId?rows.find(row=>row.owner.options?.formalPreview===true)?.spec.key:undefined);
-  const current=selectPreviewRow(rows,preferredKey,focus);
-  const focusError=focus&&!previewWantsVersions(focus)&&!activeKey&&!current&&!resource.loading?'所选试玩版本不存在或已归档，请在列表中重新选择。':'';
+  // A playing candidate has its own bounded query owner; paging only navigates the list.
+  const playerRows=mode==='expanded'?extra?previewRows({...data,candidates:[extra]},operations):[]:rows;
+  const current=selectPreviewRow(playerRows,preferredKey,focus);
+  const focusError=(focus||activeKey)&&!previewWantsVersions(focus)&&!current&&!resource.loading&&!resource.error?'所选试玩版本不存在或已归档，请在列表中重新选择。':'';
   const currentIsCandidate=Boolean(current&&(data.candidates??[]).some(spec=>spec.key===current.owner.key));
   const [resolvedUrls,setResolvedUrls]=useState<Record<string,string>>({});
   const [accessErrors,setAccessErrors]=useState<Record<string,string>>({});
   const accessKey=(row:Row)=>JSON.stringify([urls[row.spec.key]??row.url,row.host?.pass,reload[row.spec.key]??0]);
   // Both presentations use the same live documents, including previously opened versions.
-  const frames=mode==='expanded'?rows.filter(row=>canViewPreview(row.status)&&row.spec.key===current?.spec.key):[];
+  const frames=mode==='expanded'&&current&&canViewPreview(current.status)?[current]:[];
   const requestedUrls=JSON.stringify(frames.map(row=>({url:urls[row.spec.key]??row.url,key:accessKey(row)})));
   useEffect(()=>{
     let cancelled=false;
@@ -267,7 +266,8 @@ export function usePreviewModel({data:storedData,mode,layout,metadata,focus:requ
   const accessError=accessErrors[selectedAccess];
   // The compact project player and expanded player own the same live document.
   const openedKey=mode==='expanded'&&currentUrl?current?.spec.key:undefined;
-  useEffect(()=>{if(openedKey)setLoaded(keys=>[openedKey]);},[openedKey]);
+  // Default playback pins its identity across pages; a focused revision stays authoritative.
+  useEffect(()=>{if(openedKey){setLoaded([openedKey]);if(!focus)setActiveKey(openedKey);}},[openedKey,focus]);
   const activeDevice=DEVICES.find(item=>item.key===device)??DEVICES[0];
   const cycleDevice=()=>setDevice(currentDevice=>DEVICES[(DEVICES.findIndex(item=>item.key===currentDevice)+1)%DEVICES.length].key);
   const addressSource=useRef<{key?:string;url:string}>({url:''});
@@ -307,7 +307,7 @@ export function usePreviewModel({data:storedData,mode,layout,metadata,focus:requ
   };
   const frameToken=(row:Row)=>`${urls[row.spec.key]??row.url}:${reload[row.spec.key]??0}`;
 
-  const label=(spec:CandidateSpec)=>spec.title||spec.key;
+  const label=(spec:CandidateDisplay)=>spec.title||spec.key;
   const attach=(key:string)=>{setActiveKey(key);setLoaded([key]);void actions.attach({key}).catch(e=>setError(String(e)));};
   const reloadFrame=(key:string)=>setReload(state=>({...state,[key]:(state[key]??0)+1}));
   /** Not-ready play starts the process and remembers the frame, so it appears once ready. */
@@ -320,7 +320,7 @@ export function usePreviewModel({data:storedData,mode,layout,metadata,focus:requ
       return result;
     });
   };
-  const openDelegation=(spec:CandidateSpec)=>{if(spec.originNoteId&&spec.delegationId)void workbench.openNote(spec.originNoteId,spec.delegationId).catch(e=>setError(String(e)));};
+  const openDelegation=(spec:CandidateDisplay)=>{if(spec.originNoteId&&spec.delegationId)void workbench.openNote(spec.originNoteId,spec.delegationId).catch(e=>setError(String(e)));};
   const draftTodo=()=>{
     if(!config?.feedbackInTodo||!config.notes?.todo)return;
     const context=current?{ref:{projectId:config.projectId,kind:'preview',id:current.owner.key,revision:current.owner.repos?.[current.surface || 'game']?.commit || current.owner.repos?.game?.commit || current.owner.revision,...(current.surface?{surface:current.surface}:{})}}:undefined;
@@ -332,35 +332,14 @@ export function usePreviewModel({data:storedData,mode,layout,metadata,focus:requ
   const backgroundKey=current&&attachedHere?`preview:${current.spec.key}`:'';
   useBackgroundHold({key:backgroundKey,reason:'候选预览正在播放',until:['preview-stopped','user-release'],maxIdleMs:60*60*1000},mode==='expanded'&&Boolean(backgroundKey));
 
-  return {refresh:()=>Promise.all([root.refresh(),page.refresh(),outbox.refresh()]),page,cursors,nextPage,previousPage,resetPage,archivePage,archiveCursors,nextArchive,previousArchive,queryError:resource.error,queryLoading:resource.loading,previewTarget:(row:Row)=>urls[row.spec.key]??row.url,closePreview:()=>setLoaded([]),config,runtime,data,actions,workbench,stage,operations,collapsed,setCollapsed,menu,setMenu,showAddress,setShowAddress,showArchive,setShowArchive,setUrls,draft,setDraft,frameReady,setFrameReady,fullscreen,device,error:error||focusError,setError,setActiveKey,loaded,reload,confirmForget,setConfirmForget,run,archived,rows,current,currentIsCandidate,resolvedUrls,accessKey,currentUrl,accessError,activeDevice,cycleDevice,groups,availableFeatures,operate,effectiveStatus,repairButton,frameToken,label,attach,reloadFrame,startAndAttach,openDelegation,draftTodo,attachedHere,layout,metadata,focus,mode};
+  return {refresh:resource.refresh!,query:resource,page,nextPage,previousPage,resetPage,archivePage,nextArchive,previousArchive,previewTarget:(row:Row)=>urls[row.spec.key]??row.url,closePreview:()=>setLoaded([]),config,runtime,data,actions,workbench,stage,operations,collapsed,setCollapsed,menu,setMenu,showAddress,setShowAddress,showArchive,setShowArchive,setUrls,draft,setDraft,frameReady,setFrameReady,fullscreen,device,error:error||focusError,setError,setActiveKey,loaded,reload,confirmForget,setConfirmForget,run,archived,rows,current,currentIsCandidate,resolvedUrls,accessKey,currentUrl,accessError,activeDevice,cycleDevice,groups,availableFeatures,operate,effectiveStatus,repairButton,frameToken,label,attach,reloadFrame,startAndAttach,openDelegation,draftTodo,attachedHere,layout,metadata,focus,focusRequestId,mode};
 }
 export type PreviewModel = ReturnType<typeof usePreviewModel>;
 
-const loadExpanded=()=>import('./view-expanded');
-class ExpandedBoundary extends Component<{children:ReactNode;retry:()=>void},{error:string}> {
-  state={error:''};
-  static getDerivedStateFromError(error:unknown){return {error:String(error)};}
-  render(){return this.state.error?<div role="alert">展开界面加载失败：{this.state.error}<Button onPress={this.props.retry}>重试</Button></div>:this.props.children;}
-}
-function Expanded({model}:{model:PreviewModel}) {
-  const [attempt,setAttempt]=useState(0);
-  const [Page,setPage]=useState(()=>lazy(loadExpanded));
-  return <ExpandedBoundary key={attempt} retry={()=>{setPage(()=>lazy(loadExpanded));setAttempt(value=>value+1);}}><Suspense fallback={<ExpandedLoading/>}><Page model={model}/></Suspense></ExpandedBoundary>;
-}
-function ExpandedLoading(){
-  const [visible,setVisible]=useState(false);
-  useEffect(()=>{const timer=setTimeout(()=>setVisible(true),200);return()=>clearTimeout(timer);},[]);
-  return visible?<div role="status" style={{color:'var(--wb-muted)',padding:16}}>正在加载展开界面…</div>:null;
-}
 export function View(){
- const props=useViewProps<Data>();
-  const model=usePreviewModel(props);
+  const model=usePreviewModel();
   const {config,data,metadata,groups,availableFeatures,archived,rows,operations,attach,setActiveKey,startAndAttach,error}=model;
-  const {mode}=props;
-  // One player owns the game iframe across compact and expanded presentation.
-
-  // ---------------------------------------------------------------- compact
-  if(mode!=='expanded'){
+  // Compact contains summaries only; defineNoteView owns the expanded branch.
     return <section className="preview-compact" style={{boxSizing:'border-box',width:'100%',minHeight:'100dvh',background:'var(--wb-paper)',borderRadius:16,padding:'14px 16px 12px',fontFamily:FONT,fontSize:13,color:'var(--wb-ink)',minWidth:0,display:'flex',flexDirection:'column',gap:10}}>
       <style>{`
         .preview-compact-header{display:flex;align-items:center;justify-content:space-between;gap:10px;padding-bottom:10px;}
@@ -384,8 +363,9 @@ export function View(){
           <span className="preview-compact-logo" aria-hidden="true"><NoteIcon icon={metadata.icon} size={13} /></span>
           <strong className="preview-compact-title">{config?.projectId ? '试玩' : data.title||metadata.name||'候选预览'}</strong>
         </div>
-        <span className="preview-compact-count">{groups.length?`${groups.length} 个版本组${availableFeatures?` · ${availableFeatures} 可预览`:''}${archived.length?` · 归档 ${archived.length}`:''}`:archived.length?`已归档 ${archived.length} 个版本组`:'尚无试玩版本'}</span>
+        <span className="preview-compact-count">{model.query.data&&(groups.length?`${groups.length} 个版本组${availableFeatures?` · ${availableFeatures} 可预览`:''}${archived.length?` · 归档 ${archived.length}`:''}`:archived.length?`已归档 ${archived.length} 个版本组`:'尚无试玩版本')}</span>
       </div>
+      <QueryState query={model.query}>{()=> <>
       {!rows.length&&<p className="preview-compact-empty" style={{fontSize:12,lineHeight:1.7,color:'var(--wb-muted)',margin:'4px 0 0'}}>执行台委托产出可运行候选后会自动同步到这里。</p>}
       <div className="preview-compact-list">
         {[...groups].sort((a,b)=>compactRank(a.rows)-compactRank(b.rows)).slice(0,4).map(group=>{
@@ -418,15 +398,9 @@ export function View(){
         })}
         {groups.length>4&&<span title="点击卡片展开查看全部版本" style={{fontSize:11,lineHeight:1.35,color:'var(--wb-muted-light)',whiteSpace:'nowrap',paddingTop:2}}>还有 {groups.length-4} 个版本组 · 展开查看全部 ↗</span>}
       </div>
+      </>}</QueryState>
       {error&&<p role="alert" style={{fontSize:11.5,color:'var(--wb-danger)',margin:'4px 0 0'}}>{error}</p>}
     </section>;
-  }
-
-
-  return <Expanded model={model}/>;
 }
 
-export default withNotePrerequisites(View);
-
-export type CandidateSummary=import('@dsh-workbench/runtime').NoteCollectionQueries<typeof import('./model').note> extends infer Q ? Q extends Record<'candidates.page',(...args:any[])=>any> ? Awaited<ReturnType<Q['candidates.page']>>['items'][number] : never : never;
-export type FeedbackSummary=any;
+export type {CandidateSummary,FeedbackSummary} from './model';

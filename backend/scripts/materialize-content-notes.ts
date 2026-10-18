@@ -4,6 +4,8 @@ import { basename, dirname, isAbsolute, relative, resolve } from 'node:path';
 import { completePublicationSource } from '@realiz3r/worka/desktop-package';
 
 const noteIds = [1, 7, 8, 9, 10, 12] as const;
+// Other business notes consume only the same pure backend contract, never the content UI.
+const contractOnlyNoteIds = [3,11] as const;
 const contractSource = 'backend/plugins/cardgame-content/src/contract.ts';
 const provenanceFile = 'content-sources.json';
 const dependencyFields=['dependencies','devDependencies','peerDependencies','optionalDependencies','overrides'] as const;
@@ -143,7 +145,20 @@ export async function materializeContentNotes(root: string, options: { mode?: 'w
     const metadata=[['package.json',packageBytes,Buffer.from(JSON.stringify(packageManifest,null,2)+'\n')],['worka-note.json',publicationBytes,Buffer.from(JSON.stringify(publication,null,2)+'\n')]] as const;
     plans.push({directory,obsolete,previous,metadata});
   }
+  const contractPlans=[];
+  for(const id of contractOnlyNoteIds){
+    const target=`notes/note-${id}/contract.ts`;
+    if(!(await lstat(await checkedPath(root,`notes/note-${id}`))).isDirectory())throw Error(`Missing contract note: ${id}`);
+    const current=await optionalBytes(root,target);
+    contractPlans.push({target,current});
+  }
   let written = 0, removed = 0;
+  for(const {target,current} of contractPlans){
+    if(current?.equals(contract))continue;
+    if(mode==='check')throw Error(`Public contract hash mismatch: ${target}`);
+    await replaceFile(root,target,contract);written++;
+    if(hash(await bytesAt(root,target))!==files['contract.ts'])throw Error(`Public contract hash mismatch after copy: ${target}`);
+  }
   for (const {directory,obsolete,previous,metadata} of plans) {
     for (const [name, bytes] of sources) {
       // note-1 owns its shared source. Never write an earlier captured copy back
@@ -180,5 +195,5 @@ export async function materializeContentNotes(root: string, options: { mode?: 'w
     if (name !== 'contract.ts' && hash(await bytesAt(root, `notes/note-1/${name}`)) !== files[name])
       throw new Error(`Shared content source changed during materialization: ${name}`);
   }
-  return { notes: noteIds.length, contractSha256: files['contract.ts'], files:Object.keys(files),written,removed,dependencyChanges };
+  return { notes: noteIds.length, contractNotes:contractOnlyNoteIds.length, contractSha256: files['contract.ts'], files:Object.keys(files),written,removed,dependencyChanges };
 }

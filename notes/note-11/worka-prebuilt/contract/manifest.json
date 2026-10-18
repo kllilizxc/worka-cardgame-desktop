@@ -1,12 +1,13 @@
 {
   "schemaVersion": 1,
-  "codeVersion": "portable-source-rebuild",
+  "codeVersion": "final-a2f5fc5",
   "status": "ready",
   "files": [
     "SKILL.md",
     "references/api.d.ts",
     "references/types/actions.d.ts",
     "references/types/collaboration.d.ts",
+    "references/types/contract.d.ts",
     "references/types/contracts.d.ts",
     "references/types/local-todo-operations.d.ts",
     "references/types/model.d.ts",

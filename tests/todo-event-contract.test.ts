@@ -1,8 +1,9 @@
 import { describe, expect, test } from 'bun:test';
 import { readFileSync } from 'node:fs';
-import * as todo from '../notes/note-11/worka-prebuilt/actions.mjs';
+const todo=await import(process.env.CARDGAME_TODO_ACTIONS_ENTRY??'../notes/note-11/worka-prebuilt/actions.mjs');
 
-// Exercise the shipped, self-contained artifact. No note-local install, model,
+// Default: exercise the shipped, self-contained artifact. A source override is
+// available for pre-build contract checks. No note-local install, model,
 // extension provider, running host, or network connection is needed.
 const capabilityKey = Symbol.for('worka.note-capability');
 const productionName = 'cardgame.todo.productionRequested';
@@ -24,6 +25,7 @@ function harness(options: { projectId?: string; prepared?: unknown } = {}) {
     store: {
       read: async () => ({ value: { projectId: options.projectId ?? 'project-1' }, revision: 'config-1' }),
     },
+    resources: {read:async(request:any)=>({key:'todo',epoch:'fixture',version:1,stale:false,data:{item:{projectId:request.input.projectId,id:request.input.id,title:'Current requirement',description:'Complete full requirement text',status:'todo',priority:'medium',revision:1,requirementRevision:1,createdAt:'2026-01-01',updatedAt:'2026-01-01'},requirementFingerprint:'fixture'}})},
     extensions: {
       request: async (extension: string, method: string, input: any) => {
         commands.push({ extension, method, input });
@@ -34,6 +36,10 @@ function harness(options: { projectId?: string; prepared?: unknown } = {}) {
     },
     events: {
       publish: async (name: string, payload: any, publishOptions: Published['options']) => {
+        // Match the action worker's declared event boundary, including current
+        // SDK versions that intentionally defer parsing until publication.
+        const event = Object.values(todo.events).find(event => event.name === name);
+        payload = await metadata(event).output.parseAsync(payload);
         const key = `${name}:${publishOptions.key}`;
         const duplicate = seen.has(key);
         const id = seen.get(key) ?? `event-${seen.size + 1}`;
@@ -61,14 +67,17 @@ function preparedDelegation() {
   // optional undefined values are omitted by its JSON clone before returning.
   return JSON.parse(JSON.stringify({
     pending: true,
-    requestId: 'todo-repair:project-1:todo-1:4',
+    requestId: 'todo-repair:project-1:generation-1:todo-1:4',
     fingerprint: 'requirement-fingerprint',
     item: {
-      projectId: 'project-1', id: 'todo-1', title: 'Repair card layout',
+      projectId: 'project-1', projectGeneration: 'generation-1', id: 'todo-1', title: 'Repair card layout',
       revision: 7, requirementRevision: 4,
     },
     payload: {
-      projectId: 'project-1', itemId: 'todo-1', businessKey: 'todo:project-1:todo-1',
+      projectId: 'project-1', projectGeneration: 'generation-1', itemId: 'todo-1',
+      todoObjectId: `cardgame-todo:${JSON.stringify(['project-1', 'generation-1', 'todo-1'])}`, businessKey: 'todo:project-1:generation-1:todo-1',
+      requestId: 'todo-repair:project-1:generation-1:todo-1:4',
+      requestKey: 'cardgame-todo-request:generation-1:todo-repair:project-1:generation-1:todo-1:4',
       goal: 'Repair card layout', scope: ['Only the selected card'],
       requirement: {
         itemId: 'todo-1', title: 'Repair card layout', description: '', images: [],
@@ -86,7 +95,7 @@ describe('portable Todo event contracts', () => {
       [todo.events.cardGameDelegationRequested, delegationName, 7],
     ] as const) {
       expect(event.name).toBe(name);
-      expect(metadata(event)).toMatchObject({ kind: 'event', name, visibility: 'public', objectRef: '/todoId' });
+      expect(metadata(event)).toMatchObject({ kind: 'event', name, visibility: 'public', objectRef: relationNumber === 7 ? '/todoObjectId' : '/todoId' });
       expect(metadata(event).model).toBe(todo.note);
       expect(metadata(event).description.trim().length).toBeGreaterThan(0);
       expect(readFileSync(new URL(`../relations/relation-${relationNumber}/draft/SKILL.md`, import.meta.url), 'utf8'))
@@ -123,7 +132,7 @@ describe('portable Todo event contracts', () => {
     const second = await todo.productionRequest(context, { todoId: 'todo-1', brief: ' ', title: ' ' });
     expect(first).toMatchObject({ requestId: 'todo-production:project-1:todo-1', duplicate: false });
     expect(second).toMatchObject({ requestId: first.requestId, eventId: first.eventId, duplicate: true });
-    expect(published[0].payload).toMatchObject({ projectId: 'project-1', todoId: 'todo-1', brief: '来自 Todo：todo-1', businessKey: 'todo:project-1:todo-1' });
+    expect(published[0].payload).toMatchObject({ projectId: 'project-1', todoId: 'todo-1', brief: 'Complete full requirement text', title:'Current requirement', businessKey: 'todo:project-1:todo-1' });
     expect(published[1].options).toEqual({ key: first.requestId, exclusive: true });
   });
 
@@ -141,12 +150,12 @@ describe('portable Todo event contracts', () => {
     await expect(todo.productionRequest(context, { todoId: ' ' })).rejects.toThrow('制作请求需要 todoId');
     const missingProject = harness({ projectId: '' });
     await expect(todo.productionRequest(missingProject.context, { todoId: 'todo-1' })).rejects.toThrow('需要 projectId');
-    expect(() => todo.events.cardGameProductionRequested.publish(context, {
+    await expect(todo.events.cardGameProductionRequested.publish(context, {
       projectId: 'project-1', todoId: '', brief: 'Draft', businessKey: 'todo:project-1:todo-1',
-    })).toThrow();
-    expect(() => todo.events.cardGameProductionRequested.publish(context, {
+    })).rejects.toThrow();
+    await expect(todo.events.cardGameProductionRequested.publish(context, {
       projectId: 'project-1', todoId: 'todo-1', brief: 'Draft', businessKey: 'todo:project-1:todo-1', pinnedRefs: [42],
-    })).toThrow();
+    })).rejects.toThrow();
     expect(published).toEqual([]);
     expect(missingProject.published).toEqual([]);
   });
@@ -190,10 +199,12 @@ describe('portable Todo event contracts', () => {
       input: { itemId: 'todo-1', goal: 'User goal', scope: ['Only the selected card'], projectId: 'project-1' } }]);
     expect(published).toEqual([{
       id: 'event-1', name: delegationName,
-      payload: { projectId: 'project-1', todoId: 'todo-1', requestId: prepared.requestId, payload: prepared.payload, requirementRevision: 4 },
-      options: { key: prepared.requestId, exclusive: true },
+      payload: { projectId: 'project-1', projectGeneration: 'generation-1', todoId: 'todo-1', todoObjectId: prepared.payload.todoObjectId,
+        requestId: prepared.requestId, requestKey: `cardgame-todo-request:generation-1:${prepared.requestId}`,
+        payload: { goal: prepared.payload.goal, scope: prepared.payload.scope }, requirementRevision: 4 },
+      options: { key: `cardgame-todo-request:generation-1:${prepared.requestId}`, exclusive: true },
     }]);
-    expect(result).toEqual({ ...prepared, eventId: 'event-1', duplicate: false });
+    expect(result).toEqual({ projectId: 'project-1', projectGeneration: 'generation-1', itemId: 'todo-1', requestId: prepared.requestId, eventId: 'event-1', duplicate: false });
   });
 
   test('delegateTodo does not publish an unprepared result or a malformed revision', async () => {
@@ -203,7 +214,7 @@ describe('portable Todo event contracts', () => {
       expect(published).toEqual([]);
     }
     const prepared = preparedDelegation();
-    prepared.item.requirementRevision = '4';
+    prepared.payload.requirement.requirementRevision = '4';
     const { context, published } = harness({ prepared });
     await expect(todo.delegateTodo(context, { itemId: 'todo-1' })).rejects.toThrow();
     expect(published).toEqual([]);
@@ -234,14 +245,14 @@ describe('portable Todo event contracts', () => {
     });
     expect(result.outcome).toBe('completed');
     expect(calls[0]).toMatchObject({ noteId: 'desk-note', name: 'acceptRequirement', input: {
-      updateId: prepared.requestId, goal: prepared.payload.goal, scope: prepared.payload.scope,
-      source: { noteId: 'todo-note', objectId: 'todo-1', revision: '4', value: prepared.item }, delivery: 'queue',
+      updateId: published[0].payload.requestKey, goal: prepared.payload.goal, scope: prepared.payload.scope,
+      source: { noteId: 'todo-note', objectId: prepared.payload.todoObjectId, revision: '4', value: prepared.item }, delivery: 'queue',
     } });
     expect(calls[0].input).not.toHaveProperty('cwd');
     expect(calls[1]).toMatchObject({ noteId: 'todo-note', name: 'bindExecution', input: {
       projectId: 'project-1', todoId: 'todo-1', requestId: prepared.requestId,
       receipt: { status: 'accepted', result: { delegationId: 'delegation-1', status: 'queued', deskNoteId: 'desk-note' } },
     } });
-    expect(calls[2]).toEqual({ kind: 'delegation', source: { noteId: 'todo-note', objectId: 'todo-1' }, target: { noteId: 'desk-note', objectId: 'delegation-1' } });
+    expect(calls[2]).toEqual({ kind: 'delegation', source: { noteId: 'todo-note', objectId: prepared.payload.todoObjectId }, target: { noteId: 'desk-note', objectId: 'delegation-1' } });
   });
 });

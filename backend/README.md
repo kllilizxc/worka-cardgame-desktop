@@ -16,7 +16,7 @@
 
 ## 内容库源码的唯一来源
 
-`plugins/cardgame-content/src/contract.ts` 是唯一公开契约源码。正常后台构建开始时，`scripts/materialize-content-notes.ts` 自动把原始字节复制到 note-1、note-7、note-8、note-9、note-10 和 note-12 的 `contract.ts`，逐个核对 SHA-256。该文件只能静态导入 `@realiz3r/worka/extension-contracts` 公共入口或 `zod`，不能导入后台实现、本地文件、宿主接口或动态加载器；检查不会执行契约代码，也不扫描后台目录。这个导入检查是维护边界，不是 JavaScript 安全沙箱。
+`plugins/cardgame-content/src/contract.ts` 是唯一公开契约源码。正常后台构建开始时，`scripts/materialize-content-notes.ts` 自动把原始字节复制到 note-1、note-7、note-8、note-9、note-10 和 note-12 的 `contract.ts`，逐个核对 SHA-256。候选预览 note-3 只物化同一份纯契约，不接收内容库界面、动作、配置或其他业务源码；正式快照与固定候选的方法和返回类型也从该契约推导。该文件只能静态导入 `@realiz3r/worka/extension-contracts` 公共入口或 `zod`，不能导入后台实现、本地文件、宿主接口或动态加载器；检查不会执行契约代码，也不扫描后台目录。这个导入检查是维护边界，不是 JavaScript 安全沙箱。
 
 六个内容库的业务源码以 `notes/note-1` 为准。普通构建通过 Worka 公开构建入口复用已有发布闭包，跟随实际代码、类型、嵌套模块、本地图片及业务包依赖，再同步完整共享库存，不扫描无关草稿或要求作者维护源码清单。修改公共视图、动作或模型应改 note-1；公开输入输出 schema 应改后台的唯一 `contract.ts`。各实例的 config 文件、README、SKILL、图标、便笺名称、桌面配置和预构建产物保持独立；共享代码需要的依赖与发布源码列表自动合并，其他额外依赖和资源保留；实例自己的锁文件不被另一实例的锁文件覆盖。已同步的旧文件只有在上一次生成清单中登记过，且已从 note-1 移除时才会删除；其他实例文件保留。
 

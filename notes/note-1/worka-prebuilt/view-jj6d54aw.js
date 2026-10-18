@@ -1,1 +1,0 @@
-import"./entry-21fk2ca0.js";import{Al}from"./entry-0hvh5y9t.js";import{z}from"./entry-bundle.js";var t=Al({compact:()=>(z("0vpnha38"),import("./view-compact-0vpnha38.js")),expanded:()=>(z("q3150c1n"),import("./view-expanded-q3150c1n.js")),state:"legacy",prerequisites:{configurationInView:!0}});export{t as default};

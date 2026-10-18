@@ -158,7 +158,7 @@ export function createCardPipeline(content: ContentService, workflow: WorkflowSe
     }
     let todo: any;
     if (input.todoId) {
-      todo = (await workflow.query({ projectId: input.projectId, op: 'todo', id: text(input.todoId, '待办') }) as any).item;
+      todo = (await workflow.query({ projectId: input.projectId, op: 'todo',view:'summary', id: text(input.todoId, '待办') }) as any).item;
       if (todo.productionId && todo.productionId !== requestedId) throw Error('该待办已关联制作单，请打开已有制作单');
     }
     if (prior) {
@@ -221,7 +221,7 @@ export function createCardPipeline(content: ContentService, workflow: WorkflowSe
     }
     if(method==='linkCardCompanion'){
       const source=await content.query({projectId:input.projectId,op:'card',id:text(input.sourceCardId,'配套单位')}) as CardItem;
-      const {item:todo}=await workflow.query({projectId:input.projectId,op:'todo',id:text(input.todoId,'待办')}) as {item:import('./workflow').TodoRecord};
+      const {item:todo}=await workflow.query({projectId:input.projectId,op:'todo',view:'summary',id:text(input.todoId,'待办')}) as {item:import('./workflow').TodoRecord};
       if(source.kind!=='unit'||source.revision!==input.sourceRevision)throw Error('配套单位已变化，请刷新后重试');
       if(todo.productionId&&todo.productionId!==production.id)throw Error('待办已关联另一制作单');
       batch.companion={cardId:source.id,revision:source.revision};

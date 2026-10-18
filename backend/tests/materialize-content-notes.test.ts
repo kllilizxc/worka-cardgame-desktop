@@ -16,6 +16,7 @@ async function put(root: string, name: string, data: string | Buffer) { await mk
 async function fixture() {
   const root = await mkdtemp(join(tmpdir(), 'cardgame-content-sources-')); roots.push(root);
   await put(root, 'backend/plugins/cardgame-content/src/contract.ts', contract);
+  for(const id of [3,11]){await put(root,`notes/note-${id}/view.tsx`,'export const View=()=>null;');await put(root,`notes/note-${id}/package.json`,JSON.stringify({name:id===3?'preview-note':'todo-note'}));}
   for (const id of noteIds) {
     for (const name of ['README.md', 'SKILL.md', 'icon.svg', 'config.ts', 'config.json', 'config-local.ts', 'instance.config.ts'])
       await put(root, `notes/note-${id}/${name}`, `instance:${id}:${name}`);
@@ -153,7 +154,7 @@ test('ordinary backend build syncs nested types, images and business packages; a
   const build = Bun.spawn([process.execPath,'run','build'],{cwd:join(root,'backend'),env:{...process.env,PATH:dirname(process.execPath)+':'+process.env.PATH},stdout:'pipe',stderr:'pipe'});
   const [exitCode,stdout,stderr] = await Promise.all([build.exited,new Response(build.stdout).text(),new Response(build.stderr).text()]);
   expect({exitCode,stderr:exitCode?stderr:''}).toEqual({exitCode:0,stderr:''});
-  expect(stdout).toContain('shared content sources for 6 notes');
+  expect(stdout).toContain('shared content sources for 6 content notes and 2 contract-only notes');
   const required = ['nested/helper.ts','nested/types.d.ts','nested/image.png','packages/helper/package.json','packages/helper/index.ts','packages/helper/nested/value.ts'];
   for (const id of noteIds) {
     const source=join(root,`notes/note-${id}`),recipient=join(root,`export-${id}`);
@@ -209,4 +210,20 @@ test('non-file targets fail the whole preflight before earlier notes are written
   await mkdir(join(root, 'notes/note-12/actions.ts'));
   await expect(materializeContentNotes(root)).rejects.toThrow('regular file');
   await expect(readFile(join(root, 'notes/note-1/contract.ts'))).rejects.toThrow();
+});
+
+test('preview notes receive the same pure contract without receiving content UI or metadata',async()=>{
+  const root=await fixture();
+  const view=await readFile(join(root,'notes/note-3/view.tsx'),'utf8');
+  const result=await materializeContentNotes(root);
+  expect(result.contractNotes).toBe(2);
+  expect(await readFile(join(root,'notes/note-3/contract.ts'),'utf8')).toBe(contract);
+  expect(await readFile(join(root,'notes/note-3/view.tsx'),'utf8')).toBe(view);
+  expect(await readFile(join(root,'notes/note-3/package.json'),'utf8')).toBe(JSON.stringify({name:'preview-note'}));
+  await expect(readFile(join(root,'notes/note-3/helper.ts'))).rejects.toThrow();
+  await put(root,'notes/note-3/contract.ts','// drift');
+  await expect(materializeContentNotes(root,{mode:'check'})).rejects.toThrow('Public contract hash mismatch: notes/note-3/contract.ts');
+  expect(await readFile(join(root,'notes/note-3/contract.ts'),'utf8')).toBe('// drift');
+  await materializeContentNotes(root);
+  expect(await readFile(join(root,'notes/note-3/contract.ts'),'utf8')).toBe(contract);
 });

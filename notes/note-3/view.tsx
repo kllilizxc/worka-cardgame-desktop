@@ -1,7 +1,7 @@
-import {defineNoteView,withNotePrerequisites} from '@dsh-workbench/react';
+import {defineNoteView} from '@dsh-workbench/react';
 
 export const View=defineNoteView({
   compact:()=>import('./view-compact'),
   expanded:()=>import('./view-local-expanded'),
 });
-export default withNotePrerequisites(View);
+export default View;

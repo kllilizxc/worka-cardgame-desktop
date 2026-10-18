@@ -2,14 +2,14 @@ import { useState } from 'react';
 import { Button } from '@heroui/react';
 import {ReferenceCollection} from './reference-collection';
 import {useNote} from '@dsh-workbench/react';
-import type { CandidateSpec } from './model';
+import type { CandidateDisplay } from './model';
 
-export function PreviewReferences({ candidate }: { candidate?: CandidateSpec }) {
+export function PreviewReferences({ candidate }: { candidate?: CandidateDisplay }) {
   const {actions,useQuery}=useNote<typeof import('./actions')>();
-  const references = useQuery<{ items: Array<{ key: string; title: string; anchor?: string; kind: string; revision: string; freshness: string }>; limit: number }>('pinnedReferences', {});
+  const references = useQuery('pinnedReferences', {});
   const commit = candidate?.repos?.game?.commit;
   const eligible = !!candidate && !!commit && candidate.options?.formalPreview !== true;
-  const target = useQuery<{ title: string; revision: string; binding: { current: boolean; requirementRevision: number | null; round: number | null } }>('previewReferenceTarget', { key: candidate?.key ?? '', commit: commit ?? '' }, { enabled: eligible });
+  const target = useQuery('previewReferenceTarget', { key: candidate?.key ?? '', commit: commit ?? '' }, { enabled: eligible });
   const [busy, setBusy] = useState(false), [error, setError] = useState('');
   async function act(work: () => Promise<unknown>) {
     setBusy(true); setError('');

@@ -39,11 +39,8 @@
     "surface.ts",
     "view.tsx",
     "worka-source.json",
-    "worka-prebuilt/view-runtime-rjf3m1yq.js",
     "worka-prebuilt/zod-config.mjs",
-    "worka-prebuilt/view-0ces2k28.js",
     "worka-prebuilt/entry-bundle.css",
-    "worka-prebuilt/entry-qmeka98d.js",
     "worka-prebuilt/view-runtime.mjs",
     "worka-prebuilt/contract/SKILL.md",
     "worka-prebuilt/contract/references/api.d.ts",
@@ -54,10 +51,13 @@
     "worka-prebuilt/contract/references/types/cardgame-operations.d.ts",
     "worka-prebuilt/contract/references/types/migration-compat.d.ts",
     "worka-prebuilt/contract/manifest.json",
+    "worka-prebuilt/view-hd3qtn47.js",
+    "worka-prebuilt/view-runtime-g6afnv4a.js",
     "worka-prebuilt/index.html",
     "worka-prebuilt/entry-bundle.js",
     "worka-prebuilt/entry-bundle.tailwind.css",
     "worka-prebuilt/actions.mjs",
+    "worka-prebuilt/entry-fdbg27jm.js",
     "worka-prebuilt/manifest.json"
   ]
 }

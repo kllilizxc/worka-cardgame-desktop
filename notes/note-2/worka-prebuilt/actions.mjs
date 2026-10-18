@@ -1,4 +1,4 @@
-// ../../../worka-phone-pairing/node_modules/.cache/zod@4.6.1@@@1/v4/core/util.js
+// ../../../../worka-authoring-desktop-latest-20261017/node_modules/.bun/zod@4.6.1/node_modules/zod/v4/core/util.js
 function getEnumValues(entries) {
   const numericValues = Object.values(entries).filter((v) => typeof v === "number");
   const values = Object.entries(entries).filter(([k, _]) => numericValues.indexOf(+k) === -1).map(([_, v]) => v);
@@ -566,7 +566,7 @@ function constantCatch(value) {
   return fn;
 }
 
-// ../../../worka-phone-pairing/node_modules/.cache/zod@4.6.1@@@1/v4/core/core.js
+// ../../../../worka-authoring-desktop-latest-20261017/node_modules/.bun/zod@4.6.1/node_modules/zod/v4/core/core.js
 var _a;
 var _zodDesc = { value: undefined, enumerable: false };
 var _E = "captureStackTrace" in Error ? Error : null;
@@ -685,7 +685,7 @@ function config(newConfig) {
     Object.assign(globalConfig, newConfig);
   return globalConfig;
 }
-// ../../../worka-phone-pairing/node_modules/.cache/zod@4.6.1@@@1/v4/core/errors.js
+// ../../../../worka-authoring-desktop-latest-20261017/node_modules/.bun/zod@4.6.1/node_modules/zod/v4/core/errors.js
 function _getMessage() {
   const internals = this._zod;
   internals.message ?? (internals.message = JSON.stringify(internals.def, jsonStringifyReplacer, 2));
@@ -800,7 +800,7 @@ function formatError(error, mapper = (issue) => issue.message) {
   return fieldErrors;
 }
 
-// ../../../worka-phone-pairing/node_modules/.cache/zod@4.6.1@@@1/v4/core/parse.js
+// ../../../../worka-authoring-desktop-latest-20261017/node_modules/.bun/zod@4.6.1/node_modules/zod/v4/core/parse.js
 function finalizeParams(callee, params) {
   return { callee: params?.callee ?? callee, Err: params?.Err };
 }
@@ -947,7 +947,7 @@ var _safeEncodeAsync = (_Err) => async (schema, value, _ctx) => {
 var _safeDecodeAsync = (_Err) => async (schema, value, _ctx) => {
   return _safeParseAsync(_Err)(schema, value, _ctx);
 };
-// ../../../worka-phone-pairing/node_modules/.cache/zod@4.6.1@@@1/v4/core/regexes.js
+// ../../../../worka-authoring-desktop-latest-20261017/node_modules/.bun/zod@4.6.1/node_modules/zod/v4/core/regexes.js
 var cuid = /^[cC][0-9a-z]{6,}$/;
 var cuid2 = /^[0-9a-z]+$/;
 var ulid = /^[0-7][0-9A-HJKMNP-TV-Za-hjkmnp-tv-z]{25}$/;
@@ -1006,7 +1006,7 @@ var _null = /^null$/i;
 var lowercase = /^[^A-Z]*$/;
 var uppercase = /^[^a-z]*$/;
 
-// ../../../worka-phone-pairing/node_modules/.cache/zod@4.6.1@@@1/v4/core/checks.js
+// ../../../../worka-authoring-desktop-latest-20261017/node_modules/.bun/zod@4.6.1/node_modules/zod/v4/core/checks.js
 var $ZodCheck = /* @__PURE__ */ $constructor("$ZodCheck", (inst, def) => {
   var _a;
   inst._zod ?? (inst._zod = {});
@@ -1322,7 +1322,7 @@ var $ZodCheckOverwrite = /* @__PURE__ */ $constructor("$ZodCheckOverwrite", (ins
   };
 });
 
-// ../../../worka-phone-pairing/node_modules/.cache/zod@4.6.1@@@1/v4/core/doc.js
+// ../../../../worka-authoring-desktop-latest-20261017/node_modules/.bun/zod@4.6.1/node_modules/zod/v4/core/doc.js
 class Doc {
   constructor(args = [], closed = {}) {
     this.content = [];
@@ -1364,14 +1364,14 @@ ${content.join(`
   }
 }
 
-// ../../../worka-phone-pairing/node_modules/.cache/zod@4.6.1@@@1/v4/core/versions.js
+// ../../../../worka-authoring-desktop-latest-20261017/node_modules/.bun/zod@4.6.1/node_modules/zod/v4/core/versions.js
 var version = {
   major: 4,
   minor: 6,
   patch: 1
 };
 
-// ../../../worka-phone-pairing/node_modules/.cache/zod@4.6.1@@@1/v4/core/schemas.js
+// ../../../../worka-authoring-desktop-latest-20261017/node_modules/.bun/zod@4.6.1/node_modules/zod/v4/core/schemas.js
 var $ZodType = /* @__PURE__ */ $constructor("$ZodType", (inst, def) => {
   var _a;
   inst ?? (inst = {});
@@ -3052,7 +3052,7 @@ var $ZodProperties = /* @__PURE__ */ $constructor("$ZodProperties", (inst, def) 
     yield this;
   }
 });
-// ../../../worka-phone-pairing/node_modules/.cache/zod@4.6.1@@@1/v4/core/memoizer.js
+// ../../../../worka-authoring-desktop-latest-20261017/node_modules/.bun/zod@4.6.1/node_modules/zod/v4/core/memoizer.js
 class $ZodCyclicError extends Error {
   constructor() {
     super(`Cannot parse a reference cycle that closes through a transform`);
@@ -3324,7 +3324,7 @@ function isBackEdge(ctx, value) {
   const backEdges = ctx[STATE]?.backEdges;
   return backEdges !== undefined && isRef(value) && backEdges.has(value);
 }
-// ../../../worka-phone-pairing/node_modules/.cache/zod@4.6.1@@@1/v4/locales/en.js
+// ../../../../worka-authoring-desktop-latest-20261017/node_modules/.bun/zod@4.6.1/node_modules/zod/v4/locales/en.js
 var error = () => {
   const Sizable = {
     string: { unit: "characters", verb: "to have" },
@@ -3445,7 +3445,7 @@ function en_default() {
     localeError: error()
   };
 }
-// ../../../worka-phone-pairing/node_modules/.cache/zod@4.6.1@@@1/v4/core/registries.js
+// ../../../../worka-authoring-desktop-latest-20261017/node_modules/.bun/zod@4.6.1/node_modules/zod/v4/core/registries.js
 var _a2;
 class $ZodRegistry {
   constructor() {
@@ -3492,7 +3492,7 @@ function registry() {
 }
 (_a2 = globalThis).__zod_globalRegistry ?? (_a2.__zod_globalRegistry = registry());
 var globalRegistry = globalThis.__zod_globalRegistry;
-// ../../../worka-phone-pairing/node_modules/.cache/zod@4.6.1@@@1/v4/core/api.js
+// ../../../../worka-authoring-desktop-latest-20261017/node_modules/.bun/zod@4.6.1/node_modules/zod/v4/core/api.js
 function _string(Class, params) {
   return new Class({
     type: "string",
@@ -3948,7 +3948,7 @@ function _check(fn, params) {
   ch._zod.check = fn;
   return ch;
 }
-// ../../../worka-phone-pairing/node_modules/.cache/zod@4.6.1@@@1/v4/core/to-json-schema.js
+// ../../../../worka-authoring-desktop-latest-20261017/node_modules/.bun/zod@4.6.1/node_modules/zod/v4/core/to-json-schema.js
 function assignProps(target, ...sources) {
   for (const source of sources) {
     for (const key of Reflect.ownKeys(source)) {
@@ -4471,7 +4471,7 @@ var createStandardJSONSchemaMethod = (schema, io, processors = {}) => (params) =
   extractDefs(ctx, schema);
   return finalize(ctx, schema);
 };
-// ../../../worka-phone-pairing/node_modules/.cache/zod@4.6.1@@@1/v4/core/json-schema-processors.js
+// ../../../../worka-authoring-desktop-latest-20261017/node_modules/.bun/zod@4.6.1/node_modules/zod/v4/core/json-schema-processors.js
 var narrowMin = (agg, key, value) => {
   if (agg[key] === undefined || value > agg[key])
     agg[key] = value;
@@ -5242,7 +5242,7 @@ function toJSONSchema(input, params) {
   extractDefs(ctx, input);
   return finalize(ctx, input);
 }
-// ../../../worka-phone-pairing/node_modules/.cache/zod@4.6.1@@@1/v4/classic/errors.js
+// ../../../../worka-authoring-desktop-latest-20261017/node_modules/.bun/zod@4.6.1/node_modules/zod/v4/classic/errors.js
 var _installedErrorProtos = /* @__PURE__ */ new WeakSet([Object.prototype, Error.prototype]);
 function _lazyMethod(proto, key, make) {
   Object.defineProperty(proto, key, {
@@ -5287,7 +5287,7 @@ var ZodRealError = /* @__PURE__ */ $constructor("ZodError", initializer2, undefi
   Parent: Error
 });
 
-// ../../../worka-phone-pairing/node_modules/.cache/zod@4.6.1@@@1/v4/classic/parse.js
+// ../../../../worka-authoring-desktop-latest-20261017/node_modules/.bun/zod@4.6.1/node_modules/zod/v4/classic/parse.js
 var parse2 = /* @__PURE__ */ _parse(ZodRealError);
 var parseAsync = /* @__PURE__ */ _parseAsync(ZodRealError);
 var safeParse = /* @__PURE__ */ _safeParse(ZodRealError);
@@ -5301,7 +5301,7 @@ var safeDecode = /* @__PURE__ */ _safeDecode(ZodRealError);
 var safeEncodeAsync = /* @__PURE__ */ _safeEncodeAsync(ZodRealError);
 var safeDecodeAsync = /* @__PURE__ */ _safeDecodeAsync(ZodRealError);
 
-// ../../../worka-phone-pairing/node_modules/.cache/zod@4.6.1@@@1/v4/classic/schemas.js
+// ../../../../worka-authoring-desktop-latest-20261017/node_modules/.bun/zod@4.6.1/node_modules/zod/v4/classic/schemas.js
 function _ensureDefaultLocale() {
   if (!globalConfig.localeError)
     config(en_default());
@@ -6243,351 +6243,281 @@ function json(params) {
   });
   return jsonSchema;
 }
-// .sdk/runtime/src/capabilities.ts
-var definitionKey = Symbol.for("worka.note-capability");
-function operation(kind, definition, handler, contextFirst = false) {
-  const execute = async (input, context) => {
-    const result = await handler(input, context);
-    const output = captured.output.safeParse(result);
-    if (!output.success)
-      throw new Error(`Capability output is invalid after execution; inspect effects before retrying: ${output.error.message}`);
-    return output.data;
-  };
-  const captured = Object.freeze({ ...definition, kind, execute });
-  const callable = contextFirst ? async (context, input) => execute(captured.input.parse(input), context) : async (input, context) => execute(captured.input.parse(input), context);
-  Object.defineProperty(callable, definitionKey, { value: captured });
-  return callable;
-}
-function createEvent(definition) {
-  const captured = Object.freeze({ ...definition, kind: "event", output: definition.payload });
-  const event = {
-    name: definition.name,
-    publish(context, payload, options) {
-      return context.events.publish(captured.name, captured.output.parse(payload), options);
-    }
-  };
-  Object.defineProperty(event, definitionKey, { value: captured });
-  return Object.freeze(event);
-}
-
-// .sdk/runtime/src/collections.ts
-var identifier = /^[A-Za-z][A-Za-z\d_-]*$/;
-var collectionPageInput = strictObject({ cursor: string2().max(32768).optional(), limit: number2().int().min(1).max(100).optional(), maxBytes: number2().int().min(256).max(1024 * 1024).optional() });
-var collectionFieldInput = strictObject({ key: string2().min(1).max(512), field: string2().min(1).max(2048), revision: string2().min(1) });
-var collectionDetailInput = strictObject({ key: string2().min(1).max(512), revision: string2().optional() });
-var lazySchema = strictObject({ kind: literal("collection-field"), collection: string2(), key: string2(), field: string2(), revision: string2() });
-function unwrap(schema) {
-  while (schema instanceof ZodOptional || schema instanceof ZodDefault || schema instanceof ZodNullable)
-    schema = schema.unwrap();
-  return schema;
-}
-function lazyAt(schema, parts) {
-  if (schema instanceof ZodOptional)
-    return lazyAt(schema.unwrap(), parts).optional();
-  if (schema instanceof ZodDefault)
-    return lazyAt(schema.unwrap(), parts).optional();
-  if (schema instanceof ZodNullable)
-    return parts.length ? lazyAt(schema.unwrap(), parts).nullable() : lazySchema;
-  if (!parts.length)
-    return lazySchema;
-  const [head, ...tail] = parts;
-  if (schema instanceof ZodRecord && head === "*")
-    return record(schema.keyType, lazyAt(schema.valueType, tail));
-  if (!(schema instanceof ZodObject) || !head || !Object.hasOwn(schema.shape, head))
-    throw new Error(`Lazy field path does not match the state schema: ${parts.join(".")}`);
-  return schema.extend({ [head]: lazyAt(schema.shape[head], tail) });
-}
-function collectionSchemas(state, declarations = {}) {
-  if (Object.keys(declarations).length > 32)
-    throw new Error("A note may declare at most 32 collections");
-  const fields = new Set;
-  return Object.entries(declarations).map(([name, definition]) => {
-    if (!identifier.test(name) || !definition || typeof definition !== "object" || Array.isArray(definition) || Object.keys(definition).some((key) => !["field", "key", "lazy"].includes(key)) || definition.lazy !== undefined && !Array.isArray(definition.lazy))
-      throw new Error("Invalid collection declaration");
-    const field = definition.field ?? name;
-    if (fields.has(field))
-      throw new Error(`Collection state field is declared twice: ${field}`);
-    fields.add(field);
-    if (!(state instanceof ZodObject) || !Object.hasOwn(state.shape, field))
-      throw new Error(`Collection ${name} needs a top-level state array: ${field}`);
-    const array = unwrap(state.shape[field]);
-    if (!(array instanceof ZodArray) || !(array.element instanceof ZodObject))
-      throw new Error(`Collection ${name} must contain objects`);
-    const item = array.element;
-    const lazy = [...definition.lazy ?? []];
-    if (!Object.hasOwn(item.shape, definition.key) || !(item.shape[definition.key] instanceof ZodString))
-      throw new Error(`Collection ${name} requires a string key field`);
-    if (lazy.length > 32 || new Set(lazy).size !== lazy.length || lazy.some((field) => typeof field !== "string" || field === definition.key || !field || field.split(".").some((part) => !part) || lazy.some((other) => other !== field && field.startsWith(other + "."))))
-      throw new Error(`Invalid lazy fields for collection ${name}`);
-    let summary = item;
-    for (const path of lazy)
-      summary = lazyAt(summary, path.split("."));
-    return { name, contract: { field, key: definition.key, lazy }, item, summary };
-  });
-}
-var generated = new WeakMap;
-
-// .sdk/runtime/src/store.ts
-function isRevisionConflict(error) {
-  if (!error || typeof error !== "object")
+// .sdk/runtime/dist/chunk-pafsk3qt.mjs
+function b(o) {
+  if (!o || typeof o !== "object")
     return false;
-  if (error.code === "revision-conflict")
+  if (o.code === "revision-conflict")
     return true;
-  const message = error instanceof Error ? error.message : String(error);
-  return /revision conflict/i.test(message);
+  let l = o instanceof Error ? o.message : String(o);
+  return /revision conflict/i.test(l);
 }
-
-// .sdk/runtime/src/operation-error.ts
-class OperationRejectedError extends Error {
+class t extends Error {
   code = "operation-rejected";
-  constructor(message) {
-    super(message);
+  constructor(o) {
+    super(o);
     this.name = "OperationRejectedError";
   }
 }
-
-// .sdk/runtime/src/config.ts
-function noteConfigRef(noteId) {
-  return `${noteId}:config`;
+function r(o) {
+  return `${o}:config`;
 }
-
-// .sdk/runtime/src/note.ts
-var modelKey = Symbol.for("worka.note-model.v2");
-var backgroundKey = Symbol.for("worka.note-background.v2");
-var contextKey = Symbol.for("worka.note-contexts.v2");
-var contextGlobal = globalThis;
-var boundContexts = contextGlobal[contextKey] ?? new WeakMap;
-if (!contextGlobal[contextKey])
-  Object.defineProperty(contextGlobal, contextKey, { value: boundContexts });
-function defineNote(definition) {
-  collectionSchemas(definition.state?.schema, definition.collections);
-  const captured = Object.freeze({
-    ...definition,
-    ...definition.collections ? { collections: freezeJson(definition.collections) } : {},
-    ...definition.state ? { state: Object.freeze({ ...definition.state, initial: freezeJson(definition.state.schema.parse(definition.state.initial)) }) } : {},
-    ...definition.config ? { config: Object.freeze({ ...definition.config, defaults: freezeJson(partialConfig(definition.config.schema).parse(definition.config.defaults)) }) } : {}
-  });
-  const requiredConfig = captured.config ? (toJSONSchema(captured.config.schema, { io: "input" }).required?.length ?? 0) > 0 : false;
-  const note = {
-    [modelKey]: captured,
-    action: (metadata, run) => operation("action", { ...metadata, visibility: metadata.visibility ?? "private", model: note }, async (input, raw) => {
-      const bound = boundContexts.get(raw);
-      if (bound && (bound.note !== note || bound.kind !== "action"))
-        throw new OperationRejectedError("An action requires its own note’s writable context");
-      raw = bound?.raw ?? raw;
-      const context = bindActionContext(note, raw);
-      if (metadata.requiresConfig !== false && requiredConfig && captured.config) {
-        const configured = captured.config.schema.safeParse((await raw.store.read(noteConfigRef(raw.note.id))).value);
-        if (!configured.success)
-          throw new OperationRejectedError("Complete this note’s configuration before running this action");
-      }
-      return run(context, input);
-    }, true),
-    query: (metadata, run) => operation("query", { ...metadata, visibility: metadata.visibility ?? "public", model: note }, (input, raw) => run(bindQueryContext(note, raw), input), true),
-    event: (metadata) => createEvent({ ...metadata, visibility: metadata.visibility ?? "private", model: note }),
-    background: (background) => {
-      const bound = {
-        [backgroundKey]: note,
-        ...background.resources ? { resources: freezeJson(background.resources) } : {},
-        ...background.start ? { start: async (raw) => {
-          const result = await background.start(bindActionContext(note, raw));
-          if (result !== undefined)
-            throw new Error("Finite start must not return a cleanup closure or value");
-        } } : {},
-        ...background.state ? { state: async (raw, snapshot) => {
-          if (!captured.state)
-            throw new Error("A state handler requires a state model");
-          const value = captured.state.schema.parse(snapshot.value);
-          const result = await background.state(bindActionContext(note, raw), freezeJson({ ...snapshot, value }));
-          if (result !== undefined)
-            throw new Error("Finite state handler must not return a cleanup closure or value");
-        } } : {}
-      };
-      return Object.freeze(bound);
+var Ne = Symbol.for("worka.note-model.v2");
+var Pe = Symbol.for("worka.note-background.v2");
+var he = Symbol.for("worka.note-contexts.v2");
+var xe = globalThis;
+var ge = xe[he] ?? new WeakMap;
+if (!xe[he])
+  Object.defineProperty(xe, he, { value: ge });
+function h(o) {
+  a(o.state?.schema, o.collections);
+  let l = Object.freeze({ ...o, ...o.collections ? { collections: fe(o.collections) } : {}, ...o.state ? { state: Object.freeze({ ...o.state, initial: fe(o.state.schema.parse(o.state.initial)) }) } : {}, ...o.config ? { config: Object.freeze({ ...o.config, defaults: fe(ve(o.config.schema).parse(o.config.defaults)) }) } : {} }), d = l.config ? (toJSONSchema(l.config.schema, { io: "input" }).required?.length ?? 0) > 0 : false, u = { [Ne]: l, action: (p, O) => ye("action", { ...p, visibility: p.visibility ?? "private", model: u }, async (E, y) => {
+    let N = ge.get(y);
+    if (N && (N.note !== u || N.kind !== "action"))
+      throw new t("An action requires its own note’s writable context");
+    y = N?.raw ?? y;
+    let T = f(u, y);
+    if (p.requiresConfig !== false && d && l.config) {
+      if (!l.config.schema.safeParse((await y.store.read(r(y.note.id))).value).success)
+        throw new t("Complete this note’s configuration before running this action");
     }
-  };
-  return Object.freeze(note);
+    return O(T, E);
+  }, true), query: (p, O) => ye("query", { ...p, visibility: p.visibility ?? "public", model: u }, (E, y) => O(w(u, y), E), true), event: (p) => Se({ ...p, visibility: p.visibility ?? "private", model: u }), background: (p) => {
+    let O = { [Pe]: u, ...p.resources ? { resources: fe(p.resources) } : {}, ...p.start ? { start: async (E) => {
+      if (await p.start(f(u, E)) !== undefined)
+        throw Error("Finite start must not return a cleanup closure or value");
+    } } : {}, ...p.state ? { state: async (E, y) => {
+      if (!l.state)
+        throw Error("A state handler requires a state model");
+      let N = l.state.schema.parse(y.value);
+      if (await p.state(f(u, E), fe({ ...y, value: N })) !== undefined)
+        throw Error("Finite state handler must not return a cleanup closure or value");
+    } } : {} };
+    return Object.freeze(O);
+  } };
+  return Object.freeze(u);
 }
-function noteDefinition(value) {
-  return value !== null && typeof value === "object" ? value[modelKey] : undefined;
+function e(o) {
+  return o !== null && typeof o === "object" ? o[Ne] : undefined;
 }
-function identity(raw) {
-  return Object.freeze({ id: raw.id, version: raw.version ?? "unknown" });
+function Oe(o) {
+  return Object.freeze({ id: o.id, version: o.version ?? "unknown" });
 }
-function partialConfig(schema) {
-  if (!(schema instanceof ZodObject))
-    throw new Error("Config schema must be a Zod object");
-  return schema.partial();
+function ve(o) {
+  if (!(o instanceof ZodObject))
+    throw Error("Config schema must be a Zod object");
+  return o.partial();
 }
-function freezeJson(value) {
-  assertJson(value);
-  const freeze = (part) => {
-    if (part && typeof part === "object" && !Object.isFrozen(part)) {
-      Object.values(part).forEach(freeze);
-      Object.freeze(part);
-    }
-  };
-  const copy = JSON.parse(JSON.stringify(value));
-  freeze(copy);
-  return copy;
+function fe(o) {
+  s(o);
+  let l = (u) => {
+    if (u && typeof u === "object" && !Object.isFrozen(u))
+      Object.values(u).forEach(l), Object.freeze(u);
+  }, d = JSON.parse(JSON.stringify(o));
+  return l(d), d;
 }
-function assertJson(value) {
-  const seen = new Set;
-  const visit = (part) => {
-    if (part === null || typeof part === "string" || typeof part === "boolean" || typeof part === "number" && Number.isFinite(part))
+function s(o) {
+  let l = new Set, d = () => {
+    throw Error("Note data must be finite, plain JSON");
+  }, u = (p) => {
+    if (p === null || typeof p === "string" || typeof p === "boolean" || typeof p === "number" && Number.isFinite(p))
       return;
-    if (!part || typeof part !== "object" || !Array.isArray(part) && Object.getPrototypeOf(part) !== Object.prototype && Object.getPrototypeOf(part) !== null)
-      throw new Error("Note data must be finite, plain JSON");
-    if (seen.has(part))
-      throw new Error("Note data cannot contain cycles");
-    seen.add(part);
-    for (const child of Object.values(part)) {
-      if (Array.isArray(part) || child !== undefined)
-        visit(child);
+    if (!p || typeof p !== "object")
+      return d();
+    let O = Array.isArray(p), E = Object.getPrototypeOf(p);
+    if (E !== (O ? Array.prototype : Object.prototype) && E !== null)
+      return d();
+    if (Object.getOwnPropertySymbols(p).length)
+      return d();
+    if (l.has(p))
+      throw Error("Note data cannot contain cycles");
+    let y = Object.getOwnPropertyDescriptors(p), N = Object.hasOwn(y, "toJSON") ? y.toJSON : E && Object.getOwnPropertyDescriptor(E, "toJSON");
+    if (N && (!Object.hasOwn(N, "value") || typeof N.value === "function"))
+      return d();
+    if (l.add(p), O)
+      for (let T = 0;T < p.length; T++) {
+        let I = String(T), _ = Object.hasOwn(y, I) ? y[I] : undefined;
+        if (!_ || !Object.hasOwn(_, "value"))
+          return d();
+        u(_.value);
+      }
+    for (let [T, I] of Object.entries(y)) {
+      if (O) {
+        if (T === "length")
+          continue;
+        if (!/^(0|[1-9]\d*)$/.test(T) || Number(T) >= p.length)
+          return d();
+        continue;
+      }
+      if (!I.enumerable || !Object.hasOwn(I, "value"))
+        return d();
+      if (I.value !== undefined)
+        u(I.value);
     }
-    seen.delete(part);
+    l.delete(p);
   };
-  visit(value);
+  u(o);
 }
-function writableState(schema, store, ref) {
-  if (!ref)
-    throw new Error("The declared state has no bound storage");
-  const read = async () => {
-    const snapshot = await store.read(ref);
-    return freezeJson({ ...snapshot, value: schema.parse(snapshot.value) });
+function ze(o, l, d) {
+  if (!d)
+    throw Error("The declared state has no bound storage");
+  let u = async () => {
+    let p = await l.read(d);
+    return fe({ ...p, value: o.parse(p.value) });
   };
-  return { read, update: async (change, options) => {
-    for (let attempt = 1;; attempt++) {
-      const current = await read();
-      if (options?.expectedRevision !== undefined && current.revision !== options.expectedRevision)
-        throw Object.assign(new Error("State revision conflict"), { code: "revision-conflict" });
-      const draft = structuredClone(current.value);
-      const result = change(draft);
-      if (result !== undefined) {
-        if (result && typeof result.then === "function")
-          Promise.resolve(result).catch(() => {
+  return { read: u, update: async (p, O) => {
+    for (let E = 1;; E++) {
+      let y = await u();
+      if (O?.expectedRevision !== undefined && y.revision !== O.expectedRevision)
+        throw Object.assign(Error("State revision conflict"), { code: "revision-conflict" });
+      let N = structuredClone(y.value), T = p(N);
+      if (T !== undefined) {
+        if (T && typeof T.then === "function")
+          Promise.resolve(T).catch(() => {
             return;
           });
-        throw new Error("State update callbacks must be synchronous and return nothing");
+        throw Error("State update callbacks must be synchronous and return nothing");
       }
-      const value = schema.parse(draft);
-      assertJson(value);
-      if (JSON.stringify(value) === JSON.stringify(current.value))
-        return current;
+      let I = o.parse(N);
+      if (s(I), JSON.stringify(I) === JSON.stringify(y.value))
+        return y;
       try {
-        const request = { baseRevision: current.revision, patch: {}, ops: [{ path: [], value }] };
-        if (!store.update)
-          throw new Error("Read-only note context cannot update state");
-        const saved = await store.update(ref, request);
-        return freezeJson({ ...saved, value: schema.parse(saved.value) });
-      } catch (error) {
-        if (options?.expectedRevision !== undefined || attempt >= 8 || !isRevisionConflict(error))
-          throw error;
+        let _ = { baseRevision: y.revision, patch: {}, ops: [{ path: [], value: I }] };
+        if (!l.update)
+          throw Error("Read-only note context cannot update state");
+        let pe = await l.update(d, _);
+        return fe({ ...pe, value: o.parse(pe.value) });
+      } catch (_) {
+        if (O?.expectedRevision !== undefined || E >= 8 || !b(_))
+          throw _;
       }
     }
   } };
 }
-function stateParts(note, raw, writable) {
-  const definition = noteDefinition(note);
-  if (!definition)
-    throw new Error("Missing executable note model");
-  const parts = {};
-  for (const kind of ["state", "config"]) {
-    const data = definition[kind];
-    if (!data)
+function Te(o, l, d) {
+  let u = e(o);
+  if (!u)
+    throw Error("Missing executable note model");
+  let p = {};
+  for (let O of ["state", "config"]) {
+    let E = u[O];
+    if (!E)
       continue;
-    const ref = kind === "state" ? typeof raw.note.stateRef === "string" ? raw.note.stateRef : raw.note.stateRef?.id : noteConfigRef(raw.note.id);
-    const access = writableState(kind === "state" ? data.schema : partialConfig(data.schema), raw.store, ref);
-    parts[kind] = Object.freeze(writable ? access : { read: access.read });
+    let y = O === "state" ? typeof l.note.stateRef === "string" ? l.note.stateRef : l.note.stateRef?.id : r(l.note.id), N = ze(O === "state" ? E.schema : ve(E.schema), l.store, y);
+    p[O] = Object.freeze(d ? N : { read: N.read });
   }
-  return parts;
+  return p;
 }
-function bindActionContext(note, raw) {
-  const bound = boundContexts.get(raw);
-  if (bound) {
-    if (bound.note !== note || bound.kind !== "action")
-      throw new OperationRejectedError("An action requires its own note’s writable context");
-    return raw;
+function f(o, l) {
+  let d = ge.get(l);
+  if (d) {
+    if (d.note !== o || d.kind !== "action")
+      throw new t("An action requires its own note’s writable context");
+    return l;
   }
-  const { agent, schedules, notifications, previews, extensions, quip, slack, subprocess } = raw;
-  const context = Object.freeze({
-    note: identity(raw.note),
-    id: () => crypto.randomUUID(),
-    caller: raw.caller,
-    ...raw.replay ? { replay: true } : {},
-    signal: raw.signal,
-    progress: raw.progress,
-    db: raw.db,
-    files: raw.files,
-    notes: raw.notes,
-    resources: raw.resources,
-    events: raw.events,
-    host: Object.freeze({ agent, schedules, notifications, previews, extensions, quip, slack, subprocess }),
-    ...stateParts(note, raw, true)
+  let { agent: u, schedules: p, notifications: O, previews: E, extensions: y, quip: N, slack: T, subprocess: I } = l, _ = Object.freeze({ note: Oe(l.note), id: () => crypto.randomUUID(), caller: l.caller, ...l.replay ? { replay: true } : {}, signal: l.signal, progress: l.progress, db: l.db, files: l.files, notes: l.notes, resources: l.resources, events: l.events, host: Object.freeze({ agent: u, schedules: p, notifications: O, previews: E, extensions: y, quip: N, slack: T, subprocess: I }), ...Te(o, l, true) });
+  return ge.set(_, { note: o, raw: l, kind: "action" }), _;
+}
+function w(o, l) {
+  let d = ge.get(l);
+  if (d) {
+    if (d.note !== o)
+      throw new t("A bound context belongs to another note model");
+    if (d.kind === "query")
+      return l;
+    l = d.raw;
+  }
+  let u = Object.freeze({ note: Oe(l.note), db: Object.freeze({ read: l.db?.read?.bind(l.db), list: l.db?.list?.bind(l.db), stats: l.db?.stats?.bind(l.db) }), files: l.files && Object.freeze({ info: l.files.info.bind(l.files), read: l.files.read.bind(l.files) }), notes: Object.freeze({ lookup: l.notes?.lookup?.bind(l.notes), read: l.notes?.read?.bind(l.notes), query: l.notes?.query?.bind(l.notes) }), resources: Object.freeze({ read: l.resources?.read?.bind(l.resources) }), host: Object.freeze({ previews: l.previews && Object.freeze({ get: l.previews.get?.bind(l.previews), list: l.previews.list?.bind(l.previews) }) }), ...Te(o, l, false) });
+  return ge.set(u, { note: o, raw: l, kind: "query" }), u;
+}
+var De = /^[A-Za-z][A-Za-z\d_-]*$/;
+var U = strictObject({ cursor: string2().max(32768).optional(), limit: number2().int().min(1).max(100).optional(), maxBytes: number2().int().min(256).max(1048576).optional() });
+var K = strictObject({ key: string2().min(1).max(512), field: string2().min(1).max(2048), revision: string2().min(1) });
+var H = strictObject({ key: string2().min(1).max(512), revision: string2().optional() });
+var je = strictObject({ kind: literal("collection-field"), collection: string2(), key: string2(), field: string2(), revision: string2() });
+function Fe(o) {
+  while (o instanceof ZodOptional || o instanceof ZodDefault || o instanceof ZodNullable)
+    o = o.unwrap();
+  return o;
+}
+function me(o, l) {
+  if (o instanceof ZodOptional)
+    return me(o.unwrap(), l).optional();
+  if (o instanceof ZodDefault)
+    return me(o.unwrap(), l).optional();
+  if (o instanceof ZodNullable)
+    return l.length ? me(o.unwrap(), l).nullable() : je;
+  if (!l.length)
+    return je;
+  let [d, ...u] = l;
+  if (o instanceof ZodRecord && d === "*")
+    return record(o.keyType, me(o.valueType, u));
+  if (!(o instanceof ZodObject) || !d || !Object.hasOwn(o.shape, d))
+    throw Error(`Lazy field path does not match the state schema: ${l.join(".")}`);
+  return o.extend({ [d]: me(o.shape[d], u) });
+}
+function a(o, l = {}) {
+  if (Object.keys(l).length > 32)
+    throw Error("A note may declare at most 32 collections");
+  let d = new Set;
+  return Object.entries(l).map(([u, p]) => {
+    if (!De.test(u) || !p || typeof p !== "object" || Array.isArray(p) || Object.keys(p).some((I) => !["field", "key", "lazy"].includes(I)) || p.lazy !== undefined && !Array.isArray(p.lazy))
+      throw Error("Invalid collection declaration");
+    let O = p.field ?? u;
+    if (d.has(O))
+      throw Error(`Collection state field is declared twice: ${O}`);
+    if (d.add(O), !(o instanceof ZodObject) || !Object.hasOwn(o.shape, O))
+      throw Error(`Collection ${u} needs a top-level state array: ${O}`);
+    let E = Fe(o.shape[O]);
+    if (!(E instanceof ZodArray) || !(E.element instanceof ZodObject))
+      throw Error(`Collection ${u} must contain objects`);
+    let y = E.element, N = [...p.lazy ?? []];
+    if (!Object.hasOwn(y.shape, p.key) || !(y.shape[p.key] instanceof ZodString))
+      throw Error(`Collection ${u} requires a string key field`);
+    if (N.length > 32 || new Set(N).size !== N.length || N.some((I) => typeof I !== "string" || I === p.key || !I || I.split(".").some((_) => !_) || N.some((_) => _ !== I && I.startsWith(_ + "."))))
+      throw Error(`Invalid lazy fields for collection ${u}`);
+    let T = y;
+    for (let I of N)
+      T = me(T, I.split("."));
+    return { name: u, contract: { field: O, key: p.key, lazy: N }, item: y, summary: T };
   });
-  boundContexts.set(context, { note, raw, kind: "action" });
-  return context;
 }
-function bindQueryContext(note, raw) {
-  const bound = boundContexts.get(raw);
-  if (bound) {
-    if (bound.note !== note)
-      throw new OperationRejectedError("A bound context belongs to another note model");
-    if (bound.kind === "query")
-      return raw;
-    raw = bound.raw;
-  }
-  const context = Object.freeze({
-    note: identity(raw.note),
-    db: Object.freeze({ read: raw.db?.read?.bind(raw.db), list: raw.db?.list?.bind(raw.db), stats: raw.db?.stats?.bind(raw.db) }),
-    files: raw.files && Object.freeze({ info: raw.files.info.bind(raw.files), read: raw.files.read.bind(raw.files) }),
-    notes: Object.freeze({ lookup: raw.notes?.lookup?.bind(raw.notes), read: raw.notes?.read?.bind(raw.notes), query: raw.notes?.query?.bind(raw.notes) }),
-    resources: Object.freeze({ read: raw.resources?.read?.bind(raw.resources) }),
-    host: Object.freeze({ previews: raw.previews && Object.freeze({ get: raw.previews.get?.bind(raw.previews), list: raw.previews.list?.bind(raw.previews) }) }),
-    ...stateParts(note, raw, false)
-  });
-  boundContexts.set(context, { note, raw, kind: "query" });
-  return context;
+var Re = new WeakMap;
+var ke = Symbol.for("worka.note-capability");
+function ye(o, l, d, u = false) {
+  let p = async (y, N) => {
+    let T = await d(y, N), I = await O.output.safeParseAsync(T);
+    if (!I.success)
+      throw Error(`Capability output is invalid after execution; inspect effects before retrying: ${I.error.message}`);
+    return I.data;
+  }, O = Object.freeze({ ...l, kind: o, execute: p }), E = u ? async (y, N) => p(await O.input.parseAsync(N), y) : async (y, N) => p(await O.input.parseAsync(y), N);
+  return Object.defineProperty(E, ke, { value: O }), E;
 }
-// .sdk/runtime/src/task-outcome.ts
-function currentTaskOutcome(task) {
-  const outcome = task.outcome;
-  if (!outcome || task.pendingContinuation || task.pendingRequestId || task.continueRequested)
+function Se(o) {
+  let l = Object.freeze({ ...o, kind: "event", output: o.payload }), d = { name: o.name, publish(u, p, O) {
+    return u.events.publish(l.name, p, O);
+  } };
+  return Object.defineProperty(d, ke, { value: l }), Object.freeze(d);
+}
+function g(o) {
+  let l = o.outcome;
+  if (!l || o.pendingContinuation || o.pendingRequestId || o.continueRequested)
     return;
-  if ((outcome.requirementVersion ?? 1) !== (task.requirementVersion ?? 1))
+  if ((l.requirementVersion ?? 1) !== (o.requirementVersion ?? 1))
     return;
-  if (task.execution?.requestId && outcome.requestId !== task.execution.requestId)
+  if (o.execution?.requestId && l.requestId !== o.execution.requestId)
     return;
-  return outcome;
+  return l;
 }
-function taskOutcome(task) {
-  const outcome = currentTaskOutcome(task);
-  const proposal = task.proposal ?? task.proposals?.at(-1);
-  const pending = proposal?.status === "pending-approval";
-  const feedback = new Map(task.feedback?.map((f) => [JSON.stringify([f.connectionId, f.subject]), f]));
-  const repairBlocked = [...feedback.values()].some((f) => f.status === "failed" && f.manual);
-  const unresolvedOutcome = ["blocked", "needs-input", "failed", "unknown"].includes(outcome?.status ?? "");
-  const delivery = repairBlocked ? "成果验证受阻" : task.preview?.status === "failed" ? "成果交接失败" : pending ? "待合入" : task.candidate ? "候选已产出" : outcome?.status === "completed" ? "结论已出" : outcome?.status === "incomplete" ? "仍有剩余工作" : unresolvedOutcome ? "交付受阻" : ["review", "completed"].includes(task.status) ? "结果未记录" : "尚未交付";
-  const needsAction = repairBlocked || unresolvedOutcome || ["needs-input", "blocked", "failed", "unknown"].includes(task.status) || pending || task.preview?.status === "failed";
-  const unread = Boolean(outcome && outcome.recordedAt && (task.resultReadAt ?? 0) < outcome.recordedAt);
-  const section = task.archived ? "history" : needsAction ? "attention" : unread ? "result" : ["dispatching", "running"].includes(task.status) ? "running" : "history";
-  const next = repairBlocked ? "自动修复已停止，核对交付反馈" : task.preview?.status === "failed" ? "核对成果交接失败原因" : unresolvedOutcome ? "查看结果与未解决事项，决定下一步" : task.status === "needs-input" ? "补充所需信息" : ["blocked", "failed", "unknown"].includes(task.status) ? "查看阻塞原因，决定下一步" : pending ? "审核提案后决定是否合入" : task.candidate ? "打开候选查看验收范围" : outcome?.status === "completed" ? "查看结论，无需操作" : ["review", "completed"].includes(task.status) ? "查看本轮记录与剩余工作" : "正常推进，无需操作";
-  return {
-    delivery,
-    needsAction,
-    unread,
-    section,
-    next,
-    executionStatus: task.execution?.status,
-    executionError: task.execution?.error,
-    todoStatus: needsAction || !outcome || outcome.status !== "completed" || Boolean(task.candidate) || ["running", "dispatching", "paused", "cancelled"].includes(task.status) ? "in_progress" : "done"
-  };
+function S(o) {
+  let l = g(o), u = (o.proposal ?? o.proposals?.at(-1))?.status === "pending-approval", O = [...new Map(o.feedback?.map((pe) => [JSON.stringify([pe.connectionId, pe.subject]), pe])).values()].some((pe) => pe.status === "failed" && pe.manual), E = ["blocked", "needs-input", "failed", "unknown"].includes(l?.status ?? ""), y = O ? "成果验证受阻" : o.preview?.status === "failed" ? "成果交接失败" : u ? "待合入" : o.candidate ? "候选已产出" : l?.status === "completed" ? "结论已出" : l?.status === "incomplete" ? "仍有剩余工作" : E ? "交付受阻" : ["review", "completed"].includes(o.status) ? "结果未记录" : "尚未交付", N = O || E || ["needs-input", "blocked", "failed", "unknown"].includes(o.status) || u || o.preview?.status === "failed", T = Boolean(l && l.recordedAt && (o.resultReadAt ?? 0) < l.recordedAt), I = o.archived ? "history" : N ? "attention" : T ? "result" : ["dispatching", "running"].includes(o.status) ? "running" : "history", _ = O ? "自动修复已停止，核对交付反馈" : o.preview?.status === "failed" ? "核对成果交接失败原因" : E ? "查看结果与未解决事项，决定下一步" : o.status === "needs-input" ? "补充所需信息" : ["blocked", "failed", "unknown"].includes(o.status) ? "查看阻塞原因，决定下一步" : u ? "审核提案后决定是否合入" : o.candidate ? "打开候选查看验收范围" : l?.status === "completed" ? "查看结论，无需操作" : ["review", "completed"].includes(o.status) ? "查看本轮记录与剩余工作" : "正常推进，无需操作";
+  return { delivery: y, needsAction: N, unread: T, section: I, next: _, executionStatus: o.execution?.status, executionError: o.execution?.error, todoStatus: N || !l || l.status !== "completed" || Boolean(o.candidate) || ["running", "dispatching", "paused", "cancelled"].includes(o.status) ? "in_progress" : "done" };
 }
-// .sdk/runtime/src/preview-project.mjs
-var compiled = Symbol.for("worka.preview.project");
-// .sdk/runtime/src/note-files.ts
-var fileRefSchema = object({ id: string2().regex(/^note-file:[a-f0-9]{64}$/) });
-var NOTE_FILE_MAX_BYTES = 4 * 1024 * 1024;
+var c = object({ id: string2().regex(/^note-file:[a-f0-9]{64}$/) });
+
+// .sdk/runtime/dist/chunk-nn2sykgs.mjs
+var m = Symbol.for("worka.preview.project");
+
 // schemas.ts
 var emptyInputSchema = object({});
 var delegationInputSchema = object({ delegationId: string2() });
@@ -6862,12 +6792,12 @@ function mergeEvidence(existing, incoming) {
 
 // projection.ts
 function taskProgress(task, revision) {
-  const status = ["blocked", "failed", "unknown", "needs-input"].includes(task.status) ? "blocking" : taskOutcome(task).todoStatus;
-  const outcome = currentTaskOutcome(task);
+  const status = ["blocked", "failed", "unknown", "needs-input"].includes(task.status) ? "blocking" : S(task).todoStatus;
+  const outcome = g(task);
   return { delegationId: task.id, status, conclusion: outcome?.summary ?? "", revision, requirementVersion: task.requirementVersion ?? 1, archived: task.archived === true };
 }
 function taskResult(task, revision) {
-  const outcome = currentTaskOutcome(task);
+  const outcome = g(task);
   return { delegationId: task.id, title: task.goal, status: task.status, archived: task.archived === true, summary: outcome?.summary ?? "", replySuggestion: outcome?.replySuggestion ?? "", revision };
 }
 function emptyState() {
@@ -7118,7 +7048,7 @@ var executionDeskStateSchema = object({
   delegations: record(string2(), delegationSchema)
 });
 var executionConfigSchema = looseObject({ projectId: string2().optional(), notes: looseObject({ todo: string2().optional(), execution: string2().optional() }).optional() });
-var note = defineNote({
+var note = h({
   state: { schema: executionDeskStateSchema, initial: { version: 1, delegations: {}, title: "执行台" } },
   config: { schema: executionConfigSchema, defaults: {} },
   update: {

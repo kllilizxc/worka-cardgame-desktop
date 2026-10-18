@@ -7,10 +7,12 @@
     "monochrome": true
   },
   "files": [
+    ".gitattributes",
     "README.md",
     "SKILL.md",
     "actions.ts",
     "collaboration.ts",
+    "contract.ts",
     "contracts.ts",
     "icon.svg",
     "images.tsx",
@@ -20,10 +22,8 @@
     "note-model.ts",
     "package.json",
     "state.ts",
-    "surface.ts",
     "view.tsx",
-    ".gitattributes",
-    "worka-prebuilt/view-runtime-scyhf7bc.js",
+    "worka-prebuilt/view-runtime-6yyhgthd.js",
     "worka-prebuilt/zod-config.mjs",
     "worka-prebuilt/entry-bundle.css",
     "worka-prebuilt/view-runtime.mjs",
@@ -35,13 +35,14 @@
     "worka-prebuilt/contract/references/types/actions.d.ts",
     "worka-prebuilt/contract/references/types/contracts.d.ts",
     "worka-prebuilt/contract/references/types/model.d.ts",
+    "worka-prebuilt/contract/references/types/contract.d.ts",
     "worka-prebuilt/contract/manifest.json",
-    "worka-prebuilt/entry-306cxc1e.js",
     "worka-prebuilt/index.html",
     "worka-prebuilt/entry-bundle.js",
     "worka-prebuilt/entry-bundle.tailwind.css",
+    "worka-prebuilt/entry-xnsyj734.js",
     "worka-prebuilt/actions.mjs",
-    "worka-prebuilt/view-jyahhk7w.js",
+    "worka-prebuilt/view-h7w0nc37.js",
     "worka-prebuilt/manifest.json"
   ]
 }

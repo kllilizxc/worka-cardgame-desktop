@@ -1,4 +1,4 @@
-// ../../../worka-phone-pairing/node_modules/.cache/zod@4.6.1@@@1/v4/core/util.js
+// ../../../../worka-authoring-desktop-latest-20261017/node_modules/.bun/zod@4.6.1/node_modules/zod/v4/core/util.js
 function getEnumValues(entries) {
   const numericValues = Object.values(entries).filter((v) => typeof v === "number");
   const values = Object.entries(entries).filter(([k, _]) => numericValues.indexOf(+k) === -1).map(([_, v]) => v);
@@ -566,7 +566,7 @@ function constantCatch(value) {
   return fn;
 }
 
-// ../../../worka-phone-pairing/node_modules/.cache/zod@4.6.1@@@1/v4/core/core.js
+// ../../../../worka-authoring-desktop-latest-20261017/node_modules/.bun/zod@4.6.1/node_modules/zod/v4/core/core.js
 var _a;
 var _zodDesc = { value: undefined, enumerable: false };
 var _E = "captureStackTrace" in Error ? Error : null;
@@ -685,7 +685,7 @@ function config(newConfig) {
     Object.assign(globalConfig, newConfig);
   return globalConfig;
 }
-// ../../../worka-phone-pairing/node_modules/.cache/zod@4.6.1@@@1/v4/core/errors.js
+// ../../../../worka-authoring-desktop-latest-20261017/node_modules/.bun/zod@4.6.1/node_modules/zod/v4/core/errors.js
 function _getMessage() {
   const internals = this._zod;
   internals.message ?? (internals.message = JSON.stringify(internals.def, jsonStringifyReplacer, 2));
@@ -800,7 +800,7 @@ function formatError(error, mapper = (issue) => issue.message) {
   return fieldErrors;
 }
 
-// ../../../worka-phone-pairing/node_modules/.cache/zod@4.6.1@@@1/v4/core/parse.js
+// ../../../../worka-authoring-desktop-latest-20261017/node_modules/.bun/zod@4.6.1/node_modules/zod/v4/core/parse.js
 function finalizeParams(callee, params) {
   return { callee: params?.callee ?? callee, Err: params?.Err };
 }
@@ -947,7 +947,7 @@ var _safeEncodeAsync = (_Err) => async (schema, value, _ctx) => {
 var _safeDecodeAsync = (_Err) => async (schema, value, _ctx) => {
   return _safeParseAsync(_Err)(schema, value, _ctx);
 };
-// ../../../worka-phone-pairing/node_modules/.cache/zod@4.6.1@@@1/v4/core/regexes.js
+// ../../../../worka-authoring-desktop-latest-20261017/node_modules/.bun/zod@4.6.1/node_modules/zod/v4/core/regexes.js
 var cuid = /^[cC][0-9a-z]{6,}$/;
 var cuid2 = /^[0-9a-z]+$/;
 var ulid = /^[0-7][0-9A-HJKMNP-TV-Za-hjkmnp-tv-z]{25}$/;
@@ -1006,7 +1006,7 @@ var _null = /^null$/i;
 var lowercase = /^[^A-Z]*$/;
 var uppercase = /^[^a-z]*$/;
 
-// ../../../worka-phone-pairing/node_modules/.cache/zod@4.6.1@@@1/v4/core/checks.js
+// ../../../../worka-authoring-desktop-latest-20261017/node_modules/.bun/zod@4.6.1/node_modules/zod/v4/core/checks.js
 var $ZodCheck = /* @__PURE__ */ $constructor("$ZodCheck", (inst, def) => {
   var _a;
   inst._zod ?? (inst._zod = {});
@@ -1322,7 +1322,7 @@ var $ZodCheckOverwrite = /* @__PURE__ */ $constructor("$ZodCheckOverwrite", (ins
   };
 });
 
-// ../../../worka-phone-pairing/node_modules/.cache/zod@4.6.1@@@1/v4/core/doc.js
+// ../../../../worka-authoring-desktop-latest-20261017/node_modules/.bun/zod@4.6.1/node_modules/zod/v4/core/doc.js
 class Doc {
   constructor(args = [], closed = {}) {
     this.content = [];
@@ -1364,14 +1364,14 @@ ${content.join(`
   }
 }
 
-// ../../../worka-phone-pairing/node_modules/.cache/zod@4.6.1@@@1/v4/core/versions.js
+// ../../../../worka-authoring-desktop-latest-20261017/node_modules/.bun/zod@4.6.1/node_modules/zod/v4/core/versions.js
 var version = {
   major: 4,
   minor: 6,
   patch: 1
 };
 
-// ../../../worka-phone-pairing/node_modules/.cache/zod@4.6.1@@@1/v4/core/schemas.js
+// ../../../../worka-authoring-desktop-latest-20261017/node_modules/.bun/zod@4.6.1/node_modules/zod/v4/core/schemas.js
 var $ZodType = /* @__PURE__ */ $constructor("$ZodType", (inst, def) => {
   var _a;
   inst ?? (inst = {});
@@ -2969,7 +2969,7 @@ var $ZodProperties = /* @__PURE__ */ $constructor("$ZodProperties", (inst, def) 
     yield this;
   }
 });
-// ../../../worka-phone-pairing/node_modules/.cache/zod@4.6.1@@@1/v4/core/memoizer.js
+// ../../../../worka-authoring-desktop-latest-20261017/node_modules/.bun/zod@4.6.1/node_modules/zod/v4/core/memoizer.js
 class $ZodCyclicError extends Error {
   constructor() {
     super(`Cannot parse a reference cycle that closes through a transform`);
@@ -3241,7 +3241,7 @@ function isBackEdge(ctx, value) {
   const backEdges = ctx[STATE]?.backEdges;
   return backEdges !== undefined && isRef(value) && backEdges.has(value);
 }
-// ../../../worka-phone-pairing/node_modules/.cache/zod@4.6.1@@@1/v4/locales/en.js
+// ../../../../worka-authoring-desktop-latest-20261017/node_modules/.bun/zod@4.6.1/node_modules/zod/v4/locales/en.js
 var error = () => {
   const Sizable = {
     string: { unit: "characters", verb: "to have" },
@@ -3362,7 +3362,7 @@ function en_default() {
     localeError: error()
   };
 }
-// ../../../worka-phone-pairing/node_modules/.cache/zod@4.6.1@@@1/v4/core/registries.js
+// ../../../../worka-authoring-desktop-latest-20261017/node_modules/.bun/zod@4.6.1/node_modules/zod/v4/core/registries.js
 var _a2;
 class $ZodRegistry {
   constructor() {
@@ -3409,7 +3409,7 @@ function registry() {
 }
 (_a2 = globalThis).__zod_globalRegistry ?? (_a2.__zod_globalRegistry = registry());
 var globalRegistry = globalThis.__zod_globalRegistry;
-// ../../../worka-phone-pairing/node_modules/.cache/zod@4.6.1@@@1/v4/core/api.js
+// ../../../../worka-authoring-desktop-latest-20261017/node_modules/.bun/zod@4.6.1/node_modules/zod/v4/core/api.js
 function _string(Class, params) {
   return new Class({
     type: "string",
@@ -3865,7 +3865,7 @@ function _check(fn, params) {
   ch._zod.check = fn;
   return ch;
 }
-// ../../../worka-phone-pairing/node_modules/.cache/zod@4.6.1@@@1/v4/core/to-json-schema.js
+// ../../../../worka-authoring-desktop-latest-20261017/node_modules/.bun/zod@4.6.1/node_modules/zod/v4/core/to-json-schema.js
 function assignProps(target, ...sources) {
   for (const source of sources) {
     for (const key of Reflect.ownKeys(source)) {
@@ -4388,7 +4388,7 @@ var createStandardJSONSchemaMethod = (schema, io, processors = {}) => (params) =
   extractDefs(ctx, schema);
   return finalize(ctx, schema);
 };
-// ../../../worka-phone-pairing/node_modules/.cache/zod@4.6.1@@@1/v4/core/json-schema-processors.js
+// ../../../../worka-authoring-desktop-latest-20261017/node_modules/.bun/zod@4.6.1/node_modules/zod/v4/core/json-schema-processors.js
 var narrowMin = (agg, key, value) => {
   if (agg[key] === undefined || value > agg[key])
     agg[key] = value;
@@ -5159,7 +5159,7 @@ function toJSONSchema(input, params) {
   extractDefs(ctx, input);
   return finalize(ctx, input);
 }
-// ../../../worka-phone-pairing/node_modules/.cache/zod@4.6.1@@@1/v4/classic/errors.js
+// ../../../../worka-authoring-desktop-latest-20261017/node_modules/.bun/zod@4.6.1/node_modules/zod/v4/classic/errors.js
 var _installedErrorProtos = /* @__PURE__ */ new WeakSet([Object.prototype, Error.prototype]);
 function _lazyMethod(proto, key, make) {
   Object.defineProperty(proto, key, {
@@ -5204,7 +5204,7 @@ var ZodRealError = /* @__PURE__ */ $constructor("ZodError", initializer2, undefi
   Parent: Error
 });
 
-// ../../../worka-phone-pairing/node_modules/.cache/zod@4.6.1@@@1/v4/classic/parse.js
+// ../../../../worka-authoring-desktop-latest-20261017/node_modules/.bun/zod@4.6.1/node_modules/zod/v4/classic/parse.js
 var parse2 = /* @__PURE__ */ _parse(ZodRealError);
 var parseAsync = /* @__PURE__ */ _parseAsync(ZodRealError);
 var safeParse = /* @__PURE__ */ _safeParse(ZodRealError);
@@ -5218,7 +5218,7 @@ var safeDecode = /* @__PURE__ */ _safeDecode(ZodRealError);
 var safeEncodeAsync = /* @__PURE__ */ _safeEncodeAsync(ZodRealError);
 var safeDecodeAsync = /* @__PURE__ */ _safeDecodeAsync(ZodRealError);
 
-// ../../../worka-phone-pairing/node_modules/.cache/zod@4.6.1@@@1/v4/classic/schemas.js
+// ../../../../worka-authoring-desktop-latest-20261017/node_modules/.bun/zod@4.6.1/node_modules/zod/v4/classic/schemas.js
 function _ensureDefaultLocale() {
   if (!globalConfig.localeError)
     config(en_default());
@@ -6148,317 +6148,294 @@ function json(params) {
   });
   return jsonSchema;
 }
-// .sdk/runtime/src/capabilities.ts
-var definitionKey = Symbol.for("worka.note-capability");
-function operation(kind, definition, handler, contextFirst = false) {
-  const execute = async (input, context) => {
-    const result = await handler(input, context);
-    const output = captured.output.safeParse(result);
-    if (!output.success)
-      throw new Error(`Capability output is invalid after execution; inspect effects before retrying: ${output.error.message}`);
-    return output.data;
-  };
-  const captured = Object.freeze({ ...definition, kind, execute });
-  const callable = contextFirst ? async (context, input) => execute(captured.input.parse(input), context) : async (input, context) => execute(captured.input.parse(input), context);
-  Object.defineProperty(callable, definitionKey, { value: captured });
-  return callable;
-}
-function createEvent(definition) {
-  const captured = Object.freeze({ ...definition, kind: "event", output: definition.payload });
-  const event = {
-    name: definition.name,
-    publish(context, payload, options) {
-      return context.events.publish(captured.name, captured.output.parse(payload), options);
-    }
-  };
-  Object.defineProperty(event, definitionKey, { value: captured });
-  return Object.freeze(event);
-}
-
-// .sdk/runtime/src/collections.ts
-var identifier = /^[A-Za-z][A-Za-z\d_-]*$/;
-var collectionPageInput = strictObject({ cursor: string2().max(32768).optional(), limit: number2().int().min(1).max(100).optional(), maxBytes: number2().int().min(256).max(1024 * 1024).optional() });
-var collectionFieldInput = strictObject({ key: string2().min(1).max(512), field: string2().min(1).max(2048), revision: string2().min(1) });
-var collectionDetailInput = strictObject({ key: string2().min(1).max(512), revision: string2().optional() });
-var lazySchema = strictObject({ kind: literal("collection-field"), collection: string2(), key: string2(), field: string2(), revision: string2() });
-function unwrap(schema) {
-  while (schema instanceof ZodOptional || schema instanceof ZodDefault || schema instanceof ZodNullable)
-    schema = schema.unwrap();
-  return schema;
-}
-function lazyAt(schema, parts) {
-  if (schema instanceof ZodOptional)
-    return lazyAt(schema.unwrap(), parts).optional();
-  if (schema instanceof ZodDefault)
-    return lazyAt(schema.unwrap(), parts).optional();
-  if (schema instanceof ZodNullable)
-    return parts.length ? lazyAt(schema.unwrap(), parts).nullable() : lazySchema;
-  if (!parts.length)
-    return lazySchema;
-  const [head, ...tail] = parts;
-  if (schema instanceof ZodRecord && head === "*")
-    return record(schema.keyType, lazyAt(schema.valueType, tail));
-  if (!(schema instanceof ZodObject) || !head || !Object.hasOwn(schema.shape, head))
-    throw new Error(`Lazy field path does not match the state schema: ${parts.join(".")}`);
-  return schema.extend({ [head]: lazyAt(schema.shape[head], tail) });
-}
-function collectionSchemas(state, declarations = {}) {
-  if (Object.keys(declarations).length > 32)
-    throw new Error("A note may declare at most 32 collections");
-  const fields = new Set;
-  return Object.entries(declarations).map(([name, definition]) => {
-    if (!identifier.test(name) || !definition || typeof definition !== "object" || Array.isArray(definition) || Object.keys(definition).some((key) => !["field", "key", "lazy"].includes(key)) || definition.lazy !== undefined && !Array.isArray(definition.lazy))
-      throw new Error("Invalid collection declaration");
-    const field = definition.field ?? name;
-    if (fields.has(field))
-      throw new Error(`Collection state field is declared twice: ${field}`);
-    fields.add(field);
-    if (!(state instanceof ZodObject) || !Object.hasOwn(state.shape, field))
-      throw new Error(`Collection ${name} needs a top-level state array: ${field}`);
-    const array = unwrap(state.shape[field]);
-    if (!(array instanceof ZodArray) || !(array.element instanceof ZodObject))
-      throw new Error(`Collection ${name} must contain objects`);
-    const item = array.element;
-    const lazy = [...definition.lazy ?? []];
-    if (!Object.hasOwn(item.shape, definition.key) || !(item.shape[definition.key] instanceof ZodString))
-      throw new Error(`Collection ${name} requires a string key field`);
-    if (lazy.length > 32 || new Set(lazy).size !== lazy.length || lazy.some((field) => typeof field !== "string" || field === definition.key || !field || field.split(".").some((part) => !part) || lazy.some((other) => other !== field && field.startsWith(other + "."))))
-      throw new Error(`Invalid lazy fields for collection ${name}`);
-    let summary = item;
-    for (const path of lazy)
-      summary = lazyAt(summary, path.split("."));
-    return { name, contract: { field, key: definition.key, lazy }, item, summary };
-  });
-}
-var generated = new WeakMap;
-
-// .sdk/runtime/src/store.ts
-function isRevisionConflict(error) {
-  if (!error || typeof error !== "object")
+// .sdk/runtime/dist/chunk-pafsk3qt.mjs
+function b(o) {
+  if (!o || typeof o !== "object")
     return false;
-  if (error.code === "revision-conflict")
+  if (o.code === "revision-conflict")
     return true;
-  const message = error instanceof Error ? error.message : String(error);
-  return /revision conflict/i.test(message);
+  let l = o instanceof Error ? o.message : String(o);
+  return /revision conflict/i.test(l);
 }
-
-// .sdk/runtime/src/operation-error.ts
-class OperationRejectedError extends Error {
+class t extends Error {
   code = "operation-rejected";
-  constructor(message) {
-    super(message);
+  constructor(o) {
+    super(o);
     this.name = "OperationRejectedError";
   }
 }
-
-// .sdk/runtime/src/config.ts
-function noteConfigRef(noteId) {
-  return `${noteId}:config`;
+function r(o) {
+  return `${o}:config`;
 }
-
-// .sdk/runtime/src/note.ts
-var modelKey = Symbol.for("worka.note-model.v2");
-var backgroundKey = Symbol.for("worka.note-background.v2");
-var contextKey = Symbol.for("worka.note-contexts.v2");
-var contextGlobal = globalThis;
-var boundContexts = contextGlobal[contextKey] ?? new WeakMap;
-if (!contextGlobal[contextKey])
-  Object.defineProperty(contextGlobal, contextKey, { value: boundContexts });
-function defineNote(definition) {
-  collectionSchemas(definition.state?.schema, definition.collections);
-  const captured = Object.freeze({
-    ...definition,
-    ...definition.collections ? { collections: freezeJson(definition.collections) } : {},
-    ...definition.state ? { state: Object.freeze({ ...definition.state, initial: freezeJson(definition.state.schema.parse(definition.state.initial)) }) } : {},
-    ...definition.config ? { config: Object.freeze({ ...definition.config, defaults: freezeJson(partialConfig(definition.config.schema).parse(definition.config.defaults)) }) } : {}
-  });
-  const requiredConfig = captured.config ? (toJSONSchema(captured.config.schema, { io: "input" }).required?.length ?? 0) > 0 : false;
-  const note = {
-    [modelKey]: captured,
-    action: (metadata, run) => operation("action", { ...metadata, visibility: metadata.visibility ?? "private", model: note }, async (input, raw) => {
-      const bound = boundContexts.get(raw);
-      if (bound && (bound.note !== note || bound.kind !== "action"))
-        throw new OperationRejectedError("An action requires its own note’s writable context");
-      raw = bound?.raw ?? raw;
-      const context = bindActionContext(note, raw);
-      if (metadata.requiresConfig !== false && requiredConfig && captured.config) {
-        const configured = captured.config.schema.safeParse((await raw.store.read(noteConfigRef(raw.note.id))).value);
-        if (!configured.success)
-          throw new OperationRejectedError("Complete this note’s configuration before running this action");
-      }
-      return run(context, input);
-    }, true),
-    query: (metadata, run) => operation("query", { ...metadata, visibility: metadata.visibility ?? "public", model: note }, (input, raw) => run(bindQueryContext(note, raw), input), true),
-    event: (metadata) => createEvent({ ...metadata, visibility: metadata.visibility ?? "private", model: note }),
-    background: (background) => {
-      const bound = {
-        [backgroundKey]: note,
-        ...background.resources ? { resources: freezeJson(background.resources) } : {},
-        ...background.start ? { start: async (raw) => {
-          const result = await background.start(bindActionContext(note, raw));
-          if (result !== undefined)
-            throw new Error("Finite start must not return a cleanup closure or value");
-        } } : {},
-        ...background.state ? { state: async (raw, snapshot) => {
-          if (!captured.state)
-            throw new Error("A state handler requires a state model");
-          const value = captured.state.schema.parse(snapshot.value);
-          const result = await background.state(bindActionContext(note, raw), freezeJson({ ...snapshot, value }));
-          if (result !== undefined)
-            throw new Error("Finite state handler must not return a cleanup closure or value");
-        } } : {}
-      };
-      return Object.freeze(bound);
+var Ne = Symbol.for("worka.note-model.v2");
+var Pe = Symbol.for("worka.note-background.v2");
+var he = Symbol.for("worka.note-contexts.v2");
+var xe = globalThis;
+var ge = xe[he] ?? new WeakMap;
+if (!xe[he])
+  Object.defineProperty(xe, he, { value: ge });
+function h(o) {
+  a(o.state?.schema, o.collections);
+  let l = Object.freeze({ ...o, ...o.collections ? { collections: fe(o.collections) } : {}, ...o.state ? { state: Object.freeze({ ...o.state, initial: fe(o.state.schema.parse(o.state.initial)) }) } : {}, ...o.config ? { config: Object.freeze({ ...o.config, defaults: fe(ve(o.config.schema).parse(o.config.defaults)) }) } : {} }), d = l.config ? (toJSONSchema(l.config.schema, { io: "input" }).required?.length ?? 0) > 0 : false, u = { [Ne]: l, action: (p, O) => ye("action", { ...p, visibility: p.visibility ?? "private", model: u }, async (E, y) => {
+    let N = ge.get(y);
+    if (N && (N.note !== u || N.kind !== "action"))
+      throw new t("An action requires its own note’s writable context");
+    y = N?.raw ?? y;
+    let T = f(u, y);
+    if (p.requiresConfig !== false && d && l.config) {
+      if (!l.config.schema.safeParse((await y.store.read(r(y.note.id))).value).success)
+        throw new t("Complete this note’s configuration before running this action");
     }
-  };
-  return Object.freeze(note);
+    return O(T, E);
+  }, true), query: (p, O) => ye("query", { ...p, visibility: p.visibility ?? "public", model: u }, (E, y) => O(w(u, y), E), true), event: (p) => Se({ ...p, visibility: p.visibility ?? "private", model: u }), background: (p) => {
+    let O = { [Pe]: u, ...p.resources ? { resources: fe(p.resources) } : {}, ...p.start ? { start: async (E) => {
+      if (await p.start(f(u, E)) !== undefined)
+        throw Error("Finite start must not return a cleanup closure or value");
+    } } : {}, ...p.state ? { state: async (E, y) => {
+      if (!l.state)
+        throw Error("A state handler requires a state model");
+      let N = l.state.schema.parse(y.value);
+      if (await p.state(f(u, E), fe({ ...y, value: N })) !== undefined)
+        throw Error("Finite state handler must not return a cleanup closure or value");
+    } } : {} };
+    return Object.freeze(O);
+  } };
+  return Object.freeze(u);
 }
-function noteDefinition(value) {
-  return value !== null && typeof value === "object" ? value[modelKey] : undefined;
+function e(o) {
+  return o !== null && typeof o === "object" ? o[Ne] : undefined;
 }
-function identity(raw) {
-  return Object.freeze({ id: raw.id, version: raw.version ?? "unknown" });
+function Oe(o) {
+  return Object.freeze({ id: o.id, version: o.version ?? "unknown" });
 }
-function partialConfig(schema) {
-  if (!(schema instanceof ZodObject))
-    throw new Error("Config schema must be a Zod object");
-  return schema.partial();
+function ve(o) {
+  if (!(o instanceof ZodObject))
+    throw Error("Config schema must be a Zod object");
+  return o.partial();
 }
-function freezeJson(value) {
-  assertJson(value);
-  const freeze = (part) => {
-    if (part && typeof part === "object" && !Object.isFrozen(part)) {
-      Object.values(part).forEach(freeze);
-      Object.freeze(part);
-    }
-  };
-  const copy = JSON.parse(JSON.stringify(value));
-  freeze(copy);
-  return copy;
+function fe(o) {
+  s(o);
+  let l = (u) => {
+    if (u && typeof u === "object" && !Object.isFrozen(u))
+      Object.values(u).forEach(l), Object.freeze(u);
+  }, d = JSON.parse(JSON.stringify(o));
+  return l(d), d;
 }
-function assertJson(value) {
-  const seen = new Set;
-  const visit = (part) => {
-    if (part === null || typeof part === "string" || typeof part === "boolean" || typeof part === "number" && Number.isFinite(part))
+function s(o) {
+  let l = new Set, d = () => {
+    throw Error("Note data must be finite, plain JSON");
+  }, u = (p) => {
+    if (p === null || typeof p === "string" || typeof p === "boolean" || typeof p === "number" && Number.isFinite(p))
       return;
-    if (!part || typeof part !== "object" || !Array.isArray(part) && Object.getPrototypeOf(part) !== Object.prototype && Object.getPrototypeOf(part) !== null)
-      throw new Error("Note data must be finite, plain JSON");
-    if (seen.has(part))
-      throw new Error("Note data cannot contain cycles");
-    seen.add(part);
-    for (const child of Object.values(part)) {
-      if (Array.isArray(part) || child !== undefined)
-        visit(child);
+    if (!p || typeof p !== "object")
+      return d();
+    let O = Array.isArray(p), E = Object.getPrototypeOf(p);
+    if (E !== (O ? Array.prototype : Object.prototype) && E !== null)
+      return d();
+    if (Object.getOwnPropertySymbols(p).length)
+      return d();
+    if (l.has(p))
+      throw Error("Note data cannot contain cycles");
+    let y = Object.getOwnPropertyDescriptors(p), N = Object.hasOwn(y, "toJSON") ? y.toJSON : E && Object.getOwnPropertyDescriptor(E, "toJSON");
+    if (N && (!Object.hasOwn(N, "value") || typeof N.value === "function"))
+      return d();
+    if (l.add(p), O)
+      for (let T = 0;T < p.length; T++) {
+        let I = String(T), _ = Object.hasOwn(y, I) ? y[I] : undefined;
+        if (!_ || !Object.hasOwn(_, "value"))
+          return d();
+        u(_.value);
+      }
+    for (let [T, I] of Object.entries(y)) {
+      if (O) {
+        if (T === "length")
+          continue;
+        if (!/^(0|[1-9]\d*)$/.test(T) || Number(T) >= p.length)
+          return d();
+        continue;
+      }
+      if (!I.enumerable || !Object.hasOwn(I, "value"))
+        return d();
+      if (I.value !== undefined)
+        u(I.value);
     }
-    seen.delete(part);
+    l.delete(p);
   };
-  visit(value);
+  u(o);
 }
-function writableState(schema, store, ref) {
-  if (!ref)
-    throw new Error("The declared state has no bound storage");
-  const read = async () => {
-    const snapshot = await store.read(ref);
-    return freezeJson({ ...snapshot, value: schema.parse(snapshot.value) });
+function ze(o, l, d) {
+  if (!d)
+    throw Error("The declared state has no bound storage");
+  let u = async () => {
+    let p = await l.read(d);
+    return fe({ ...p, value: o.parse(p.value) });
   };
-  return { read, update: async (change, options) => {
-    for (let attempt = 1;; attempt++) {
-      const current = await read();
-      if (options?.expectedRevision !== undefined && current.revision !== options.expectedRevision)
-        throw Object.assign(new Error("State revision conflict"), { code: "revision-conflict" });
-      const draft = structuredClone(current.value);
-      const result = change(draft);
-      if (result !== undefined) {
-        if (result && typeof result.then === "function")
-          Promise.resolve(result).catch(() => {
+  return { read: u, update: async (p, O) => {
+    for (let E = 1;; E++) {
+      let y = await u();
+      if (O?.expectedRevision !== undefined && y.revision !== O.expectedRevision)
+        throw Object.assign(Error("State revision conflict"), { code: "revision-conflict" });
+      let N = structuredClone(y.value), T = p(N);
+      if (T !== undefined) {
+        if (T && typeof T.then === "function")
+          Promise.resolve(T).catch(() => {
             return;
           });
-        throw new Error("State update callbacks must be synchronous and return nothing");
+        throw Error("State update callbacks must be synchronous and return nothing");
       }
-      const value = schema.parse(draft);
-      assertJson(value);
-      if (JSON.stringify(value) === JSON.stringify(current.value))
-        return current;
+      let I = o.parse(N);
+      if (s(I), JSON.stringify(I) === JSON.stringify(y.value))
+        return y;
       try {
-        const request = { baseRevision: current.revision, patch: {}, ops: [{ path: [], value }] };
-        if (!store.update)
-          throw new Error("Read-only note context cannot update state");
-        const saved = await store.update(ref, request);
-        return freezeJson({ ...saved, value: schema.parse(saved.value) });
-      } catch (error) {
-        if (options?.expectedRevision !== undefined || attempt >= 8 || !isRevisionConflict(error))
-          throw error;
+        let _ = { baseRevision: y.revision, patch: {}, ops: [{ path: [], value: I }] };
+        if (!l.update)
+          throw Error("Read-only note context cannot update state");
+        let pe = await l.update(d, _);
+        return fe({ ...pe, value: o.parse(pe.value) });
+      } catch (_) {
+        if (O?.expectedRevision !== undefined || E >= 8 || !b(_))
+          throw _;
       }
     }
   } };
 }
-function stateParts(note, raw, writable) {
-  const definition = noteDefinition(note);
-  if (!definition)
-    throw new Error("Missing executable note model");
-  const parts = {};
-  for (const kind of ["state", "config"]) {
-    const data = definition[kind];
-    if (!data)
+function Te(o, l, d) {
+  let u = e(o);
+  if (!u)
+    throw Error("Missing executable note model");
+  let p = {};
+  for (let O of ["state", "config"]) {
+    let E = u[O];
+    if (!E)
       continue;
-    const ref = kind === "state" ? typeof raw.note.stateRef === "string" ? raw.note.stateRef : raw.note.stateRef?.id : noteConfigRef(raw.note.id);
-    const access = writableState(kind === "state" ? data.schema : partialConfig(data.schema), raw.store, ref);
-    parts[kind] = Object.freeze(writable ? access : { read: access.read });
+    let y = O === "state" ? typeof l.note.stateRef === "string" ? l.note.stateRef : l.note.stateRef?.id : r(l.note.id), N = ze(O === "state" ? E.schema : ve(E.schema), l.store, y);
+    p[O] = Object.freeze(d ? N : { read: N.read });
   }
-  return parts;
+  return p;
 }
-function bindActionContext(note, raw) {
-  const bound = boundContexts.get(raw);
-  if (bound) {
-    if (bound.note !== note || bound.kind !== "action")
-      throw new OperationRejectedError("An action requires its own note’s writable context");
-    return raw;
+function f(o, l) {
+  let d = ge.get(l);
+  if (d) {
+    if (d.note !== o || d.kind !== "action")
+      throw new t("An action requires its own note’s writable context");
+    return l;
   }
-  const { agent, schedules, notifications, previews, extensions, quip, slack, subprocess } = raw;
-  const context = Object.freeze({
-    note: identity(raw.note),
-    id: () => crypto.randomUUID(),
-    caller: raw.caller,
-    ...raw.replay ? { replay: true } : {},
-    signal: raw.signal,
-    progress: raw.progress,
-    db: raw.db,
-    files: raw.files,
-    notes: raw.notes,
-    resources: raw.resources,
-    events: raw.events,
-    host: Object.freeze({ agent, schedules, notifications, previews, extensions, quip, slack, subprocess }),
-    ...stateParts(note, raw, true)
+  let { agent: u, schedules: p, notifications: O, previews: E, extensions: y, quip: N, slack: T, subprocess: I } = l, _ = Object.freeze({ note: Oe(l.note), id: () => crypto.randomUUID(), caller: l.caller, ...l.replay ? { replay: true } : {}, signal: l.signal, progress: l.progress, db: l.db, files: l.files, notes: l.notes, resources: l.resources, events: l.events, host: Object.freeze({ agent: u, schedules: p, notifications: O, previews: E, extensions: y, quip: N, slack: T, subprocess: I }), ...Te(o, l, true) });
+  return ge.set(_, { note: o, raw: l, kind: "action" }), _;
+}
+function w(o, l) {
+  let d = ge.get(l);
+  if (d) {
+    if (d.note !== o)
+      throw new t("A bound context belongs to another note model");
+    if (d.kind === "query")
+      return l;
+    l = d.raw;
+  }
+  let u = Object.freeze({ note: Oe(l.note), db: Object.freeze({ read: l.db?.read?.bind(l.db), list: l.db?.list?.bind(l.db), stats: l.db?.stats?.bind(l.db) }), files: l.files && Object.freeze({ info: l.files.info.bind(l.files), read: l.files.read.bind(l.files) }), notes: Object.freeze({ lookup: l.notes?.lookup?.bind(l.notes), read: l.notes?.read?.bind(l.notes), query: l.notes?.query?.bind(l.notes) }), resources: Object.freeze({ read: l.resources?.read?.bind(l.resources) }), host: Object.freeze({ previews: l.previews && Object.freeze({ get: l.previews.get?.bind(l.previews), list: l.previews.list?.bind(l.previews) }) }), ...Te(o, l, false) });
+  return ge.set(u, { note: o, raw: l, kind: "query" }), u;
+}
+var De = /^[A-Za-z][A-Za-z\d_-]*$/;
+var U = strictObject({ cursor: string2().max(32768).optional(), limit: number2().int().min(1).max(100).optional(), maxBytes: number2().int().min(256).max(1048576).optional() });
+var K = strictObject({ key: string2().min(1).max(512), field: string2().min(1).max(2048), revision: string2().min(1) });
+var H = strictObject({ key: string2().min(1).max(512), revision: string2().optional() });
+var je = strictObject({ kind: literal("collection-field"), collection: string2(), key: string2(), field: string2(), revision: string2() });
+function Fe(o) {
+  while (o instanceof ZodOptional || o instanceof ZodDefault || o instanceof ZodNullable)
+    o = o.unwrap();
+  return o;
+}
+function me(o, l) {
+  if (o instanceof ZodOptional)
+    return me(o.unwrap(), l).optional();
+  if (o instanceof ZodDefault)
+    return me(o.unwrap(), l).optional();
+  if (o instanceof ZodNullable)
+    return l.length ? me(o.unwrap(), l).nullable() : je;
+  if (!l.length)
+    return je;
+  let [d, ...u] = l;
+  if (o instanceof ZodRecord && d === "*")
+    return record(o.keyType, me(o.valueType, u));
+  if (!(o instanceof ZodObject) || !d || !Object.hasOwn(o.shape, d))
+    throw Error(`Lazy field path does not match the state schema: ${l.join(".")}`);
+  return o.extend({ [d]: me(o.shape[d], u) });
+}
+function a(o, l = {}) {
+  if (Object.keys(l).length > 32)
+    throw Error("A note may declare at most 32 collections");
+  let d = new Set;
+  return Object.entries(l).map(([u, p]) => {
+    if (!De.test(u) || !p || typeof p !== "object" || Array.isArray(p) || Object.keys(p).some((I) => !["field", "key", "lazy"].includes(I)) || p.lazy !== undefined && !Array.isArray(p.lazy))
+      throw Error("Invalid collection declaration");
+    let O = p.field ?? u;
+    if (d.has(O))
+      throw Error(`Collection state field is declared twice: ${O}`);
+    if (d.add(O), !(o instanceof ZodObject) || !Object.hasOwn(o.shape, O))
+      throw Error(`Collection ${u} needs a top-level state array: ${O}`);
+    let E = Fe(o.shape[O]);
+    if (!(E instanceof ZodArray) || !(E.element instanceof ZodObject))
+      throw Error(`Collection ${u} must contain objects`);
+    let y = E.element, N = [...p.lazy ?? []];
+    if (!Object.hasOwn(y.shape, p.key) || !(y.shape[p.key] instanceof ZodString))
+      throw Error(`Collection ${u} requires a string key field`);
+    if (N.length > 32 || new Set(N).size !== N.length || N.some((I) => typeof I !== "string" || I === p.key || !I || I.split(".").some((_) => !_) || N.some((_) => _ !== I && I.startsWith(_ + "."))))
+      throw Error(`Invalid lazy fields for collection ${u}`);
+    let T = y;
+    for (let I of N)
+      T = me(T, I.split("."));
+    return { name: u, contract: { field: O, key: p.key, lazy: N }, item: y, summary: T };
   });
-  boundContexts.set(context, { note, raw, kind: "action" });
-  return context;
 }
-function bindQueryContext(note, raw) {
-  const bound = boundContexts.get(raw);
-  if (bound) {
-    if (bound.note !== note)
-      throw new OperationRejectedError("A bound context belongs to another note model");
-    if (bound.kind === "query")
-      return raw;
-    raw = bound.raw;
+var Re = new WeakMap;
+var ke = Symbol.for("worka.note-capability");
+function ye(o, l, d, u = false) {
+  let p = async (y, N) => {
+    let T = await d(y, N), I = await O.output.safeParseAsync(T);
+    if (!I.success)
+      throw Error(`Capability output is invalid after execution; inspect effects before retrying: ${I.error.message}`);
+    return I.data;
+  }, O = Object.freeze({ ...l, kind: o, execute: p }), E = u ? async (y, N) => p(await O.input.parseAsync(N), y) : async (y, N) => p(await O.input.parseAsync(y), N);
+  return Object.defineProperty(E, ke, { value: O }), E;
+}
+function Se(o) {
+  let l = Object.freeze({ ...o, kind: "event", output: o.payload }), d = { name: o.name, publish(u, p, O) {
+    return u.events.publish(l.name, p, O);
+  } };
+  return Object.defineProperty(d, ke, { value: l }), Object.freeze(d);
+}
+var c = object({ id: string2().regex(/^note-file:[a-f0-9]{64}$/) });
+
+// .sdk/runtime/dist/chunk-nn2sykgs.mjs
+var m = Symbol.for("worka.preview.project");
+
+// .sdk/runtime/dist/chunk-vrx42qmb.mjs
+function u(t) {
+  return Object.freeze({ ...t });
+}
+function d(t) {
+  return Object.freeze({ ...t });
+}
+async function l(t, e, n) {
+  let a = await e.input.parseAsync(n), c = await t.request(e.extension, e.method, a);
+  try {
+    return await R(e.output, c);
+  } catch (i) {
+    throw Error(`Extension ${e.extension}.${e.method} returned invalid output after invocation; inspect effects before retrying`, { cause: i });
   }
-  const context = Object.freeze({
-    note: identity(raw.note),
-    db: Object.freeze({ read: raw.db?.read?.bind(raw.db), list: raw.db?.list?.bind(raw.db), stats: raw.db?.stats?.bind(raw.db) }),
-    files: raw.files && Object.freeze({ info: raw.files.info.bind(raw.files), read: raw.files.read.bind(raw.files) }),
-    notes: Object.freeze({ lookup: raw.notes?.lookup?.bind(raw.notes), read: raw.notes?.read?.bind(raw.notes), query: raw.notes?.query?.bind(raw.notes) }),
-    resources: Object.freeze({ read: raw.resources?.read?.bind(raw.resources) }),
-    host: Object.freeze({ previews: raw.previews && Object.freeze({ get: raw.previews.get?.bind(raw.previews), list: raw.previews.list?.bind(raw.previews) }) }),
-    ...stateParts(note, raw, false)
-  });
-  boundContexts.set(context, { note, raw, kind: "query" });
-  return context;
 }
-// .sdk/runtime/src/preview-project.mjs
-var compiled = Symbol.for("worka.preview.project");
-// .sdk/runtime/src/note-files.ts
-var fileRefSchema = object({ id: string2().regex(/^note-file:[a-f0-9]{64}$/) });
-var NOTE_FILE_MAX_BYTES = 4 * 1024 * 1024;
+async function p(t, e, n) {
+  let a = await e.input.parseAsync(n), c = await t.read({ name: e.name, input: json().parse(a) });
+  if (c.data === undefined) {
+    let { data: i, ...f } = c;
+    return f;
+  }
+  return { ...c, data: await R(e.output, c.data) };
+}
+async function R(t, e) {
+  return t.parseAsync(e);
+}
+
 // schemas.ts
 var candidateInputSchema = object({
   key: string2(),
@@ -6582,7 +6559,7 @@ var configSchema = looseObject({
   projectId: string2().optional(),
   notes: looseObject({ todo: string2().optional(), execution: string2().optional() }).optional()
 });
-var note = defineNote({
+var note = h({
   state: { schema: dataSchema, initial: { title: "候选预览", candidates: [], attached: [] } },
   config: { schema: configSchema, defaults: {} },
   collections: {
@@ -6609,6 +6586,866 @@ var note = defineNote({
     }]
   }
 });
+// contract.ts
+var textSchema = string2();
+var numberSchema = number2();
+var booleanSchema = boolean2();
+var stringListSchema = array(textSchema);
+var emptyInputSchema = object({});
+var jsonObject = record(textSchema, json());
+var libraryItemSchema = object({
+  id: textSchema,
+  title: textSchema.optional(),
+  name: textSchema.optional(),
+  path: textSchema.optional(),
+  revision: textSchema.optional()
+});
+var contentItemSchema = libraryItemSchema.extend({
+  title: textSchema,
+  path: textSchema,
+  revision: textSchema
+});
+var pageSchema = (item) => object({
+  items: array(item),
+  next: textSchema.min(1).optional(),
+  revision: textSchema.min(1),
+  total: numberSchema.int().nonnegative().optional()
+});
+var documentLinkSchema = object({
+  targetPath: textSchema,
+  targetKind: _enum(["document", "card", "asset", "unknown", "external"]),
+  targetId: textSchema.optional(),
+  anchor: textSchema.optional(),
+  label: textSchema.optional(),
+  line: numberSchema,
+  rawTarget: textSchema
+});
+var documentItemSchema = contentItemSchema.extend({
+  title: textSchema,
+  path: textSchema,
+  revision: textSchema,
+  type: literal("document"),
+  size: numberSchema,
+  links: array(documentLinkSchema),
+  updatedAt: textSchema.optional(),
+  snippet: textSchema.optional()
+});
+var documentSchema = documentItemSchema.extend({ content: textSchema });
+var documentMetaSchema = object({
+  id: textSchema,
+  path: textSchema,
+  title: textSchema,
+  revision: textSchema,
+  size: numberSchema,
+  isScene: booleanSchema
+});
+var directorySchema = contentItemSchema.extend({
+  type: literal("directory"),
+  path: textSchema,
+  hasChildren: booleanSchema.optional(),
+  parentPath: textSchema.optional()
+});
+var backlinkSchema = contentItemSchema.extend({
+  sourceId: textSchema,
+  sourcePath: textSchema,
+  targetPath: textSchema,
+  line: numberSchema,
+  snippet: textSchema.optional(),
+  anchor: textSchema.optional(),
+  label: textSchema.optional()
+});
+var graphSchema = object({
+  nodes: array(contentItemSchema.extend({ type: _enum(["document", "asset"]), depth: numberSchema })),
+  edges: array(object({
+    sourceId: textSchema,
+    targetId: textSchema.optional(),
+    sourcePath: textSchema,
+    targetPath: textSchema,
+    kind: _enum(["document", "card", "asset", "unknown", "external"]),
+    anchor: textSchema.optional()
+  })),
+  truncated: booleanSchema
+});
+var movePreviewSchema = object({
+  source: documentItemSchema.extend({ content: textSchema.optional() }),
+  toPath: textSchema,
+  affected: array(object({
+    id: textSchema,
+    path: textSchema,
+    revision: textSchema,
+    changed: booleanSchema,
+    changedLinks: numberSchema
+  })),
+  conflicts: stringListSchema,
+  canApply: booleanSchema
+});
+var cardItemSchema = contentItemSchema.extend({
+  type: literal("card"),
+  name: textSchema,
+  kind: textSchema,
+  attack: numberSchema.optional(),
+  health: numberSchema.optional(),
+  description: textSchema.optional(),
+  rarity: textSchema.optional(),
+  labels: stringListSchema.optional(),
+  cost: union([numberSchema, textSchema]).optional(),
+  facePreview: textSchema.optional()
+});
+var cardSchema = cardItemSchema.extend({ json: jsonObject });
+var assetVersionSchema = libraryItemSchema.extend({
+  assetId: textSchema,
+  path: textSchema,
+  revision: textSchema,
+  mimeType: textSchema,
+  size: numberSchema,
+  width: numberSchema.nullish(),
+  height: numberSchema.nullish(),
+  durationMs: numberSchema.nullish(),
+  frameCount: numberSchema.nullish(),
+  source: _enum(["project", "candidate", "adopted"]),
+  candidateId: textSchema.optional(),
+  metadata: jsonObject.optional(),
+  createdAt: textSchema,
+  adopted: booleanSchema
+});
+var assetSchema = contentItemSchema.extend({
+  type: literal("asset"),
+  kind: _enum(["image", "audio", "spritesheet", "other"]),
+  mimeType: textSchema,
+  size: numberSchema,
+  name: textSchema.optional(),
+  tags: stringListSchema.optional(),
+  metadataRevision: textSchema.optional(),
+  format: textSchema.optional(),
+  status: textSchema.optional(),
+  width: numberSchema.nullish(),
+  height: numberSchema.nullish(),
+  durationMs: numberSchema.nullish(),
+  frameCount: numberSchema.nullish(),
+  currentVersionId: textSchema.optional(),
+  metadata: jsonObject.optional(),
+  versions: array(assetVersionSchema).optional()
+});
+var mediaSchema = object({
+  id: textSchema,
+  versionId: textSchema.optional(),
+  variant: _enum(["thumbnail", "original", "waveform"]),
+  mimeType: textSchema,
+  size: numberSchema,
+  revision: textSchema,
+  url: textSchema.optional(),
+  data: textSchema.optional(),
+  path: textSchema.optional(),
+  absolutePath: textSchema.optional(),
+  width: numberSchema.nullish(),
+  height: numberSchema.nullish(),
+  durationMs: numberSchema.nullish(),
+  frameCount: numberSchema.nullish(),
+  metadata: jsonObject.optional()
+});
+var statusSchema = object({
+  projectId: textSchema,
+  phase: _enum(["pending", "indexing", "ready", "error", "closed"]),
+  indexedAt: textSchema.optional(),
+  documents: numberSchema,
+  directories: numberSchema,
+  cards: numberSchema,
+  assets: numberSchema,
+  errors: stringListSchema
+});
+var recentChangeSchema = object({
+  kind: _enum(["document", "card", "asset", "version"]),
+  id: textSchema.optional(),
+  path: textSchema.optional(),
+  name: textSchema.optional(),
+  change: _enum(["created", "updated"]),
+  at: textSchema
+});
+var diagnostic = object({
+  severity: _enum(["error", "warning"]),
+  path: textSchema,
+  line: numberSchema.optional(),
+  detail: textSchema
+});
+var storyBuild = object({
+  storyId: textSchema,
+  entryPath: textSchema,
+  outputPath: textSchema,
+  sourcePaths: stringListSchema,
+  errorCount: numberSchema,
+  warningCount: numberSchema,
+  nodeCount: numberSchema,
+  choiceCount: numberSchema,
+  builtAt: textSchema
+});
+var storyScene = object({
+  id: textSchema,
+  path: textSchema,
+  revision: textSchema,
+  nodeId: textSchema,
+  title: textSchema,
+  chapter: textSchema,
+  summary: textSchema,
+  dialogueCount: numberSchema,
+  offset: numberSchema,
+  nextOffset: numberSchema.optional(),
+  items: array(object({
+    id: textSchema,
+    speakerId: textSchema,
+    speakerName: textSchema,
+    text: textSchema,
+    emotion: textSchema.optional(),
+    line: numberSchema
+  })),
+  diagnostics: array(diagnostic)
+});
+var pinnedIdentity = object({
+  key: textSchema,
+  projectId: textSchema,
+  kind: textSchema,
+  id: textSchema,
+  revision: textSchema,
+  title: textSchema,
+  anchor: textSchema.optional(),
+  path: textSchema.optional(),
+  context: jsonObject.optional(),
+  binding: jsonObject.optional(),
+  freshness: _enum(["current", "stale", "unavailable"]).optional(),
+  currentRevision: textSchema.optional()
+});
+var candidateBinding = object({
+  productionId: textSchema,
+  candidateId: textSchema,
+  candidateHash: textSchema,
+  commit: textSchema,
+  productionRevision: numberSchema,
+  requirementRevision: numberSchema.nullable(),
+  round: numberSchema.nullable(),
+  currentRequirementRevision: numberSchema,
+  currentRound: numberSchema,
+  current: booleanSchema,
+  status: textSchema
+});
+var previewReference = pinnedIdentity.extend({ kind: literal("candidate"), binding: candidateBinding });
+var formalPreviewRecordSchema = object({
+  projectId: textSchema,
+  key: textSchema,
+  snapshotId: textSchema,
+  createdAt: textSchema,
+  commit: textSchema,
+  contentRevision: textSchema,
+  runtimeRevision: textSchema,
+  snapshotRevision: textSchema
+});
+var formalPreview = object({ record: formalPreviewRecordSchema.nullable(), freshness: _enum(["missing", "current", "stale", "unavailable"]), error: textSchema.optional() });
+var pinnedPage = object({ items: array(pinnedIdentity), limit: numberSchema });
+var reportRef = object({ experimentId: textSchema, reportId: textSchema });
+var candidateRef = object({
+  productionId: textSchema,
+  candidateId: textSchema,
+  candidateHash: textSchema
+});
+var battleSource = union([object({ kind: literal("registered-project") }), candidateRef.extend({ kind: literal("candidate"), commit: textSchema })]);
+var battleSettings = object({
+  deckId: textSchema,
+  encounterId: textSchema,
+  policyVersion: textSchema,
+  seeds: array(numberSchema),
+  turnLimit: numberSchema,
+  actionLimit: numberSchema,
+  opening: literal("player-first")
+});
+var battleOutcome = _enum(["victory", "defeat", "draw", "incomplete"]);
+var battleTrial = object({
+  outcome: battleOutcome,
+  turns: numberSchema,
+  actions: numberSchema,
+  reason: textSchema.optional(),
+  playedCardIds: stringListSchema,
+  finalStateHash: textSchema
+});
+var battleReport = object({
+  schemaVersion: literal(1),
+  createdAt: textSchema,
+  settings: battleSettings,
+  settingsHash: textSchema,
+  contentRevision: textSchema,
+  runtimeRevision: textSchema,
+  adapterVersion: textSchema,
+  deckCardIds: stringListSchema,
+  trials: array(object({
+    seed: numberSchema,
+    result: battleTrial.optional(),
+    error: textSchema.optional(),
+    cancelled: literal(true).optional()
+  })),
+  summary: object({
+    requested: numberSchema,
+    executed: numberSchema,
+    valid: numberSchema,
+    decisive: numberSchema,
+    victories: numberSchema,
+    defeats: numberSchema,
+    draws: numberSchema,
+    incomplete: numberSchema,
+    failed: numberSchema,
+    cancelled: booleanSchema,
+    victoryRate: numberSchema.nullable()
+  })
+});
+var battleExperiments = object({
+  status: textSchema,
+  experiment: object({
+    id: textSchema,
+    snapshotId: textSchema,
+    contentRevision: textSchema,
+    sourceRevision: textSchema,
+    runtimeRevision: textSchema.optional(),
+    source: battleSource.optional(),
+    createdAt: textSchema,
+    error: textSchema.optional(),
+    url: textSchema.optional()
+  }).optional(),
+  reports: array(object({
+    experimentId: textSchema,
+    reportId: textSchema,
+    source: battleSource.optional(),
+    report: battleReport,
+    projectCheck: object({
+      status: textSchema,
+      checkedAt: textSchema,
+      scope: textSchema,
+      error: textSchema.optional()
+    })
+  })),
+  reportScope: literal("historical-snapshot")
+});
+var battleComparison = object({
+  before: reportRef,
+  after: reportRef,
+  settings: battleSettings,
+  pairs: array(object({
+    seed: numberSchema,
+    before: battleOutcome,
+    after: battleOutcome
+  })),
+  excludedSeeds: array(numberSchema),
+  pairedCount: numberSchema,
+  beforeVictoryRate: numberSchema.nullable(),
+  afterVictoryRate: numberSchema.nullable(),
+  beforeVersion: object({ content: textSchema, runtime: textSchema }),
+  afterVersion: object({ content: textSchema, runtime: textSchema }),
+  interpretation: textSchema
+});
+var executionReport = object({
+  storyId: textSchema,
+  storyRevision: textSchema,
+  runtimeRevision: textSchema,
+  createdAt: textSchema,
+  exploredStates: numberSchema,
+  totalNodes: numberSchema,
+  reachedNodeIds: stringListSchema,
+  unvisitedNodeIds: stringListSchema,
+  stateLimit: numberSchema,
+  depthLimit: numberSchema,
+  bounded: booleanSchema,
+  depthCutoffs: numberSchema,
+  stateCutoffs: numberSchema,
+  externalStops: numberSchema,
+  errors: numberSchema,
+  witnesses: array(object({
+    kind: textSchema,
+    nodeId: textSchema,
+    path: stringListSchema,
+    detail: textSchema.optional(),
+    state: json()
+  })),
+  blockedExamples: array(object({
+    choiceId: textSchema,
+    nodeId: textSchema,
+    reason: textSchema,
+    path: stringListSchema
+  })),
+  limits: stringListSchema,
+  initialState: json()
+});
+var executionState = object({
+  status: _enum(["idle", "running", "succeeded", "failed", "interrupted"]),
+  startedAt: textSchema.optional(),
+  finishedAt: textSchema.optional(),
+  error: textSchema.optional(),
+  report: executionReport.optional(),
+  currentStoryRevision: textSchema.optional(),
+  contentMatches: booleanSchema.optional(),
+  runtimeFreshness: textSchema.optional()
+});
+var metric = object({
+  sample: numberSchema,
+  min: numberSchema,
+  max: numberSchema,
+  mean: numberSchema
+}).nullable();
+var balance = object({
+  revision: textSchema,
+  cardCount: numberSchema,
+  groups: array(object({
+    kind: textSchema,
+    count: numberSchema,
+    attack: metric,
+    health: metric
+  })),
+  measurement: literal("definitions"),
+  battleReport: _null3()
+});
+var deck = object({
+  id: textSchema,
+  path: textSchema,
+  revision: textSchema,
+  name: textSchema,
+  description: textSchema,
+  cards: array(object({
+    id: textSchema,
+    count: numberSchema,
+    name: textSchema.optional(),
+    missing: booleanSchema
+  })),
+  total: numberSchema
+});
+var storyNode = object({
+  id: textSchema,
+  title: textSchema,
+  type: textSchema,
+  summary: textSchema,
+  chapter: textSchema,
+  sourceMatch: literal("node-id"),
+  sources: array(object({
+    id: textSchema,
+    path: textSchema,
+    title: textSchema,
+    revision: textSchema
+  })),
+  sourceCount: numberSchema
+});
+var storyAnalysis = union([object({
+  id: textSchema,
+  path: textSchema,
+  revision: textSchema,
+  selectedNode: object({
+    id: textSchema,
+    detail: textSchema,
+    onEnter: array(json())
+  })
+}), object({
+  id: textSchema,
+  path: textSchema,
+  revision: textSchema,
+  catalogRevision: textSchema,
+  title: textSchema,
+  entry: textSchema,
+  nodes: array(storyNode),
+  edges: array(object({
+    id: textSchema,
+    from: textSchema,
+    to: textSchema,
+    text: textSchema,
+    conditional: booleanSchema,
+    enabledWhen: json().optional(),
+    visibleWhen: json().optional(),
+    effects: array(json()).optional()
+  })),
+  findings: array(object({
+    kind: textSchema,
+    id: textSchema,
+    detail: textSchema
+  })),
+  terminalIds: stringListSchema,
+  reachableCount: numberSchema,
+  conditionalCount: numberSchema,
+  reachability: literal("structural")
+})]);
+var candidateDiff = object({
+  candidateId: textSchema,
+  candidateHash: textSchema,
+  commit: textSchema,
+  status: textSchema,
+  targetBaseRevision: textSchema,
+  currentBaseRevision: textSchema,
+  baseCurrent: booleanSchema,
+  comparison: textSchema,
+  files: array(object({
+    path: textSchema,
+    changed: booleanSchema,
+    binary: booleanSchema,
+    truncated: booleanSchema,
+    beforeRevision: textSchema.nullable(),
+    afterRevision: textSchema.nullable(),
+    beforeBytes: numberSchema,
+    afterBytes: numberSchema,
+    before: textSchema.nullish(),
+    after: textSchema.nullish()
+  }))
+});
+var listInput = object({
+  q: textSchema.optional(),
+  query: textSchema.optional(),
+  directory: textSchema.optional(),
+  parentPath: textSchema.optional(),
+  kind: textSchema.optional(),
+  assetScope: _enum(["art", "audio"]).optional(),
+  format: textSchema.optional(),
+  mimeType: textSchema.optional(),
+  minWidth: numberSchema.optional(),
+  maxWidth: numberSchema.optional(),
+  minDurationMs: numberSchema.optional(),
+  maxDurationMs: numberSchema.optional(),
+  status: textSchema.optional(),
+  rarity: textSchema.optional(),
+  tags: union([textSchema, stringListSchema]).optional(),
+  labels: union([textSchema, stringListSchema]).optional(),
+  cursor: textSchema.optional(),
+  limit: numberSchema.optional(),
+  id: textSchema.optional(),
+  path: textSchema.optional(),
+  assetId: textSchema.optional()
+});
+var detailInput = object({
+  id: textSchema.optional(),
+  path: textSchema.optional(),
+  assetId: textSchema.optional(),
+  versionId: textSchema.optional(),
+  freshKind: textSchema.optional()
+});
+function query(op, input, output) {
+  const response = output.and(object({ projectGeneration: textSchema.optional() }));
+  return { input: input.strict().nullish(), output: response, resource: d({
+    name: "extension.cardgame-content.query",
+    input: input.extend({ projectId: textSchema.min(1), projectGeneration: textSchema.optional(), op: literal(op) }).strict(),
+    output: response
+  }) };
+}
+var contentQueries = {
+  formalPreview: query("formalPreview", emptyInputSchema, formalPreview),
+  previewReferenceTarget: query("previewReferenceTarget", object({ key: textSchema, commit: textSchema }), previewReference),
+  status: query("status", emptyInputSchema, statusSchema),
+  documents: query("documents", listInput, pageSchema(documentItemSchema)),
+  directories: query("directories", listInput, pageSchema(directorySchema)),
+  document: query("document", detailInput, documentSchema),
+  documentMeta: query("documentMeta", detailInput, documentMetaSchema),
+  backlinks: query("backlinks", listInput, pageSchema(backlinkSchema)),
+  graph: query("graph", detailInput.extend({
+    depth: numberSchema.optional(),
+    maxNodes: numberSchema.optional(),
+    limit: numberSchema.optional()
+  }), graphSchema),
+  movePreview: query("movePreview", detailInput.extend({ toPath: textSchema.optional(), targetPath: textSchema.optional() }), movePreviewSchema),
+  cards: query("cards", listInput, pageSchema(cardItemSchema)),
+  card: query("card", detailInput, cardSchema),
+  assets: query("assets", listInput, pageSchema(assetSchema)),
+  asset: query("asset", detailInput, assetSchema),
+  versions: query("versions", listInput, pageSchema(assetVersionSchema)),
+  media: query("media", detailInput.extend({
+    versionId: textSchema.optional(),
+    variant: _enum(["thumbnail", "original", "waveform"]).optional(),
+    from: textSchema.optional()
+  }), mediaSchema),
+  inspection: query("inspection", object({
+    kinds: array(_enum(["broken-link", "scene-dead-end", "orphan-asset", "card-missing-art", "asset-missing-metadata"])).optional(),
+    cursor: textSchema.optional(),
+    limit: numberSchema.optional()
+  }), object({
+    findings: array(object({
+      kind: textSchema,
+      severity: _enum(["info", "warning", "high"]),
+      ref: object({
+        type: _enum(["document", "card", "asset"]),
+        id: textSchema.optional(),
+        path: textSchema.optional()
+      }),
+      detail: textSchema
+    })),
+    counts: record(textSchema, numberSchema),
+    nextCursor: textSchema.optional()
+  })),
+  recentChanges: query("recentChanges", object({
+    since: textSchema.optional(),
+    cursor: textSchema.optional(),
+    limit: numberSchema.optional()
+  }), pageSchema(recentChangeSchema)),
+  storyBuilds: query("storyBuilds", object({ cursor: textSchema.optional(), limit: numberSchema.optional() }), pageSchema(storyBuild)),
+  storyScenePage: query("storyScenePage", detailInput.extend({
+    offset: numberSchema.optional(),
+    limit: numberSchema.optional(),
+    expectedRevision: textSchema.optional()
+  }), storyScene),
+  pinnedReferenceTarget: query("pinnedReferenceTarget", object({
+    kind: textSchema,
+    id: textSchema,
+    anchor: textSchema.optional(),
+    context: jsonObject.optional()
+  }), pinnedIdentity),
+  pinnedReferences: query("pinnedReferences", emptyInputSchema, pinnedPage),
+  battleExperiments: query("battleExperiments", emptyInputSchema, battleExperiments),
+  battleSources: query("battleSources", emptyInputSchema, object({ items: array(candidateRef.extend({
+    commit: textSchema,
+    kind: textSchema,
+    targetId: textSchema,
+    status: textSchema
+  })) })),
+  battleComparison: query("battleComparison", object({ before: reportRef, after: reportRef }), battleComparison),
+  storyExecutionReport: query("storyExecutionReport", object({ id: textSchema }), executionState),
+  candidateDiff: query("gameCandidateDiff", object({ productionId: textSchema, candidateId: textSchema }), candidateDiff),
+  balanceOverview: query("balanceOverview", emptyInputSchema, balance),
+  gameDeck: query("gameDeck", object({ id: textSchema }), deck),
+  gameCatalog: query("gameCatalog", object({
+    kind: _enum(["story", "deck", "encounter"]),
+    q: textSchema.optional(),
+    query: textSchema.optional(),
+    cursor: textSchema.optional(),
+    limit: numberSchema.optional()
+  }), pageSchema(object({
+    id: textSchema,
+    title: textSchema,
+    path: textSchema,
+    kind: textSchema
+  }))),
+  storyAnalysis: query("storyAnalysis", object({
+    id: textSchema,
+    nodeId: textSchema.optional(),
+    expectedRevision: textSchema.optional()
+  }), storyAnalysis)
+};
+var documentDraft = object({
+  path: textSchema,
+  content: textSchema,
+  expectedRevision: textSchema.nullish()
+});
+var candidate = object({
+  id: textSchema,
+  projectId: textSchema,
+  productionId: textSchema,
+  candidateHash: textSchema,
+  commit: textSchema,
+  status: textSchema
+});
+var production = object({
+  id: textSchema,
+  projectId: textSchema,
+  revision: numberSchema
+});
+var staged = object({
+  candidate,
+  production,
+  reused: booleanSchema.optional()
+});
+var compileResult = object({
+  storyId: textSchema,
+  outputPath: textSchema,
+  catalogUpdated: booleanSchema,
+  nodeCount: numberSchema,
+  choiceCount: numberSchema,
+  diagnostics: array(diagnostic)
+});
+var registeredCandidate = object({
+  id: textSchema,
+  title: textSchema,
+  path: textSchema,
+  revision: textSchema,
+  mimeType: textSchema,
+  size: numberSchema,
+  metadata: jsonObject,
+  status: textSchema.optional(),
+  assetId: textSchema.optional(),
+  versionId: textSchema.optional()
+});
+var command = (method, input, output) => ({
+  input: input.strict(),
+  output,
+  method: u({ extension: "cardgame-content", method, input: input.extend({ projectId: textSchema.min(1), projectGeneration: textSchema.optional() }).strict(), output })
+});
+var contentActions = {
+  prepareFormalPreview: command("prepareFormalPreview", object({ fresh: booleanSchema.optional() }), formalPreviewRecordSchema),
+  pinReference: command("pinReference", object({
+    kind: textSchema,
+    id: textSchema,
+    anchor: textSchema.optional(),
+    context: jsonObject.optional(),
+    revision: textSchema
+  }), pinnedPage),
+  removePinnedReference: command("removePinnedReference", object({ key: textSchema }), object({ removed: literal(true) })),
+  prepareBattleExperiment: command("prepareBattleExperiment", object({ fresh: booleanSchema.optional(), candidate: candidateRef.optional() }), object({
+    id: textSchema,
+    url: textSchema,
+    snapshotId: textSchema
+  })),
+  stopBattleExperiment: command("stopBattleExperiment", emptyInputSchema, object({ stopped: literal(true) })),
+  analyzeStoryPaths: command("analyzeStoryPaths", object({ id: textSchema, expectedRevision: textSchema }), executionState),
+  saveDocument: command("saveDocument", object({
+    id: textSchema.optional(),
+    path: textSchema.optional(),
+    content: textSchema,
+    expectedRevision: textSchema.optional(),
+    title: textSchema.optional()
+  }), documentSchema),
+  moveDocument: command("moveDocument", object({
+    id: textSchema.optional(),
+    path: textSchema.optional(),
+    toPath: textSchema,
+    expectedRevision: textSchema.optional(),
+    expectedRevisions: record(textSchema, textSchema).optional(),
+    updateLinks: booleanSchema.optional()
+  }), movePreviewSchema),
+  updateCard: command("updateCard", object({
+    id: textSchema,
+    card: jsonObject.optional(),
+    patch: jsonObject.optional(),
+    expectedRevision: textSchema.optional()
+  }), cardSchema),
+  updateAsset: command("updateAsset", object({
+    id: textSchema,
+    name: textSchema.optional(),
+    tags: stringListSchema.optional(),
+    expectedMetadataRevision: textSchema.optional()
+  }), assetSchema),
+  registerCandidates: command("registerCandidates", object({ candidates: array(object({
+    id: textSchema.optional(),
+    name: textSchema.optional(),
+    fileName: textSchema.optional(),
+    mimeType: textSchema.optional(),
+    data: textSchema.optional(),
+    base64: textSchema.optional(),
+    sourcePath: textSchema.optional(),
+    metadata: jsonObject.optional()
+  })), autoAdopt: object({
+    path: textSchema.optional(),
+    assetId: textSchema.optional(),
+    metadata: jsonObject.optional()
+  }).optional() }), array(registeredCandidate)),
+  adoptVersion: command("adoptVersion", object({
+    candidateId: textSchema.optional(),
+    versionId: textSchema.optional(),
+    assetId: textSchema.optional(),
+    path: textSchema.optional(),
+    fileName: textSchema.optional(),
+    metadata: jsonObject.optional()
+  }), assetSchema),
+  compileStory: command("compileStory", object({
+    entry: textSchema,
+    storyId: textSchema.optional(),
+    dryRun: booleanSchema.optional()
+  }), compileResult),
+  stageDocumentsCandidate: command("stageDocumentsCandidate", object({
+    featureId: textSchema,
+    brief: textSchema,
+    documents: array(documentDraft)
+  }), staged),
+  stageStoryCandidate: command("stageStoryCandidate", object({
+    featureId: textSchema,
+    storyId: textSchema,
+    entryPath: textSchema,
+    brief: textSchema,
+    documents: array(documentDraft),
+    referenceDocuments: array(documentDraft).optional(),
+    assets: array(object({ candidateId: textSchema, path: textSchema })).optional(),
+    npcs: array(jsonObject).optional(),
+    items: array(jsonObject).optional(),
+    shops: array(jsonObject).optional(),
+    recipes: array(jsonObject).optional(),
+    quests: array(jsonObject).optional(),
+    copyEdits: array(jsonObject).optional(),
+    launch: object({
+      hubPath: textSchema,
+      locationId: textSchema,
+      actionId: textSchema,
+      label: textSchema
+    }).optional()
+  }), staged),
+  createCardBatch: command("createCardBatch", object({
+    cardIds: stringListSchema,
+    featureId: textSchema,
+    requestId: textSchema.optional(),
+    sourceRevisions: record(textSchema, textSchema).optional(),
+    brief: textSchema
+  }), object({ production })),
+  saveCardDraft: command("saveCardDraft", object({
+    productionId: textSchema,
+    cardId: textSchema,
+    baseRevision: numberSchema,
+    definition: jsonObject,
+    presentation: jsonObject.optional()
+  }), object({ production })),
+  createTodo: command("createTodo", object({
+    title: textSchema,
+    description: textSchema,
+    priority: textSchema,
+    category: textSchema,
+    context: jsonObject
+  }), object({ item: object({ id: textSchema }) }))
+};
+var configureProjectContract = u({
+  extension: "cardgame-content",
+  method: "configureProject",
+  input: strictObject({ root: textSchema.trim().min(1), desktopId: textSchema.optional() }),
+  output: object({
+    configured: literal(true),
+    projectId: textSchema,
+    projectRoot: textSchema,
+    notes: record(textSchema, textSchema)
+  })
+});
+var referenceResourceSchema = object({
+  title: textSchema,
+  path: textSchema,
+  root: textSchema.optional(),
+  linkBase: textSchema.optional(),
+  revision: textSchema.optional()
+});
+var referenceDocumentSchema = object({
+  content: textSchema,
+  path: textSchema.optional(),
+  title: textSchema.optional(),
+  revision: textSchema.optional(),
+  format: textSchema.optional()
+});
+var featureChoicesSchema = object({ items: array(object({ id: textSchema, title: textSchema })) });
+var localActions = {
+  discussAudio: { input: emptyInputSchema, output: object({ sessionId: textSchema }) },
+  discussSelection: { input: object({ itemIds: stringListSchema.optional() }), output: object({ sessionId: textSchema }) },
+  addResource: { input: object({ path: textSchema, title: textSchema.optional() }), output: referenceResourceSchema },
+  rejectAssetVersion: { input: object({ assetId: textSchema, reason: textSchema.optional() }), output: object({
+    reverted: booleanSchema,
+    versionId: textSchema.optional(),
+    todoId: textSchema.optional()
+  }) },
+  createCardWorkflow: { input: object({
+    itemIds: stringListSchema,
+    featureId: textSchema,
+    draft: jsonObject.optional(),
+    expectedRevision: textSchema.optional(),
+    requestId: textSchema.optional()
+  }), output: object({ noteId: textSchema, itemId: textSchema }) },
+  switchCardTheme: { input: object({
+    id: textSchema,
+    themeId: textSchema,
+    expectedRevision: textSchema
+  }), output: cardSchema }
+};
+var todoImageSchema = object({ id: textSchema, dataUrl: textSchema, type: _enum(["image/png", "image/jpeg", "image/webp", "image/gif"]).optional(), name: textSchema.optional(), width: numberSchema.optional(), height: numberSchema.optional() });
+var todoMetadata = { projectId: textSchema, projectGeneration: textSchema.optional(), id: textSchema, status: _enum(["todo", "in_progress", "done", "blocked"]), completed: booleanSchema.optional(), priority: _enum(["low", "medium", "high"]), category: textSchema.optional(), dueDate: textSchema.optional(), taskId: textSchema.optional(), delegationId: textSchema.optional(), productionId: textSchema.optional(), revision: numberSchema, requirementRevision: numberSchema, createdAt: textSchema, updatedAt: textSchema };
+var todoRequirementSchema = object({ ...todoMetadata, title: textSchema, description: textSchema.optional(), images: array(todoImageSchema).optional(), conclusion: textSchema.optional() });
+var todoSummarySchema = object({ ...todoMetadata, title: textSchema, titleTruncated: booleanSchema.optional(), description: textSchema.optional(), descriptionTruncated: booleanSchema.optional(), conclusion: textSchema.optional(), conclusionTruncated: booleanSchema.optional(), imageCount: numberSchema, imageNames: stringListSchema, hasDelivery: booleanSchema.optional() });
+var todoTextSchema = todoRequirementSchema.omit({ images: true, conclusion: true });
+var todoReadSchema = object({ item: todoRequirementSchema, requirementFingerprint: textSchema });
+var todoReceiptSchema = object({ projectId: textSchema, projectGeneration: textSchema.optional(), id: textSchema, revision: numberSchema, requirementRevision: numberSchema, requirementFingerprint: textSchema });
+var todoHistorySchema = object({ history: array(object({ id: numberSchema, projectId: textSchema, itemId: textSchema, kind: literal("todo"), event: textSchema, revision: numberSchema, payload: json(), createdAt: textSchema })), nextCursor: textSchema.optional(), historyLimit: numberSchema });
+var workflowReadContracts = {
+  todoHistory: query("todo", object({ projectId: textSchema.optional(), projectGeneration: textSchema.optional(), id: textSchema, view: literal("history"), historyCursor: textSchema.optional(), historyLimit: numberSchema.optional() }), todoHistorySchema),
+  todoSummary: query("todo", object({ id: textSchema, view: literal("summary") }), object({ item: todoSummarySchema })),
+  todoTexts: query("todos", object({ projectId: textSchema.optional(), view: literal("text"), cursor: textSchema.optional(), limit: numberSchema.optional(), q: textSchema.optional(), category: textSchema.optional(), status: _enum(["todo", "in_progress", "done", "blocked"]).optional() }), object({ items: array(todoTextSchema), next: textSchema.optional(), revision: textSchema, total: numberSchema })),
+  workflowStatus: query("workflowStatus", emptyInputSchema, object({ counts: object({ todos: numberSchema, todo: numberSchema, inProgress: numberSchema, done: numberSchema, blocked: numberSchema }) })),
+  categories: query("categories", object({ projectId: textSchema.optional(), cursor: textSchema.optional(), limit: numberSchema.optional() }), object({ items: array(object({ category: textSchema, count: numberSchema.int().nonnegative() })), next: textSchema.optional(), revision: textSchema, total: numberSchema.int().nonnegative() })),
+  todos: query("todos", object({ projectId: textSchema.optional(), cursor: textSchema.optional(), limit: numberSchema.optional(), q: textSchema.optional(), category: textSchema.optional(), status: _enum(["todo", "in_progress", "done", "blocked"]).optional() }), object({ items: array(todoSummarySchema), next: textSchema.optional(), revision: textSchema, total: numberSchema })),
+  todo: query("todo", object({ projectId: textSchema.optional(), projectGeneration: textSchema.optional(), id: textSchema }), todoReadSchema)
+};
 
 // cardgame-operations.ts
 async function project(ctx) {
@@ -6617,24 +7454,26 @@ async function project(ctx) {
     throw Error("请先关联 CardGame 项目");
   return config.value.projectId;
 }
-async function read(ctx, op, input = {}) {
-  const snapshot = await ctx.resources.read({ name: "extension.cardgame-content.query", input: { ...input, op, projectId: await project(ctx) } });
+async function read(ctx, op, input) {
+  const contract = contentQueries[op];
+  const resourceInput = await contract.resource.input.parseAsync({ ...input, op, projectId: await project(ctx) });
+  const snapshot = await p(ctx.resources, contract.resource, resourceInput);
   if (snapshot.error || snapshot.data === undefined)
     throw Error(snapshot.error || "试玩内容暂时无法读取");
-  return JSON.parse(JSON.stringify(snapshot.data));
+  return snapshot.data;
 }
-var prepareFormalPreview = note.action({ description: "核对本地正式内容后准备独立试玩快照。", visibility: "private", input: object({ fresh: boolean2().optional() }), output: json() }, async (ctx, input) => ctx.host.extensions.request("cardgame-content", "prepareFormalPreview", { ...input, projectId: await project(ctx) }));
-var pinPreviewReference = note.action({ description: "固定已经核对的候选与提交，不发送消息。", visibility: "private", input: object({ key: string2(), commit: string2(), revision: string2() }), output: json() }, async (ctx, input) => {
+var prepareFormalPreview = note.action({ description: "核对本地正式内容后准备独立试玩快照。", visibility: "private", ...contentActions.prepareFormalPreview }, async (ctx, input) => l(ctx.host.extensions, contentActions.prepareFormalPreview.method, { ...input, projectId: await project(ctx) }));
+var pinPreviewReference = note.action({ description: "固定已经核对的候选与提交，不发送消息。", visibility: "private", input: object({ key: string2(), commit: string2(), revision: string2() }), output: contentActions.pinReference.output }, async (ctx, input) => {
   const target = await read(ctx, "previewReferenceTarget", { key: input.key, commit: input.commit });
   if (target.revision !== input.revision)
     throw Error("候选身份已变化，请刷新后重新固定");
-  return ctx.host.extensions.request("cardgame-content", "pinReference", { ...target, projectId: await project(ctx) });
+  return l(ctx.host.extensions, contentActions.pinReference.method, { kind: target.kind, id: target.id, revision: target.revision, ...target.anchor ? { anchor: target.anchor } : {}, ...target.context ? { context: target.context } : {}, projectId: target.projectId, ...target.projectGeneration ? { projectGeneration: target.projectGeneration } : {} });
 });
-var removePinnedReference = note.action({ description: "移除指定固定引用，保留对象。", visibility: "private", input: object({ key: string2() }), output: json() }, async (ctx, input) => ctx.host.extensions.request("cardgame-content", "removePinnedReference", { ...input, projectId: await project(ctx) }));
+var removePinnedReference = note.action({ description: "移除指定固定引用，保留对象。", visibility: "private", ...contentActions.removePinnedReference }, async (ctx, input) => l(ctx.host.extensions, contentActions.removePinnedReference.method, { ...input, projectId: await project(ctx) }));
 var cardgameQueries = {
-  formalPreview: note.query({ description: "只读当前正式快照及版本新鲜度。", visibility: "private", input: object({}).nullable(), output: json() }, async (ctx) => read(ctx, "formalPreview")),
-  previewReferenceTarget: note.query({ description: "核对指定候选 key 与提交。", visibility: "private", input: object({ key: string2(), commit: string2() }), output: json() }, async (ctx, input) => read(ctx, "previewReferenceTarget", input)),
-  pinnedReferences: note.query({ description: "读取项目固定引用。", visibility: "private", input: object({}).nullable(), output: json() }, async (ctx) => read(ctx, "pinnedReferences"))
+  formalPreview: note.query({ description: "只读当前正式快照及版本新鲜度。", visibility: "private", ...contentQueries.formalPreview }, async (ctx, input) => read(ctx, "formalPreview", input)),
+  previewReferenceTarget: note.query({ description: "核对指定候选 key 与提交。", visibility: "private", ...contentQueries.previewReferenceTarget }, async (ctx, input) => read(ctx, "previewReferenceTarget", input)),
+  pinnedReferences: note.query({ description: "读取项目固定引用。", visibility: "private", ...contentQueries.pinnedReferences }, async (ctx, input) => read(ctx, "pinnedReferences", input))
 };
 // actions.ts
 import { createHash } from "node:crypto";
@@ -6642,47 +7481,47 @@ var events = {
   changed: note.event({ visibility: "public", name: "candidates.changed", description: "候选登记、来源、标题、运行意图或移除发生变化；检查结果由反馈事件报告。", payload: object({ key: string2(), title: string2(), revision: string2(), removed: boolean2() }), objectRef: "/key", objectLabel: "/title", revision: "/revision" }),
   feedbackReported: note.event({ visibility: "public", name: "candidates.feedbackReported", description: "候选检查的明确结果或用户授权修复请求，需要联动执行台核对。", payload: feedbackSchema.extend({ originNoteId: string2().nullable() }), objectRef: "/candidateKey", objectLabel: "/title", revision: "/runId" })
 };
-async function command(name, input, ctx) {
+async function command2(name, input, ctx) {
   if (!ctx.host.previews.command)
     throw Error("请更新宿主以启用持久预览运行器");
   return ctx.host.previews.command(name, input);
 }
 var receive = note.action({ visibility: "public", description: "接收或更新同一 key 的执行候选；接收不代表启动或验收通过。", objectRef: "/candidate/key", receipt: "queryable", input: receiveInputSchema, output: union([looseObject({ renamed: number2() }), looseObject({ candidate: object({ key: string2() }), accepted: boolean2(), startRequested: boolean2(), started: literal(false) }), looseObject({ accepted: boolean2(), key: string2(), desired: _enum(["running", "stopped"]) })]) }, async (ctx, input) => {
-  return input?.operation === "rename" ? renameCandidates(ctx, input) : command("receive", input, ctx);
+  return input?.operation === "rename" ? renameCandidates(ctx, input) : command2("receive", input, ctx);
 });
 var start = note.action({ description: "启动指定候选或预览界面。", visibility: "private", input: object({ key: string2(), surface: string2().optional(), restart: boolean2().optional() }), output: looseObject({ accepted: boolean2(), key: string2(), desired: _enum(["running", "stopped"]) }) }, async (ctx, input) => {
-  return command("start", input, ctx);
+  return command2("start", input, ctx);
 });
 var stop = note.action({ description: "停止指定候选或预览界面。", visibility: "private", input: object({ key: string2(), surface: string2().optional() }), output: looseObject({ accepted: boolean2(), key: string2(), desired: _enum(["running", "stopped"]) }) }, async (ctx, input) => {
-  return command("stop", input, ctx);
+  return command2("stop", input, ctx);
 });
 var verify = note.action({ description: "请求核验候选的项目验收检查。", visibility: "private", input: object({ key: string2(), surface: string2().optional() }), output: looseObject({ accepted: boolean2() }) }, async (ctx, input) => {
-  return command("verify", input, ctx);
+  return command2("verify", input, ctx);
 });
 var check = note.action({ description: "请求运行候选的项目检查。", visibility: "private", input: object({ key: string2(), surface: string2().optional() }), output: looseObject({ accepted: boolean2() }) }, async (ctx, input) => {
-  return command("check", input, ctx);
+  return command2("check", input, ctx);
 });
 var attach = note.action({ description: "设置候选是否在预览区展示。", visibility: "private", input: object({ key: string2(), attached: boolean2().optional() }), output: looseObject({ key: string2(), attached: boolean2() }) }, async (ctx, input) => {
-  return command("attach", input, ctx);
+  return command2("attach", input, ctx);
 });
 var archive = note.action({ description: "停止并归档一个候选。", visibility: "private", input: object({ key: string2() }), output: looseObject({ archived: boolean2(), key: string2().optional(), reason: string2().optional() }) }, async (ctx, input) => {
-  return command("archive", input, ctx);
+  return command2("archive", input, ctx);
 });
 var archiveByFeature = note.action({ visibility: "public", description: "按明确 feature ID 归档对应候选并停止预览进程。", receipt: "queryable", input: object({ featureId: string2().optional(), title: string2().optional(), repos: array(string2()).optional() }), output: looseObject({ accepted: boolean2(), matched: array(string2()), skipped: array(string2()) }) }, async (ctx, input) => {
   const featureId = input.featureId?.trim();
   if (!featureId)
     throw new Error("归档预览需要明确的 featureId");
-  return command("archiveByFeature", { featureId }, ctx);
+  return command2("archiveByFeature", { featureId }, ctx);
 });
 var restore = note.action({ description: "从归档区恢复一个候选。", visibility: "private", input: object({ key: string2() }), output: looseObject({ restored: boolean2(), key: string2().optional(), reason: string2().optional() }) }, async (ctx, input) => {
-  return command("restore", input, ctx);
+  return command2("restore", input, ctx);
 });
 var forget = note.action({ description: "删除已归档候选的登记记录。", visibility: "private", input: object({ key: string2() }), output: looseObject({ removed: boolean2(), reason: string2().optional() }) }, async (ctx, input) => {
-  return command("forget", input, ctx);
+  return command2("forget", input, ctx);
 });
 var background = note.background({
   async start(ctx) {
-    await command("refresh", {}, ctx);
+    await command2("refresh", {}, ctx);
     await seedEventCursor(ctx);
   },
   state: reconcileState
@@ -6718,10 +7557,10 @@ async function reconcileState(ctx, snapshot) {
   await ctx.db.write(eventCursorKey, current);
 }
 var requestRepair = note.action({ description: "请求处理当前失败轮次的修复。", visibility: "private", input: object({ key: string2(), surface: string2().optional() }), output: looseObject({ accepted: boolean2(), session: string2().optional(), reason: string2().optional() }) }, async (ctx, input) => {
-  return command("requestRepair", input, ctx);
+  return command2("requestRepair", input, ctx);
 });
 var refreshFeedback = note.action({ description: "重试投递候选的待处理反馈。", visibility: "private", input: object({ key: string2() }), output: looseObject({ checked: boolean2() }) }, async (ctx, input) => {
-  return command("refreshFeedback", input, ctx);
+  return command2("refreshFeedback", input, ctx);
 });
 var recordFeedback = note.action({ visibility: "public", description: "核对候选失败轮次后保存执行台修复处理状态。", receipt: "queryable", input: object({ key: string2(), surface: string2(), runId: string2(), reportId: string2(), handling: string2(), summary: string2().optional(), delegationId: string2().optional(), sessionId: string2().optional() }), output: looseObject({ stored: boolean2(), key: string2(), runId: string2(), duplicate: boolean2().optional() }) }, async (ctx, input) => {
   if (!ctx.caller.skillCause?.chain.length)
@@ -6764,7 +7603,7 @@ var recordFeedback = note.action({ visibility: "public", description: "核对候
     draft.candidates = candidates;
   }, { expectedRevision: row.revision });
   if (input.handling === "completed")
-    await command("refresh", {}, ctx);
+    await command2("refresh", {}, ctx);
   return { stored: true, key: input.key, runId: input.runId };
 });
 var rename = note.action({ visibility: "public", description: "按原任务或候选 key 更新显示名称，不影响预览运行状态。", receipt: "queryable", input: renameInputSchema, output: looseObject({ renamed: number2() }) }, (ctx, input) => renameCandidates(ctx, input));
@@ -6799,12 +7638,6 @@ var queries = {
     return (await ctx.state.read()).value;
   })
 };
-var setViewState = note.action({ description: "保存本便笺的界面选择，核对当前修订。", visibility: "private", requiresConfig: false, input: object({ patch: record(string2(), json()), expectedRevision: string2() }), output: object({ revision: string2() }) }, async (ctx, input) => {
-  const saved = await ctx.state.update((draft) => {
-    Object.assign(draft, input.patch);
-  }, { expectedRevision: input.expectedRevision });
-  return { revision: saved.revision };
-});
 export {
   archive,
   archiveByFeature,
@@ -6824,7 +7657,6 @@ export {
   rename,
   requestRepair,
   restore,
-  setViewState,
   start,
   stop,
   verify

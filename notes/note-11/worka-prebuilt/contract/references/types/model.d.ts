@@ -345,6 +345,8 @@ export declare const revisionOutputSchema: z.ZodObject<{
     revision: z.ZodString;
 }, z.core.$strip>;
 export declare const todoConfigSchema: z.ZodObject<{
+    projectId: z.ZodOptional<z.ZodString>;
+    notes: z.ZodOptional<z.ZodRecord<z.ZodString, z.ZodString>>;
     filter: z.ZodOptional<z.ZodEnum<{
         active: "active";
         all: "all";
@@ -442,6 +444,8 @@ export declare const note: import("@dsh-workbench/runtime").NoteModel<z.ZodObjec
         stateRef: z.ZodOptional<z.ZodString>;
     }, z.core.$strip>>;
 }, z.core.$loose>, z.ZodObject<{
+    projectId: z.ZodOptional<z.ZodString>;
+    notes: z.ZodOptional<z.ZodRecord<z.ZodString, z.ZodString>>;
     filter: z.ZodOptional<z.ZodEnum<{
         active: "active";
         all: "all";

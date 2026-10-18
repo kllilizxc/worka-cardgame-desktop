@@ -43,6 +43,7 @@ export const todoSnapshotSchema = z.object({
 export const revisionOutputSchema = z.object({ revision: z.string() });
 
 export const todoConfigSchema = z.looseObject({
+  projectId:z.string().optional(),notes:z.record(z.string(),z.string()).optional(),
   filter: z.enum(['all', 'active', 'completed']).optional(),
 });
 

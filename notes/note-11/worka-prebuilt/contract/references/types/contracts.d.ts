@@ -125,11 +125,18 @@ export declare const importItemResultSchema: z.ZodObject<{
 export declare const events: {
     cardGameDelegationRequested: Readonly<import("@dsh-workbench/runtime").NoteEvent<z.ZodObject<{
         projectId: z.ZodString;
+        projectGeneration: z.ZodString;
         todoId: z.ZodString;
+        todoObjectId: z.ZodString;
         requestId: z.ZodString;
-        payload: z.ZodRecord<z.ZodString, z.ZodJSONSchema>;
+        requestKey: z.ZodString;
+        payload: z.ZodObject<{
+            goal: z.ZodString;
+            scope: z.ZodArray<z.ZodString>;
+            cwd: z.ZodOptional<z.ZodString>;
+        }, z.core.$strict>;
         requirementRevision: z.ZodNumber;
-    }, z.core.$strip>>>;
+    }, z.core.$strict>>>;
     cardGameProductionRequested: Readonly<import("@dsh-workbench/runtime").NoteEvent<z.ZodObject<{
         projectId: z.ZodString;
         todoId: z.ZodString;

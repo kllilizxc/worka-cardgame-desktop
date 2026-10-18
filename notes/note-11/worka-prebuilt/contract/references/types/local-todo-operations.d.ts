@@ -169,6 +169,8 @@ export declare const upsertExternalItem: import("@dsh-workbench/runtime").NoteOp
         stateRef: z.ZodOptional<z.ZodString>;
     }, z.core.$strip>>;
 }, z.core.$loose>, z.ZodObject<{
+    projectId: z.ZodOptional<z.ZodString>;
+    notes: z.ZodOptional<z.ZodRecord<z.ZodString, z.ZodString>>;
     filter: z.ZodOptional<z.ZodEnum<{
         active: "active";
         all: "all";
@@ -266,6 +268,8 @@ export declare const requestDelegation: import("@dsh-workbench/runtime").NoteOpe
         stateRef: z.ZodOptional<z.ZodString>;
     }, z.core.$strip>>;
 }, z.core.$loose>, z.ZodObject<{
+    projectId: z.ZodOptional<z.ZodString>;
+    notes: z.ZodOptional<z.ZodRecord<z.ZodString, z.ZodString>>;
     filter: z.ZodOptional<z.ZodEnum<{
         active: "active";
         all: "all";
@@ -374,6 +378,8 @@ export declare const recordProgress: import("@dsh-workbench/runtime").NoteOperat
         stateRef: z.ZodOptional<z.ZodString>;
     }, z.core.$strip>>;
 }, z.core.$loose>, z.ZodObject<{
+    projectId: z.ZodOptional<z.ZodString>;
+    notes: z.ZodOptional<z.ZodRecord<z.ZodString, z.ZodString>>;
     filter: z.ZodOptional<z.ZodEnum<{
         active: "active";
         all: "all";
@@ -562,6 +568,8 @@ export declare const addTodo: import("@dsh-workbench/runtime").NoteOperation<z.Z
         stateRef: z.ZodOptional<z.ZodString>;
     }, z.core.$strip>>;
 }, z.core.$loose>, z.ZodObject<{
+    projectId: z.ZodOptional<z.ZodString>;
+    notes: z.ZodOptional<z.ZodRecord<z.ZodString, z.ZodString>>;
     filter: z.ZodOptional<z.ZodEnum<{
         active: "active";
         all: "all";
@@ -660,6 +668,8 @@ export declare const updateStatus: import("@dsh-workbench/runtime").NoteOperatio
         stateRef: z.ZodOptional<z.ZodString>;
     }, z.core.$strip>>;
 }, z.core.$loose>, z.ZodObject<{
+    projectId: z.ZodOptional<z.ZodString>;
+    notes: z.ZodOptional<z.ZodRecord<z.ZodString, z.ZodString>>;
     filter: z.ZodOptional<z.ZodEnum<{
         active: "active";
         all: "all";
@@ -751,6 +761,8 @@ export declare const toggleTodo: import("@dsh-workbench/runtime").NoteOperation<
         stateRef: z.ZodOptional<z.ZodString>;
     }, z.core.$strip>>;
 }, z.core.$loose>, z.ZodObject<{
+    projectId: z.ZodOptional<z.ZodString>;
+    notes: z.ZodOptional<z.ZodRecord<z.ZodString, z.ZodString>>;
     filter: z.ZodOptional<z.ZodEnum<{
         active: "active";
         all: "all";
@@ -842,6 +854,8 @@ export declare const removeTodo: import("@dsh-workbench/runtime").NoteOperation<
         stateRef: z.ZodOptional<z.ZodString>;
     }, z.core.$strip>>;
 }, z.core.$loose>, z.ZodObject<{
+    projectId: z.ZodOptional<z.ZodString>;
+    notes: z.ZodOptional<z.ZodRecord<z.ZodString, z.ZodString>>;
     filter: z.ZodOptional<z.ZodEnum<{
         active: "active";
         all: "all";
@@ -931,6 +945,8 @@ export declare const clearCompleted: import("@dsh-workbench/runtime").NoteOperat
         stateRef: z.ZodOptional<z.ZodString>;
     }, z.core.$strip>>;
 }, z.core.$loose>, z.ZodObject<{
+    projectId: z.ZodOptional<z.ZodString>;
+    notes: z.ZodOptional<z.ZodRecord<z.ZodString, z.ZodString>>;
     filter: z.ZodOptional<z.ZodEnum<{
         active: "active";
         all: "all";
@@ -1023,6 +1039,8 @@ export declare const generateSuggestions: import("@dsh-workbench/runtime").NoteO
         stateRef: z.ZodOptional<z.ZodString>;
     }, z.core.$strip>>;
 }, z.core.$loose>, z.ZodObject<{
+    projectId: z.ZodOptional<z.ZodString>;
+    notes: z.ZodOptional<z.ZodRecord<z.ZodString, z.ZodString>>;
     filter: z.ZodOptional<z.ZodEnum<{
         active: "active";
         all: "all";
@@ -1255,6 +1273,8 @@ export declare const queries: {
             stateRef: z.ZodOptional<z.ZodString>;
         }, z.core.$strip>>;
     }, z.core.$loose>, z.ZodObject<{
+        projectId: z.ZodOptional<z.ZodString>;
+        notes: z.ZodOptional<z.ZodRecord<z.ZodString, z.ZodString>>;
         filter: z.ZodOptional<z.ZodEnum<{
             active: "active";
             all: "all";

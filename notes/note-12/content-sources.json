@@ -3,7 +3,7 @@
   "contractSource": "backend/plugins/cardgame-content/src/contract.ts",
   "sharedSource": "notes/note-1",
   "files": {
-    "contract.ts": "457132034f9d35fd25323d776ef680a481903f47c3280c7e1bed29139049b347",
+    "contract.ts": "2c9b6379ea6d1147b4f5762b1b70bdc9fabebcfbdbe3612483084abf3d84dc68",
     "actions.ts": "ffb690c3e4b9f3312ed68aeec48a069fd12887c38cf89fab6807667d001488c2",
     "asset-filter-panel.tsx": "289f1fe2ffe5840b37abffc83fe8eaabd2e7091ba68c808312b81d4ed9482fcc",
     "audio-guidance.tsx": "e7c8180e7c15d1537bf3bd57b3897e7d7dd4dd14b741b4615c49db9b92413fcd",

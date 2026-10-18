@@ -1,4 +1,4 @@
-import type { CandidateInput, CandidateSpec, SurfaceStatus, Data } from './model';
+import type { CandidateInput, CandidateSpec, SurfaceDisplay, Data, CandidateDisplay, DisplayData } from './model';
 import type { Snapshot } from '@dsh-workbench/runtime';
 /**
  * Candidates may be registered standalone (any note or conversation) or synced from a delegation.
@@ -8,14 +8,14 @@ import type { Snapshot } from '@dsh-workbench/runtime';
 export declare function validateCandidateIdentity(input: Partial<Pick<CandidateInput, 'key' | 'delegationId' | 'originNoteId'>>): void;
 /** One row per surface, exactly as the host reported it. */
 export type PreviewRow = {
-    candidate: CandidateSpec;
+    candidate: CandidateDisplay;
     surface: string;
     name: string;
     url?: string;
-    status?: SurfaceStatus;
+    status?: SurfaceDisplay;
     desired: NonNullable<CandidateSpec['desired']>[string];
 };
-export declare function previewRows(data: Pick<Data, 'candidates'>): PreviewRow[];
+export declare function previewRows(data: Pick<DisplayData, 'candidates'>): PreviewRow[];
 /** Stable display state derived only from host status. */
 export declare function rowState(row: PreviewRow): 'stopped' | 'starting' | 'checking' | 'ready' | 'unchecked' | 'verificationFailed' | 'failed' | 'stopping' | 'repairing' | 'waiting';
 /** Shared stable-identity projection used by the public query and update checks. */

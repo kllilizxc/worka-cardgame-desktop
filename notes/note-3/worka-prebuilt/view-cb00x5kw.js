@@ -1,0 +1,1 @@
+import"./entry-bm25p8f8.js";import{We}from"./entry-gn4q8stf.js";import{K}from"./entry-bundle.js";var e=We({compact:()=>(K("2pe1cvp1"),import("./view-compact-2pe1cvp1.js")),expanded:()=>(K("tv7nqw07"),import("./view-local-expanded-tv7nqw07.js"))}),p=e;export{e as View,p as default};

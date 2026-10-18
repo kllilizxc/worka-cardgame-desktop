@@ -1,6 +1,8 @@
 import { createHash, randomUUID } from "node:crypto";
 import { mkdir, readFile, rename, writeFile } from "node:fs/promises";
 import { dirname, join } from "node:path";
+import {queryPage} from '@realiz3r/worka/extension-contracts';
+import {todoRequirementSchema,todoSummarySchema,todoTextSchema,type TodoSummary,type TodoText} from './contract';
 import { gameChangeFilters, projectGameChange } from './changes';
 
 /**
@@ -801,29 +803,55 @@ class DurableWorkflowStore {
     return Object.values(this.ensureFallback().todos).filter(row => row.projectId === projectId).map(clone);
   }
 
-  listTodosPage(projectId: string, input: Record<string, unknown>): WorkflowPage<TodoRecord> {
-    const limit = limitOf(input.limit);
-    const cursor = decodeCursor(input.cursor);
-    const status = input.status === undefined ? undefined : normalizeStatus(input.status);
-    const q = optionalText(input.q ?? input.search)?.toLocaleLowerCase();
-    if (this.native) {
-      const clauses = ["project_id = ?"];
-      const params: unknown[] = [projectId];
-      if (status) { clauses.push("status = ?"); params.push(status); }
-      if (q) { clauses.push("(lower(title) LIKE ? OR lower(payload_json) LIKE ?)"); params.push(`%${q}%`, `%${q}%`); }
-      if (cursor?.updatedAt !== undefined && cursor.id !== undefined) {
-        clauses.push("(updated_at < ? OR (updated_at = ? AND id < ?))");
-        params.push(String(cursor.updatedAt), String(cursor.updatedAt), String(cursor.id));
-      }
-      const rows = this.statement(`SELECT payload_json,updated_at,id FROM todos WHERE ${clauses.join(" AND ")} ORDER BY updated_at DESC,id DESC LIMIT ?`).all(...params, limit + 1) as Array<{ payload_json: string; updated_at: string; id: string }>;
-      const hasNext = rows.length > limit;
-      const items = rows.slice(0, limit).map(row => JSON.parse(row.payload_json) as TodoRecord);
-      const totalParams = [projectId, ...(status ? [status] : []), ...(q ? [`%${q}%`, `%${q}%`] : [])];
-      const total = Number((this.statement(`SELECT COUNT(*) AS count FROM todos WHERE ${clauses.filter(clause => !clause.startsWith("(updated_at")).join(" AND ")}`).get(...totalParams) as { count: number }).count);
-      return { projectId, items, limit, total, ...(hasNext && items.length ? { nextCursor: encodeCursor({ updatedAt: items.at(-1)!.updatedAt, id: items.at(-1)!.id }) } : {}) };
-    }
-    const items = this.listTodos(projectId).filter(item => (!status || item.status === status) && (!q || `${item.title}\n${item.description ?? ""}`.toLocaleLowerCase().includes(q)));
-    return pageRecords(items, input);
+  private todoFilter(projectId:string,input:Record<string,unknown>) {
+    const status=input.status===undefined?undefined:normalizeStatus(input.status),q=optionalText(input.q??input.search)?.replace(/[A-Z]/g,char=>char.toLowerCase()),category=optionalText(input.category);
+    const clauses=['project_id = ?'],params:unknown[]=[projectId];
+    if(status){clauses.push('status = ?');params.push(status);}
+    if(category){clauses.push("json_extract(payload_json,'$.category') = ?");params.push(category);}
+    if(input.id){clauses.push('id = ?');params.push(input.id);}
+    if(q){clauses.push("(instr(lower(title),?) > 0 OR instr(lower(COALESCE(json_extract(payload_json,'$.description'),'')),?) > 0)");params.push(q,q);}
+    const matches=(item:TodoRecord)=>(!status||item.status===status)&&(!category||item.category===category)&&(!input.id||item.id===input.id)&&(!q||[item.title,item.description??''].some(value=>value.replace(/[A-Z]/g,char=>char.toLowerCase()).includes(q)));
+    return {where:clauses.join(' AND '),params,matches};
+  }
+
+  listTodoSummaries(projectId:string,input:Record<string,unknown>):TodoSummary[] {
+    const filter=this.todoFilter(projectId,input);
+    if(!this.native)return Object.values(this.ensureFallback().todos).filter(filter.matches).filter(item=>item.projectId===projectId).sort(todoOrder).map(todoSummary);
+    const rows=this.statement(`SELECT project_id AS projectId,id,substr(title,1,160) AS title,length(title)>160 AS titleTruncated,status,priority,created_at AS createdAt,updated_at AS updatedAt,revision,
+      json_extract(payload_json,'$.requirementRevision') AS requirementRevision,json_extract(payload_json,'$.completed') AS completed,
+      substr(json_extract(payload_json,'$.description'),1,240) AS description,length(json_extract(payload_json,'$.description'))>240 AS descriptionTruncated,
+      substr(json_extract(payload_json,'$.conclusion'),1,240) AS conclusion,length(json_extract(payload_json,'$.conclusion'))>240 AS conclusionTruncated,
+      json_extract(payload_json,'$.category') AS category,json_extract(payload_json,'$.dueDate') AS dueDate,json_extract(payload_json,'$.taskId') AS taskId,json_extract(payload_json,'$.execution.delegationId') AS delegationId,json_extract(payload_json,'$.productionId') AS productionId,
+      COALESCE(json_array_length(payload_json,'$.images'),0) AS imageCount,
+      (SELECT json_group_array(json_extract(value,'$.name')) FROM json_each(payload_json,'$.images') WHERE json_extract(value,'$.name') IS NOT NULL) AS imageNames,
+      json_type(payload_json,'$.delivery') IS NOT NULL AS hasDelivery
+      FROM todos WHERE ${filter.where} ORDER BY updated_at DESC,id DESC`).all(...filter.params) as Array<Record<string,unknown>>;
+    return rows.map(row=>todoSummarySchema.parse(cleanTodoProjection({...row,imageNames:JSON.parse(String(row.imageNames??'[]')),...Object.fromEntries(['completed','titleTruncated','descriptionTruncated','conclusionTruncated','hasDelivery'].map(name=>[name,row[name]==null?undefined:Boolean(row[name])]))})));
+  }
+
+  /** Capture only the ordered identity index; page assembly reads full text on demand. */
+  todoTexts(projectId:string,input:Record<string,unknown>) {
+    const filter=this.todoFilter(projectId,input);
+    const index=this.native?this.statement(`SELECT id,revision,updated_at AS updatedAt FROM todos WHERE ${filter.where} ORDER BY updated_at DESC,id DESC`).all(...filter.params) as Array<{id:string;revision:number;updatedAt:string}>:Object.values(this.ensureFallback().todos).filter(item=>item.projectId===projectId&&filter.matches(item)).sort(todoOrder).map(({id,revision,updatedAt})=>({id,revision,updatedAt}));
+    const revision=digest(index.map(item=>[item.id,item.revision,item.updatedAt]));
+    const read=this.native?this.statement(`SELECT project_id AS projectId,id,title,status,priority,created_at AS createdAt,updated_at AS updatedAt,revision,
+      json_extract(payload_json,'$.requirementRevision') AS requirementRevision,json_extract(payload_json,'$.completed') AS completed,json_extract(payload_json,'$.description') AS description,
+      json_extract(payload_json,'$.category') AS category,json_extract(payload_json,'$.dueDate') AS dueDate,json_extract(payload_json,'$.taskId') AS taskId,json_extract(payload_json,'$.execution.delegationId') AS delegationId,json_extract(payload_json,'$.productionId') AS productionId
+      FROM todos WHERE project_id = ? AND id = ?`):undefined;
+    return {revision,rows:{length:index.length,at:(position:number):TodoText|undefined=>{
+      const expected=index[position];if(!expected)return undefined;
+      const row=read?read.get(projectId,expected.id) as Record<string,unknown>|undefined:this.ensureFallback().todos[key(projectId,expected.id)];
+      if(!row||row.revision!==expected.revision||row.updatedAt!==expected.updatedAt)throw Object.assign(new Error('Todo collection changed; restart pagination'),{code:'collection-stale'});
+      const item=todoTextSchema.parse(cleanTodoProjection({...row,...(!read&&typeof (row as TodoRecord).execution?.delegationId==='string'?{delegationId:(row as TodoRecord).execution!.delegationId}:{}),...(row.completed==null?{}:{completed:Boolean(row.completed)})}));
+      return {...item,...(typeof input.projectGeneration==='string'?{projectGeneration:input.projectGeneration}:{})};
+    }}};
+  }
+
+  todoCategories(projectId:string):Array<{category:string;count:number}>{
+    const rows=this.native
+      ? this.statement("SELECT json_extract(payload_json,'$.category') AS category,COUNT(*) AS count FROM todos WHERE project_id = ? AND json_type(payload_json,'$.category') = 'text' AND json_extract(payload_json,'$.category') <> '' GROUP BY category").all(projectId) as Array<{category:string;count:number}>
+      : (()=>{const counts=new Map<string,number>();for(const item of Object.values(this.ensureFallback().todos))if(item.projectId===projectId&&typeof item.category==='string'&&item.category)counts.set(item.category,(counts.get(item.category)??0)+1);return [...counts].map(([category,count])=>({category,count}));})();
+    return rows.map(row=>({category:row.category,count:Number(row.count)})).sort((left,right)=>left.category<right.category?-1:left.category>right.category?1:0);
   }
 
   countTodos(projectId: string): number {
@@ -1137,6 +1165,19 @@ function taskStatusFromReceipt(receipt: Record<string, unknown>): string | undef
   return value;
 }
 
+const todoMetadataFields=['projectId','id','status','completed','priority','category','dueDate','taskId','productionId','revision','requirementRevision','createdAt','updatedAt'] as const;
+function todoMetadata(item:TodoRecord){return {...Object.fromEntries(todoMetadataFields.filter(field=>item[field]!==undefined).map(field=>[field,item[field]])),...(typeof item.execution?.delegationId==='string'?{delegationId:item.execution.delegationId}:{})};}
+function todoOrder(a:Pick<TodoRecord,'updatedAt'|'id'>,b:Pick<TodoRecord,'updatedAt'|'id'>){return Buffer.compare(Buffer.from(b.updatedAt),Buffer.from(a.updatedAt))||Buffer.compare(Buffer.from(b.id),Buffer.from(a.id));}
+function cleanTodoProjection(row:Record<string,unknown>){return Object.fromEntries(Object.entries(row).filter(([,value])=>value!==null&&value!==undefined));}
+function todoSummary(item:TodoRecord):TodoSummary {
+ const excerpt=(name:'title'|'description'|'conclusion',limit:number)=>{if(typeof item[name]!=='string')return {};const points=Array.from(item[name]!);return {[name]:points.slice(0,limit).join(''),[name+'Truncated']:points.length>limit};};
+ return todoSummarySchema.parse({...todoMetadata(item),...excerpt('title',160),...excerpt('description',240),...excerpt('conclusion',240),imageCount:item.images?.length??0,imageNames:(item.images??[]).flatMap(image=>image.name?[image.name]:[]),hasDelivery:Boolean(item.delivery)});
+}
+export function todoRequirementFingerprint(item:Pick<TodoRecord,'title'|'description'|'images'>):string {
+ return digest([item.title,item.description??'',(item.images??[]).map(image=>[image.id,image.dataUrl,image.type??null,image.name??null,image.width??null,image.height??null])]);
+}
+function projectTodoRequirement(item:TodoRecord,projectGeneration?:unknown){return todoRequirementSchema.parse({...todoMetadata(item),...(typeof projectGeneration==='string'?{projectGeneration}:{}),title:item.title,...(item.description!==undefined?{description:item.description}:{}),...(item.images?{images:item.images}:{}),...(item.conclusion!==undefined?{conclusion:item.conclusion}:{})});}
+
 export function createWorkflowService(options: WorkflowServiceOptions): WorkflowService {
   const projects = new Map<string, WorkflowProject>();
   for (const project of options.projects) {
@@ -1406,11 +1447,19 @@ export function createWorkflowService(options: WorkflowServiceOptions): Workflow
       const item = store.getTodo(projectId, id);
       if (!item) throw new WorkflowError("not-found", `找不到 Todo：${id}`);
       const requirement = todoRequirement(item);
-      const businessKey = text(input.businessKey ?? `todo:${projectId}:${id}`, "businessKey");
+      const projectGeneration = typeof input.projectGeneration === 'string' ? input.projectGeneration : undefined;
+      const identity = projectGeneration ? `${projectId}:${projectGeneration}:${id}` : `${projectId}:${id}`;
+      const businessKey = text(input.businessKey ?? `todo:${identity}`, "businessKey");
       const scope = defaultScope(input.scope);
+      const previousRequest = item.delivery?.payload.projectGeneration === projectGeneration ? item.delivery?.requestId : undefined;
+      const request = requestId(input.requestId ?? previousRequest, `todo-repair:${identity}:${item.requirementRevision}`);
+      const requestKey = projectGeneration ? `cardgame-todo-request:${projectGeneration}:${request}` : request;
       const payload = {
         projectId,
+        ...(projectGeneration ? { projectGeneration, todoObjectId: `cardgame-todo:${JSON.stringify([projectId, projectGeneration, id])}` } : {}),
         itemId: id,
+        requestId: request,
+        requestKey,
         businessKey,
         goal: optionalText(input.goal) ?? `处理待办：${item.title}`,
         scope,
@@ -1419,12 +1468,11 @@ export function createWorkflowService(options: WorkflowServiceOptions): Workflow
         resumePaused: true,
         delegationId: item.execution?.delegationId,
       };
-      const request = requestId(input.requestId ?? item.delivery?.requestId, `todo-repair:${projectId}:${id}:${item.requirementRevision}`);
       // A successful first delivery can add a delegationId to the Todo.  It
       // is transport binding metadata, so it must not make a retry with the
       // same requestId look like a different user request.
       const fingerprint = digest({ operation: "repair", payload: { ...payload, delegationId: undefined } });
-      const prior = store.getRequest(projectId, request);
+      const prior = store.getRequest(projectId, requestKey);
       if (prior && prior.fingerprint !== fingerprint) throw new WorkflowRequestIdReuseError(undefined, { requestId: request, previous: prior });
       const at = iso(now());
       const sameDelivery = item.delivery?.requestId === request && item.delivery.fingerprint === fingerprint;
@@ -1435,7 +1483,7 @@ export function createWorkflowService(options: WorkflowServiceOptions): Workflow
         next.revision += 1;
         next.updatedAt = at;
         touchTodo(store, next, "delegation-prepared", { requestId: request, businessKey }, at);
-        store.putRequest({ projectId, requestId: request, operation: "repair", fingerprint, todoId: id, status: "pending", payload: transportPayload, createdAt: prior?.createdAt ?? at, updatedAt: at });
+        store.putRequest({ projectId, requestId: requestKey, operation: "repair", fingerprint, todoId: id, status: "pending", payload: transportPayload, createdAt: prior?.createdAt ?? at, updatedAt: at });
         emit({ projectId, kind: "todo", id, revision: next.revision });
         return { item: next, payload: transportPayload, requestId: request, fingerprint };
       }
@@ -1913,7 +1961,7 @@ export function createWorkflowService(options: WorkflowServiceOptions): Workflow
         next.updatedAt = at;
         touchTodo(store, next, "delegated", { requestId: optionalText(input.requestId), status }, at);
         if (next.delivery) {
-          const prior = store.getRequest(projectId, next.delivery.requestId);
+          const prior = store.getRequest(projectId, optionalText(next.delivery.payload.requestKey) ?? next.delivery.requestId);
           if (prior) store.putRequest({ ...prior, status, result: receipt.result, updatedAt: at });
         }
         emit({ projectId, kind: "todo", id: todoId, revision: next.revision });
@@ -2098,15 +2146,27 @@ export function createWorkflowService(options: WorkflowServiceOptions): Workflow
     const op = text(input.op ?? input.name ?? input.query, "query");
     const projectId = assertProject(input);
     if (op === "todos") {
-      return store.listTodosPage(projectId, input);
+      if(input.view!==undefined&&input.view!=='text')throw new WorkflowError('invalid-input','未知 Todo 列表视图');
+      if(input.view==='text'){const source=store.todoTexts(projectId,input);return queryPage(source.rows,input,{revision:source.revision,scope:{projectId,projectGeneration:typeof input.projectGeneration==='string'?input.projectGeneration:null,query:'todos',view:'text'}});}
+      const summaries=store.listTodoSummaries(projectId,input).map(item=>({...item,...(typeof input.projectGeneration==='string'?{projectGeneration:input.projectGeneration}:{})}));
+      const revision=digest(summaries.map(item=>[item.id,item.revision,item.updatedAt]));
+      return queryPage(summaries,input,{revision,scope:{projectId,projectGeneration:typeof input.projectGeneration==='string'?input.projectGeneration:null,query:'todos',view:input.view==='text'?'text':'summary'}});
+    }
+    if (op === "categories") {
+      const categories=store.todoCategories(projectId);
+      return queryPage(categories,input,{revision:digest(categories),scope:{projectId,projectGeneration:typeof input.projectGeneration==='string'?input.projectGeneration:null,query:'categories'}});
     }
     if (op === "todo") {
       const id = text(input.id ?? input.itemId, "id");
+      if(input.view==='summary'){const item=store.listTodoSummaries(projectId,{id})[0];if(!item)throw new WorkflowError('not-found',`找不到 Todo：${id}`);return {item:{...item,...(typeof input.projectGeneration==='string'?{projectGeneration:input.projectGeneration}:{})}};}
       const item = store.getTodo(projectId, id);
       if (!item) throw new WorkflowError("not-found", `找不到 Todo：${id}`);
-      const history = store.listHistoryPage(projectId, "todo", id, input);
-      const execution = context?.execution && item.execution ? await context.execution(clone(item.execution)) : undefined;
-      return { item: clone(item), history: history.items, ...(history.nextCursor ? { nextCursor: history.nextCursor } : {}), historyLimit: history.limit, ...(execution !== undefined ? { execution } : {}) };
+      if(input.view==='history') {
+        const history=store.listHistoryPage(projectId,'todo',id,input);
+        return {history:history.items,...(history.nextCursor?{nextCursor:history.nextCursor}:{}),historyLimit:history.limit};
+      }
+      if(input.view!==undefined)throw new WorkflowError('invalid-input','未知 Todo 详情视图');
+      return {item:projectTodoRequirement(item,input.projectGeneration),requirementFingerprint:todoRequirementFingerprint(item)};
     }
     if (op === "productions") {
       return store.listProductionsPage(projectId, input);
@@ -2165,15 +2225,16 @@ export function createWorkflowService(options: WorkflowServiceOptions): Workflow
     throw new WorkflowError("unknown-query", `未知工作流查询：${op}`);
   }
 
+  async function withRequirementFingerprint<T extends {item:TodoRecord}>(pending:Promise<T>) {const result=await pending;return {...result,requirementFingerprint:todoRequirementFingerprint(result.item)};}
   async function command(method: string, input: Record<string, unknown>, context?: WorkflowCommandContext): Promise<unknown> {
     if (typeof method !== "string" || !method.trim()) throw new WorkflowError("invalid-input", "command method 不能为空");
     const name = method.trim();
     switch (name) {
-      case "createTodo": return createTodo(input);
-      case "updateTodo": return updateTodo(input);
+      case "createTodo": return withRequirementFingerprint(createTodo(input));
+      case "updateTodo": return withRequirementFingerprint(updateTodo(input));
       case "deleteTodo": return deleteTodo(input);
       case "todoFeedback":
-      case "feedback": return todoFeedback(input);
+      case "feedback": return withRequirementFingerprint(todoFeedback(input));
       case "importTodos": return importTodos(input);
       case "importProductions": return importProductions(input);
       case "delegateTodo": return delegateTodo(input);

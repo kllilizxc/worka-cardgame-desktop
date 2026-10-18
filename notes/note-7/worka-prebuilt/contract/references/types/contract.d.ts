@@ -341,7 +341,151 @@ export declare const recentChangeSchema: z.ZodObject<{
     }>;
     at: z.ZodString;
 }, z.core.$strip>;
+export declare const formalPreviewRecordSchema: z.ZodObject<{
+    projectId: z.ZodString;
+    key: z.ZodString;
+    snapshotId: z.ZodString;
+    createdAt: z.ZodString;
+    commit: z.ZodString;
+    contentRevision: z.ZodString;
+    runtimeRevision: z.ZodString;
+    snapshotRevision: z.ZodString;
+}, z.core.$strip>;
+export type FormalPreviewRecord = z.output<typeof formalPreviewRecordSchema>;
 export declare const contentQueries: {
+    readonly formalPreview: {
+        input: z.ZodOptional<z.ZodNullable<z.ZodObject<{}, z.core.$strict>>>;
+        output: z.ZodIntersection<z.ZodObject<{
+            record: z.ZodNullable<z.ZodObject<{
+                projectId: z.ZodString;
+                key: z.ZodString;
+                snapshotId: z.ZodString;
+                createdAt: z.ZodString;
+                commit: z.ZodString;
+                contentRevision: z.ZodString;
+                runtimeRevision: z.ZodString;
+                snapshotRevision: z.ZodString;
+            }, z.core.$strip>>;
+            freshness: z.ZodEnum<{
+                current: "current";
+                missing: "missing";
+                stale: "stale";
+                unavailable: "unavailable";
+            }>;
+            error: z.ZodOptional<z.ZodString>;
+        }, z.core.$strip>, z.ZodObject<{
+            projectGeneration: z.ZodOptional<z.ZodString>;
+        }, z.core.$strip>>;
+        resource: Readonly<{
+            readonly name: "extension.cardgame-content.query";
+            readonly input: z.ZodObject<{
+                projectId: z.ZodString;
+                projectGeneration: z.ZodOptional<z.ZodString>;
+                op: z.ZodLiteral<"formalPreview">;
+            }, z.core.$strict>;
+            readonly output: z.ZodIntersection<z.ZodObject<{
+                record: z.ZodNullable<z.ZodObject<{
+                    projectId: z.ZodString;
+                    key: z.ZodString;
+                    snapshotId: z.ZodString;
+                    createdAt: z.ZodString;
+                    commit: z.ZodString;
+                    contentRevision: z.ZodString;
+                    runtimeRevision: z.ZodString;
+                    snapshotRevision: z.ZodString;
+                }, z.core.$strip>>;
+                freshness: z.ZodEnum<{
+                    current: "current";
+                    missing: "missing";
+                    stale: "stale";
+                    unavailable: "unavailable";
+                }>;
+                error: z.ZodOptional<z.ZodString>;
+            }, z.core.$strip>, z.ZodObject<{
+                projectGeneration: z.ZodOptional<z.ZodString>;
+            }, z.core.$strip>>;
+        }>;
+    };
+    readonly previewReferenceTarget: {
+        input: z.ZodOptional<z.ZodNullable<z.ZodObject<{
+            key: z.ZodString;
+            commit: z.ZodString;
+        }, z.core.$strict>>>;
+        output: z.ZodIntersection<z.ZodObject<{
+            key: z.ZodString;
+            projectId: z.ZodString;
+            id: z.ZodString;
+            revision: z.ZodString;
+            title: z.ZodString;
+            anchor: z.ZodOptional<z.ZodString>;
+            path: z.ZodOptional<z.ZodString>;
+            context: z.ZodOptional<z.ZodRecord<z.ZodString, z.ZodJSONSchema>>;
+            freshness: z.ZodOptional<z.ZodEnum<{
+                current: "current";
+                stale: "stale";
+                unavailable: "unavailable";
+            }>>;
+            currentRevision: z.ZodOptional<z.ZodString>;
+            kind: z.ZodLiteral<"candidate">;
+            binding: z.ZodObject<{
+                productionId: z.ZodString;
+                candidateId: z.ZodString;
+                candidateHash: z.ZodString;
+                commit: z.ZodString;
+                productionRevision: z.ZodNumber;
+                requirementRevision: z.ZodNullable<z.ZodNumber>;
+                round: z.ZodNullable<z.ZodNumber>;
+                currentRequirementRevision: z.ZodNumber;
+                currentRound: z.ZodNumber;
+                current: z.ZodBoolean;
+                status: z.ZodString;
+            }, z.core.$strip>;
+        }, z.core.$strip>, z.ZodObject<{
+            projectGeneration: z.ZodOptional<z.ZodString>;
+        }, z.core.$strip>>;
+        resource: Readonly<{
+            readonly name: "extension.cardgame-content.query";
+            readonly input: z.ZodObject<{
+                projectId: z.ZodString;
+                projectGeneration: z.ZodOptional<z.ZodString>;
+                op: z.ZodLiteral<"previewReferenceTarget">;
+                key: z.ZodString;
+                commit: z.ZodString;
+            }, z.core.$strict>;
+            readonly output: z.ZodIntersection<z.ZodObject<{
+                key: z.ZodString;
+                projectId: z.ZodString;
+                id: z.ZodString;
+                revision: z.ZodString;
+                title: z.ZodString;
+                anchor: z.ZodOptional<z.ZodString>;
+                path: z.ZodOptional<z.ZodString>;
+                context: z.ZodOptional<z.ZodRecord<z.ZodString, z.ZodJSONSchema>>;
+                freshness: z.ZodOptional<z.ZodEnum<{
+                    current: "current";
+                    stale: "stale";
+                    unavailable: "unavailable";
+                }>>;
+                currentRevision: z.ZodOptional<z.ZodString>;
+                kind: z.ZodLiteral<"candidate">;
+                binding: z.ZodObject<{
+                    productionId: z.ZodString;
+                    candidateId: z.ZodString;
+                    candidateHash: z.ZodString;
+                    commit: z.ZodString;
+                    productionRevision: z.ZodNumber;
+                    requirementRevision: z.ZodNullable<z.ZodNumber>;
+                    round: z.ZodNullable<z.ZodNumber>;
+                    currentRequirementRevision: z.ZodNumber;
+                    currentRound: z.ZodNumber;
+                    current: z.ZodBoolean;
+                    status: z.ZodString;
+                }, z.core.$strip>;
+            }, z.core.$strip>, z.ZodObject<{
+                projectGeneration: z.ZodOptional<z.ZodString>;
+            }, z.core.$strip>>;
+        }>;
+    };
     readonly status: {
         input: z.ZodOptional<z.ZodNullable<z.ZodObject<{}, z.core.$strict>>>;
         output: z.ZodIntersection<z.ZodObject<{
@@ -2920,6 +3064,40 @@ export type ContentQueryName = keyof typeof contentQueries;
 export type ContentQueryInput<K extends ContentQueryName> = z.input<(typeof contentQueries)[K]['input']>;
 export type ContentQueryOutput<K extends ContentQueryName> = z.output<(typeof contentQueries)[K]['output']>;
 export declare const contentActions: {
+    readonly prepareFormalPreview: {
+        input: z.ZodObject<{
+            fresh: z.ZodOptional<z.ZodBoolean>;
+        }, z.core.$strict>;
+        output: z.ZodObject<{
+            projectId: z.ZodString;
+            key: z.ZodString;
+            snapshotId: z.ZodString;
+            createdAt: z.ZodString;
+            commit: z.ZodString;
+            contentRevision: z.ZodString;
+            runtimeRevision: z.ZodString;
+            snapshotRevision: z.ZodString;
+        }, z.core.$strip>;
+        method: Readonly<{
+            readonly extension: "cardgame-content";
+            readonly method: "prepareFormalPreview";
+            readonly input: z.ZodObject<{
+                projectId: z.ZodString;
+                projectGeneration: z.ZodOptional<z.ZodString>;
+                fresh: z.ZodOptional<z.ZodBoolean>;
+            }, z.core.$strict>;
+            readonly output: z.ZodObject<{
+                projectId: z.ZodString;
+                key: z.ZodString;
+                snapshotId: z.ZodString;
+                createdAt: z.ZodString;
+                commit: z.ZodString;
+                contentRevision: z.ZodString;
+                runtimeRevision: z.ZodString;
+                snapshotRevision: z.ZodString;
+            }, z.core.$strip>;
+        }>;
+    };
     readonly pinReference: {
         input: z.ZodObject<{
             kind: z.ZodString;
@@ -4131,3 +4309,749 @@ export declare const localActions: {
         }, z.core.$strip>;
     };
 };
+/** Workflow reads contain displayed facts, never frozen delivery payloads or execution history. */
+export declare const todoImageSchema: z.ZodObject<{
+    id: z.ZodString;
+    dataUrl: z.ZodString;
+    type: z.ZodOptional<z.ZodEnum<{
+        "image/gif": "image/gif";
+        "image/jpeg": "image/jpeg";
+        "image/png": "image/png";
+        "image/webp": "image/webp";
+    }>>;
+    name: z.ZodOptional<z.ZodString>;
+    width: z.ZodOptional<z.ZodNumber>;
+    height: z.ZodOptional<z.ZodNumber>;
+}, z.core.$strip>;
+export declare const todoRequirementSchema: z.ZodObject<{
+    projectId: z.ZodString;
+    projectGeneration: z.ZodOptional<z.ZodString>;
+    id: z.ZodString;
+    status: z.ZodEnum<{
+        blocked: "blocked";
+        done: "done";
+        in_progress: "in_progress";
+        todo: "todo";
+    }>;
+    completed: z.ZodOptional<z.ZodBoolean>;
+    priority: z.ZodEnum<{
+        high: "high";
+        low: "low";
+        medium: "medium";
+    }>;
+    category: z.ZodOptional<z.ZodString>;
+    dueDate: z.ZodOptional<z.ZodString>;
+    taskId: z.ZodOptional<z.ZodString>;
+    delegationId: z.ZodOptional<z.ZodString>;
+    productionId: z.ZodOptional<z.ZodString>;
+    revision: z.ZodNumber;
+    requirementRevision: z.ZodNumber;
+    createdAt: z.ZodString;
+    updatedAt: z.ZodString;
+    title: z.ZodString;
+    description: z.ZodOptional<z.ZodString>;
+    images: z.ZodOptional<z.ZodArray<z.ZodObject<{
+        id: z.ZodString;
+        dataUrl: z.ZodString;
+        type: z.ZodOptional<z.ZodEnum<{
+            "image/gif": "image/gif";
+            "image/jpeg": "image/jpeg";
+            "image/png": "image/png";
+            "image/webp": "image/webp";
+        }>>;
+        name: z.ZodOptional<z.ZodString>;
+        width: z.ZodOptional<z.ZodNumber>;
+        height: z.ZodOptional<z.ZodNumber>;
+    }, z.core.$strip>>>;
+    conclusion: z.ZodOptional<z.ZodString>;
+}, z.core.$strip>;
+export declare const todoSummarySchema: z.ZodObject<{
+    projectId: z.ZodString;
+    projectGeneration: z.ZodOptional<z.ZodString>;
+    id: z.ZodString;
+    status: z.ZodEnum<{
+        blocked: "blocked";
+        done: "done";
+        in_progress: "in_progress";
+        todo: "todo";
+    }>;
+    completed: z.ZodOptional<z.ZodBoolean>;
+    priority: z.ZodEnum<{
+        high: "high";
+        low: "low";
+        medium: "medium";
+    }>;
+    category: z.ZodOptional<z.ZodString>;
+    dueDate: z.ZodOptional<z.ZodString>;
+    taskId: z.ZodOptional<z.ZodString>;
+    delegationId: z.ZodOptional<z.ZodString>;
+    productionId: z.ZodOptional<z.ZodString>;
+    revision: z.ZodNumber;
+    requirementRevision: z.ZodNumber;
+    createdAt: z.ZodString;
+    updatedAt: z.ZodString;
+    title: z.ZodString;
+    titleTruncated: z.ZodOptional<z.ZodBoolean>;
+    description: z.ZodOptional<z.ZodString>;
+    descriptionTruncated: z.ZodOptional<z.ZodBoolean>;
+    conclusion: z.ZodOptional<z.ZodString>;
+    conclusionTruncated: z.ZodOptional<z.ZodBoolean>;
+    imageCount: z.ZodNumber;
+    imageNames: z.ZodArray<z.ZodString>;
+    hasDelivery: z.ZodOptional<z.ZodBoolean>;
+}, z.core.$strip>;
+export declare const todoTextSchema: z.ZodObject<{
+    projectId: z.ZodString;
+    projectGeneration: z.ZodOptional<z.ZodString>;
+    id: z.ZodString;
+    status: z.ZodEnum<{
+        blocked: "blocked";
+        done: "done";
+        in_progress: "in_progress";
+        todo: "todo";
+    }>;
+    completed: z.ZodOptional<z.ZodBoolean>;
+    priority: z.ZodEnum<{
+        high: "high";
+        low: "low";
+        medium: "medium";
+    }>;
+    category: z.ZodOptional<z.ZodString>;
+    dueDate: z.ZodOptional<z.ZodString>;
+    taskId: z.ZodOptional<z.ZodString>;
+    delegationId: z.ZodOptional<z.ZodString>;
+    productionId: z.ZodOptional<z.ZodString>;
+    revision: z.ZodNumber;
+    requirementRevision: z.ZodNumber;
+    createdAt: z.ZodString;
+    updatedAt: z.ZodString;
+    title: z.ZodString;
+    description: z.ZodOptional<z.ZodString>;
+}, z.core.$strip>;
+export declare const todoReadSchema: z.ZodObject<{
+    item: z.ZodObject<{
+        projectId: z.ZodString;
+        projectGeneration: z.ZodOptional<z.ZodString>;
+        id: z.ZodString;
+        status: z.ZodEnum<{
+            blocked: "blocked";
+            done: "done";
+            in_progress: "in_progress";
+            todo: "todo";
+        }>;
+        completed: z.ZodOptional<z.ZodBoolean>;
+        priority: z.ZodEnum<{
+            high: "high";
+            low: "low";
+            medium: "medium";
+        }>;
+        category: z.ZodOptional<z.ZodString>;
+        dueDate: z.ZodOptional<z.ZodString>;
+        taskId: z.ZodOptional<z.ZodString>;
+        delegationId: z.ZodOptional<z.ZodString>;
+        productionId: z.ZodOptional<z.ZodString>;
+        revision: z.ZodNumber;
+        requirementRevision: z.ZodNumber;
+        createdAt: z.ZodString;
+        updatedAt: z.ZodString;
+        title: z.ZodString;
+        description: z.ZodOptional<z.ZodString>;
+        images: z.ZodOptional<z.ZodArray<z.ZodObject<{
+            id: z.ZodString;
+            dataUrl: z.ZodString;
+            type: z.ZodOptional<z.ZodEnum<{
+                "image/gif": "image/gif";
+                "image/jpeg": "image/jpeg";
+                "image/png": "image/png";
+                "image/webp": "image/webp";
+            }>>;
+            name: z.ZodOptional<z.ZodString>;
+            width: z.ZodOptional<z.ZodNumber>;
+            height: z.ZodOptional<z.ZodNumber>;
+        }, z.core.$strip>>>;
+        conclusion: z.ZodOptional<z.ZodString>;
+    }, z.core.$strip>;
+    requirementFingerprint: z.ZodString;
+}, z.core.$strip>;
+export declare const todoReceiptSchema: z.ZodObject<{
+    projectId: z.ZodString;
+    projectGeneration: z.ZodOptional<z.ZodString>;
+    id: z.ZodString;
+    revision: z.ZodNumber;
+    requirementRevision: z.ZodNumber;
+    requirementFingerprint: z.ZodString;
+}, z.core.$strip>;
+export declare const todoHistorySchema: z.ZodObject<{
+    history: z.ZodArray<z.ZodObject<{
+        id: z.ZodNumber;
+        projectId: z.ZodString;
+        itemId: z.ZodString;
+        kind: z.ZodLiteral<"todo">;
+        event: z.ZodString;
+        revision: z.ZodNumber;
+        payload: z.ZodJSONSchema;
+        createdAt: z.ZodString;
+    }, z.core.$strip>>;
+    nextCursor: z.ZodOptional<z.ZodString>;
+    historyLimit: z.ZodNumber;
+}, z.core.$strip>;
+export declare const workflowReadContracts: {
+    todoHistory: {
+        input: z.ZodOptional<z.ZodNullable<z.ZodObject<{
+            projectId: z.ZodOptional<z.ZodString>;
+            projectGeneration: z.ZodOptional<z.ZodString>;
+            id: z.ZodString;
+            view: z.ZodLiteral<"history">;
+            historyCursor: z.ZodOptional<z.ZodString>;
+            historyLimit: z.ZodOptional<z.ZodNumber>;
+        }, z.core.$strict>>>;
+        output: z.ZodIntersection<z.ZodObject<{
+            history: z.ZodArray<z.ZodObject<{
+                id: z.ZodNumber;
+                projectId: z.ZodString;
+                itemId: z.ZodString;
+                kind: z.ZodLiteral<"todo">;
+                event: z.ZodString;
+                revision: z.ZodNumber;
+                payload: z.ZodJSONSchema;
+                createdAt: z.ZodString;
+            }, z.core.$strip>>;
+            nextCursor: z.ZodOptional<z.ZodString>;
+            historyLimit: z.ZodNumber;
+        }, z.core.$strip>, z.ZodObject<{
+            projectGeneration: z.ZodOptional<z.ZodString>;
+        }, z.core.$strip>>;
+        resource: Readonly<{
+            readonly name: "extension.cardgame-content.query";
+            readonly input: z.ZodObject<{
+                projectId: z.ZodString;
+                projectGeneration: z.ZodOptional<z.ZodString>;
+                op: z.ZodLiteral<"todo">;
+                id: z.ZodString;
+                view: z.ZodLiteral<"history">;
+                historyCursor: z.ZodOptional<z.ZodString>;
+                historyLimit: z.ZodOptional<z.ZodNumber>;
+            }, z.core.$strict>;
+            readonly output: z.ZodIntersection<z.ZodObject<{
+                history: z.ZodArray<z.ZodObject<{
+                    id: z.ZodNumber;
+                    projectId: z.ZodString;
+                    itemId: z.ZodString;
+                    kind: z.ZodLiteral<"todo">;
+                    event: z.ZodString;
+                    revision: z.ZodNumber;
+                    payload: z.ZodJSONSchema;
+                    createdAt: z.ZodString;
+                }, z.core.$strip>>;
+                nextCursor: z.ZodOptional<z.ZodString>;
+                historyLimit: z.ZodNumber;
+            }, z.core.$strip>, z.ZodObject<{
+                projectGeneration: z.ZodOptional<z.ZodString>;
+            }, z.core.$strip>>;
+        }>;
+    };
+    todoSummary: {
+        input: z.ZodOptional<z.ZodNullable<z.ZodObject<{
+            id: z.ZodString;
+            view: z.ZodLiteral<"summary">;
+        }, z.core.$strict>>>;
+        output: z.ZodIntersection<z.ZodObject<{
+            item: z.ZodObject<{
+                projectId: z.ZodString;
+                projectGeneration: z.ZodOptional<z.ZodString>;
+                id: z.ZodString;
+                status: z.ZodEnum<{
+                    blocked: "blocked";
+                    done: "done";
+                    in_progress: "in_progress";
+                    todo: "todo";
+                }>;
+                completed: z.ZodOptional<z.ZodBoolean>;
+                priority: z.ZodEnum<{
+                    high: "high";
+                    low: "low";
+                    medium: "medium";
+                }>;
+                category: z.ZodOptional<z.ZodString>;
+                dueDate: z.ZodOptional<z.ZodString>;
+                taskId: z.ZodOptional<z.ZodString>;
+                delegationId: z.ZodOptional<z.ZodString>;
+                productionId: z.ZodOptional<z.ZodString>;
+                revision: z.ZodNumber;
+                requirementRevision: z.ZodNumber;
+                createdAt: z.ZodString;
+                updatedAt: z.ZodString;
+                title: z.ZodString;
+                titleTruncated: z.ZodOptional<z.ZodBoolean>;
+                description: z.ZodOptional<z.ZodString>;
+                descriptionTruncated: z.ZodOptional<z.ZodBoolean>;
+                conclusion: z.ZodOptional<z.ZodString>;
+                conclusionTruncated: z.ZodOptional<z.ZodBoolean>;
+                imageCount: z.ZodNumber;
+                imageNames: z.ZodArray<z.ZodString>;
+                hasDelivery: z.ZodOptional<z.ZodBoolean>;
+            }, z.core.$strip>;
+        }, z.core.$strip>, z.ZodObject<{
+            projectGeneration: z.ZodOptional<z.ZodString>;
+        }, z.core.$strip>>;
+        resource: Readonly<{
+            readonly name: "extension.cardgame-content.query";
+            readonly input: z.ZodObject<{
+                projectId: z.ZodString;
+                projectGeneration: z.ZodOptional<z.ZodString>;
+                op: z.ZodLiteral<"todo">;
+                id: z.ZodString;
+                view: z.ZodLiteral<"summary">;
+            }, z.core.$strict>;
+            readonly output: z.ZodIntersection<z.ZodObject<{
+                item: z.ZodObject<{
+                    projectId: z.ZodString;
+                    projectGeneration: z.ZodOptional<z.ZodString>;
+                    id: z.ZodString;
+                    status: z.ZodEnum<{
+                        blocked: "blocked";
+                        done: "done";
+                        in_progress: "in_progress";
+                        todo: "todo";
+                    }>;
+                    completed: z.ZodOptional<z.ZodBoolean>;
+                    priority: z.ZodEnum<{
+                        high: "high";
+                        low: "low";
+                        medium: "medium";
+                    }>;
+                    category: z.ZodOptional<z.ZodString>;
+                    dueDate: z.ZodOptional<z.ZodString>;
+                    taskId: z.ZodOptional<z.ZodString>;
+                    delegationId: z.ZodOptional<z.ZodString>;
+                    productionId: z.ZodOptional<z.ZodString>;
+                    revision: z.ZodNumber;
+                    requirementRevision: z.ZodNumber;
+                    createdAt: z.ZodString;
+                    updatedAt: z.ZodString;
+                    title: z.ZodString;
+                    titleTruncated: z.ZodOptional<z.ZodBoolean>;
+                    description: z.ZodOptional<z.ZodString>;
+                    descriptionTruncated: z.ZodOptional<z.ZodBoolean>;
+                    conclusion: z.ZodOptional<z.ZodString>;
+                    conclusionTruncated: z.ZodOptional<z.ZodBoolean>;
+                    imageCount: z.ZodNumber;
+                    imageNames: z.ZodArray<z.ZodString>;
+                    hasDelivery: z.ZodOptional<z.ZodBoolean>;
+                }, z.core.$strip>;
+            }, z.core.$strip>, z.ZodObject<{
+                projectGeneration: z.ZodOptional<z.ZodString>;
+            }, z.core.$strip>>;
+        }>;
+    };
+    todoTexts: {
+        input: z.ZodOptional<z.ZodNullable<z.ZodObject<{
+            projectId: z.ZodOptional<z.ZodString>;
+            view: z.ZodLiteral<"text">;
+            cursor: z.ZodOptional<z.ZodString>;
+            limit: z.ZodOptional<z.ZodNumber>;
+            q: z.ZodOptional<z.ZodString>;
+            category: z.ZodOptional<z.ZodString>;
+            status: z.ZodOptional<z.ZodEnum<{
+                blocked: "blocked";
+                done: "done";
+                in_progress: "in_progress";
+                todo: "todo";
+            }>>;
+        }, z.core.$strict>>>;
+        output: z.ZodIntersection<z.ZodObject<{
+            items: z.ZodArray<z.ZodObject<{
+                projectId: z.ZodString;
+                projectGeneration: z.ZodOptional<z.ZodString>;
+                id: z.ZodString;
+                status: z.ZodEnum<{
+                    blocked: "blocked";
+                    done: "done";
+                    in_progress: "in_progress";
+                    todo: "todo";
+                }>;
+                completed: z.ZodOptional<z.ZodBoolean>;
+                priority: z.ZodEnum<{
+                    high: "high";
+                    low: "low";
+                    medium: "medium";
+                }>;
+                category: z.ZodOptional<z.ZodString>;
+                dueDate: z.ZodOptional<z.ZodString>;
+                taskId: z.ZodOptional<z.ZodString>;
+                delegationId: z.ZodOptional<z.ZodString>;
+                productionId: z.ZodOptional<z.ZodString>;
+                revision: z.ZodNumber;
+                requirementRevision: z.ZodNumber;
+                createdAt: z.ZodString;
+                updatedAt: z.ZodString;
+                title: z.ZodString;
+                description: z.ZodOptional<z.ZodString>;
+            }, z.core.$strip>>;
+            next: z.ZodOptional<z.ZodString>;
+            revision: z.ZodString;
+            total: z.ZodNumber;
+        }, z.core.$strip>, z.ZodObject<{
+            projectGeneration: z.ZodOptional<z.ZodString>;
+        }, z.core.$strip>>;
+        resource: Readonly<{
+            readonly name: "extension.cardgame-content.query";
+            readonly input: z.ZodObject<{
+                projectId: z.ZodString;
+                projectGeneration: z.ZodOptional<z.ZodString>;
+                op: z.ZodLiteral<"todos">;
+                view: z.ZodLiteral<"text">;
+                cursor: z.ZodOptional<z.ZodString>;
+                limit: z.ZodOptional<z.ZodNumber>;
+                q: z.ZodOptional<z.ZodString>;
+                category: z.ZodOptional<z.ZodString>;
+                status: z.ZodOptional<z.ZodEnum<{
+                    blocked: "blocked";
+                    done: "done";
+                    in_progress: "in_progress";
+                    todo: "todo";
+                }>>;
+            }, z.core.$strict>;
+            readonly output: z.ZodIntersection<z.ZodObject<{
+                items: z.ZodArray<z.ZodObject<{
+                    projectId: z.ZodString;
+                    projectGeneration: z.ZodOptional<z.ZodString>;
+                    id: z.ZodString;
+                    status: z.ZodEnum<{
+                        blocked: "blocked";
+                        done: "done";
+                        in_progress: "in_progress";
+                        todo: "todo";
+                    }>;
+                    completed: z.ZodOptional<z.ZodBoolean>;
+                    priority: z.ZodEnum<{
+                        high: "high";
+                        low: "low";
+                        medium: "medium";
+                    }>;
+                    category: z.ZodOptional<z.ZodString>;
+                    dueDate: z.ZodOptional<z.ZodString>;
+                    taskId: z.ZodOptional<z.ZodString>;
+                    delegationId: z.ZodOptional<z.ZodString>;
+                    productionId: z.ZodOptional<z.ZodString>;
+                    revision: z.ZodNumber;
+                    requirementRevision: z.ZodNumber;
+                    createdAt: z.ZodString;
+                    updatedAt: z.ZodString;
+                    title: z.ZodString;
+                    description: z.ZodOptional<z.ZodString>;
+                }, z.core.$strip>>;
+                next: z.ZodOptional<z.ZodString>;
+                revision: z.ZodString;
+                total: z.ZodNumber;
+            }, z.core.$strip>, z.ZodObject<{
+                projectGeneration: z.ZodOptional<z.ZodString>;
+            }, z.core.$strip>>;
+        }>;
+    };
+    workflowStatus: {
+        input: z.ZodOptional<z.ZodNullable<z.ZodObject<{}, z.core.$strict>>>;
+        output: z.ZodIntersection<z.ZodObject<{
+            counts: z.ZodObject<{
+                todos: z.ZodNumber;
+                todo: z.ZodNumber;
+                inProgress: z.ZodNumber;
+                done: z.ZodNumber;
+                blocked: z.ZodNumber;
+            }, z.core.$strip>;
+        }, z.core.$strip>, z.ZodObject<{
+            projectGeneration: z.ZodOptional<z.ZodString>;
+        }, z.core.$strip>>;
+        resource: Readonly<{
+            readonly name: "extension.cardgame-content.query";
+            readonly input: z.ZodObject<{
+                projectId: z.ZodString;
+                projectGeneration: z.ZodOptional<z.ZodString>;
+                op: z.ZodLiteral<"workflowStatus">;
+            }, z.core.$strict>;
+            readonly output: z.ZodIntersection<z.ZodObject<{
+                counts: z.ZodObject<{
+                    todos: z.ZodNumber;
+                    todo: z.ZodNumber;
+                    inProgress: z.ZodNumber;
+                    done: z.ZodNumber;
+                    blocked: z.ZodNumber;
+                }, z.core.$strip>;
+            }, z.core.$strip>, z.ZodObject<{
+                projectGeneration: z.ZodOptional<z.ZodString>;
+            }, z.core.$strip>>;
+        }>;
+    };
+    categories: {
+        input: z.ZodOptional<z.ZodNullable<z.ZodObject<{
+            projectId: z.ZodOptional<z.ZodString>;
+            cursor: z.ZodOptional<z.ZodString>;
+            limit: z.ZodOptional<z.ZodNumber>;
+        }, z.core.$strict>>>;
+        output: z.ZodIntersection<z.ZodObject<{
+            items: z.ZodArray<z.ZodObject<{
+                category: z.ZodString;
+                count: z.ZodNumber;
+            }, z.core.$strip>>;
+            next: z.ZodOptional<z.ZodString>;
+            revision: z.ZodString;
+            total: z.ZodNumber;
+        }, z.core.$strip>, z.ZodObject<{
+            projectGeneration: z.ZodOptional<z.ZodString>;
+        }, z.core.$strip>>;
+        resource: Readonly<{
+            readonly name: "extension.cardgame-content.query";
+            readonly input: z.ZodObject<{
+                projectId: z.ZodString;
+                projectGeneration: z.ZodOptional<z.ZodString>;
+                op: z.ZodLiteral<"categories">;
+                cursor: z.ZodOptional<z.ZodString>;
+                limit: z.ZodOptional<z.ZodNumber>;
+            }, z.core.$strict>;
+            readonly output: z.ZodIntersection<z.ZodObject<{
+                items: z.ZodArray<z.ZodObject<{
+                    category: z.ZodString;
+                    count: z.ZodNumber;
+                }, z.core.$strip>>;
+                next: z.ZodOptional<z.ZodString>;
+                revision: z.ZodString;
+                total: z.ZodNumber;
+            }, z.core.$strip>, z.ZodObject<{
+                projectGeneration: z.ZodOptional<z.ZodString>;
+            }, z.core.$strip>>;
+        }>;
+    };
+    todos: {
+        input: z.ZodOptional<z.ZodNullable<z.ZodObject<{
+            projectId: z.ZodOptional<z.ZodString>;
+            cursor: z.ZodOptional<z.ZodString>;
+            limit: z.ZodOptional<z.ZodNumber>;
+            q: z.ZodOptional<z.ZodString>;
+            category: z.ZodOptional<z.ZodString>;
+            status: z.ZodOptional<z.ZodEnum<{
+                blocked: "blocked";
+                done: "done";
+                in_progress: "in_progress";
+                todo: "todo";
+            }>>;
+        }, z.core.$strict>>>;
+        output: z.ZodIntersection<z.ZodObject<{
+            items: z.ZodArray<z.ZodObject<{
+                projectId: z.ZodString;
+                projectGeneration: z.ZodOptional<z.ZodString>;
+                id: z.ZodString;
+                status: z.ZodEnum<{
+                    blocked: "blocked";
+                    done: "done";
+                    in_progress: "in_progress";
+                    todo: "todo";
+                }>;
+                completed: z.ZodOptional<z.ZodBoolean>;
+                priority: z.ZodEnum<{
+                    high: "high";
+                    low: "low";
+                    medium: "medium";
+                }>;
+                category: z.ZodOptional<z.ZodString>;
+                dueDate: z.ZodOptional<z.ZodString>;
+                taskId: z.ZodOptional<z.ZodString>;
+                delegationId: z.ZodOptional<z.ZodString>;
+                productionId: z.ZodOptional<z.ZodString>;
+                revision: z.ZodNumber;
+                requirementRevision: z.ZodNumber;
+                createdAt: z.ZodString;
+                updatedAt: z.ZodString;
+                title: z.ZodString;
+                titleTruncated: z.ZodOptional<z.ZodBoolean>;
+                description: z.ZodOptional<z.ZodString>;
+                descriptionTruncated: z.ZodOptional<z.ZodBoolean>;
+                conclusion: z.ZodOptional<z.ZodString>;
+                conclusionTruncated: z.ZodOptional<z.ZodBoolean>;
+                imageCount: z.ZodNumber;
+                imageNames: z.ZodArray<z.ZodString>;
+                hasDelivery: z.ZodOptional<z.ZodBoolean>;
+            }, z.core.$strip>>;
+            next: z.ZodOptional<z.ZodString>;
+            revision: z.ZodString;
+            total: z.ZodNumber;
+        }, z.core.$strip>, z.ZodObject<{
+            projectGeneration: z.ZodOptional<z.ZodString>;
+        }, z.core.$strip>>;
+        resource: Readonly<{
+            readonly name: "extension.cardgame-content.query";
+            readonly input: z.ZodObject<{
+                projectId: z.ZodString;
+                projectGeneration: z.ZodOptional<z.ZodString>;
+                op: z.ZodLiteral<"todos">;
+                cursor: z.ZodOptional<z.ZodString>;
+                limit: z.ZodOptional<z.ZodNumber>;
+                q: z.ZodOptional<z.ZodString>;
+                category: z.ZodOptional<z.ZodString>;
+                status: z.ZodOptional<z.ZodEnum<{
+                    blocked: "blocked";
+                    done: "done";
+                    in_progress: "in_progress";
+                    todo: "todo";
+                }>>;
+            }, z.core.$strict>;
+            readonly output: z.ZodIntersection<z.ZodObject<{
+                items: z.ZodArray<z.ZodObject<{
+                    projectId: z.ZodString;
+                    projectGeneration: z.ZodOptional<z.ZodString>;
+                    id: z.ZodString;
+                    status: z.ZodEnum<{
+                        blocked: "blocked";
+                        done: "done";
+                        in_progress: "in_progress";
+                        todo: "todo";
+                    }>;
+                    completed: z.ZodOptional<z.ZodBoolean>;
+                    priority: z.ZodEnum<{
+                        high: "high";
+                        low: "low";
+                        medium: "medium";
+                    }>;
+                    category: z.ZodOptional<z.ZodString>;
+                    dueDate: z.ZodOptional<z.ZodString>;
+                    taskId: z.ZodOptional<z.ZodString>;
+                    delegationId: z.ZodOptional<z.ZodString>;
+                    productionId: z.ZodOptional<z.ZodString>;
+                    revision: z.ZodNumber;
+                    requirementRevision: z.ZodNumber;
+                    createdAt: z.ZodString;
+                    updatedAt: z.ZodString;
+                    title: z.ZodString;
+                    titleTruncated: z.ZodOptional<z.ZodBoolean>;
+                    description: z.ZodOptional<z.ZodString>;
+                    descriptionTruncated: z.ZodOptional<z.ZodBoolean>;
+                    conclusion: z.ZodOptional<z.ZodString>;
+                    conclusionTruncated: z.ZodOptional<z.ZodBoolean>;
+                    imageCount: z.ZodNumber;
+                    imageNames: z.ZodArray<z.ZodString>;
+                    hasDelivery: z.ZodOptional<z.ZodBoolean>;
+                }, z.core.$strip>>;
+                next: z.ZodOptional<z.ZodString>;
+                revision: z.ZodString;
+                total: z.ZodNumber;
+            }, z.core.$strip>, z.ZodObject<{
+                projectGeneration: z.ZodOptional<z.ZodString>;
+            }, z.core.$strip>>;
+        }>;
+    };
+    todo: {
+        input: z.ZodOptional<z.ZodNullable<z.ZodObject<{
+            projectId: z.ZodOptional<z.ZodString>;
+            projectGeneration: z.ZodOptional<z.ZodString>;
+            id: z.ZodString;
+        }, z.core.$strict>>>;
+        output: z.ZodIntersection<z.ZodObject<{
+            item: z.ZodObject<{
+                projectId: z.ZodString;
+                projectGeneration: z.ZodOptional<z.ZodString>;
+                id: z.ZodString;
+                status: z.ZodEnum<{
+                    blocked: "blocked";
+                    done: "done";
+                    in_progress: "in_progress";
+                    todo: "todo";
+                }>;
+                completed: z.ZodOptional<z.ZodBoolean>;
+                priority: z.ZodEnum<{
+                    high: "high";
+                    low: "low";
+                    medium: "medium";
+                }>;
+                category: z.ZodOptional<z.ZodString>;
+                dueDate: z.ZodOptional<z.ZodString>;
+                taskId: z.ZodOptional<z.ZodString>;
+                delegationId: z.ZodOptional<z.ZodString>;
+                productionId: z.ZodOptional<z.ZodString>;
+                revision: z.ZodNumber;
+                requirementRevision: z.ZodNumber;
+                createdAt: z.ZodString;
+                updatedAt: z.ZodString;
+                title: z.ZodString;
+                description: z.ZodOptional<z.ZodString>;
+                images: z.ZodOptional<z.ZodArray<z.ZodObject<{
+                    id: z.ZodString;
+                    dataUrl: z.ZodString;
+                    type: z.ZodOptional<z.ZodEnum<{
+                        "image/gif": "image/gif";
+                        "image/jpeg": "image/jpeg";
+                        "image/png": "image/png";
+                        "image/webp": "image/webp";
+                    }>>;
+                    name: z.ZodOptional<z.ZodString>;
+                    width: z.ZodOptional<z.ZodNumber>;
+                    height: z.ZodOptional<z.ZodNumber>;
+                }, z.core.$strip>>>;
+                conclusion: z.ZodOptional<z.ZodString>;
+            }, z.core.$strip>;
+            requirementFingerprint: z.ZodString;
+        }, z.core.$strip>, z.ZodObject<{
+            projectGeneration: z.ZodOptional<z.ZodString>;
+        }, z.core.$strip>>;
+        resource: Readonly<{
+            readonly name: "extension.cardgame-content.query";
+            readonly input: z.ZodObject<{
+                projectId: z.ZodString;
+                projectGeneration: z.ZodOptional<z.ZodString>;
+                op: z.ZodLiteral<"todo">;
+                id: z.ZodString;
+            }, z.core.$strict>;
+            readonly output: z.ZodIntersection<z.ZodObject<{
+                item: z.ZodObject<{
+                    projectId: z.ZodString;
+                    projectGeneration: z.ZodOptional<z.ZodString>;
+                    id: z.ZodString;
+                    status: z.ZodEnum<{
+                        blocked: "blocked";
+                        done: "done";
+                        in_progress: "in_progress";
+                        todo: "todo";
+                    }>;
+                    completed: z.ZodOptional<z.ZodBoolean>;
+                    priority: z.ZodEnum<{
+                        high: "high";
+                        low: "low";
+                        medium: "medium";
+                    }>;
+                    category: z.ZodOptional<z.ZodString>;
+                    dueDate: z.ZodOptional<z.ZodString>;
+                    taskId: z.ZodOptional<z.ZodString>;
+                    delegationId: z.ZodOptional<z.ZodString>;
+                    productionId: z.ZodOptional<z.ZodString>;
+                    revision: z.ZodNumber;
+                    requirementRevision: z.ZodNumber;
+                    createdAt: z.ZodString;
+                    updatedAt: z.ZodString;
+                    title: z.ZodString;
+                    description: z.ZodOptional<z.ZodString>;
+                    images: z.ZodOptional<z.ZodArray<z.ZodObject<{
+                        id: z.ZodString;
+                        dataUrl: z.ZodString;
+                        type: z.ZodOptional<z.ZodEnum<{
+                            "image/gif": "image/gif";
+                            "image/jpeg": "image/jpeg";
+                            "image/png": "image/png";
+                            "image/webp": "image/webp";
+                        }>>;
+                        name: z.ZodOptional<z.ZodString>;
+                        width: z.ZodOptional<z.ZodNumber>;
+                        height: z.ZodOptional<z.ZodNumber>;
+                    }, z.core.$strip>>>;
+                    conclusion: z.ZodOptional<z.ZodString>;
+                }, z.core.$strip>;
+                requirementFingerprint: z.ZodString;
+            }, z.core.$strip>, z.ZodObject<{
+                projectGeneration: z.ZodOptional<z.ZodString>;
+            }, z.core.$strip>>;
+        }>;
+    };
+};
+export type TodoImage = z.output<typeof todoImageSchema>;
+export type TodoRequirement = z.output<typeof todoRequirementSchema>;
+export type TodoSummary = z.output<typeof todoSummarySchema>;
+export type TodoRead = z.output<typeof workflowReadContracts.todo.output>;
+export type TodoReceipt = z.output<typeof todoReceiptSchema>;
+export type TodoText = z.output<typeof todoTextSchema>;

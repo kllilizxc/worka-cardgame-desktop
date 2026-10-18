@@ -1,7 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Button, ScrollShadow } from '@heroui/react';
-import {NoteDialog,NoteGuidance,NoteIcon,ManagedEmbed} from '@dsh-workbench/react';
-import {useNoteSurfaceVisible} from './surface';
+import {NoteDialog,NoteGuidance,NoteIcon,ManagedEmbed,QueryState} from '@dsh-workbench/react';
 import {useNote} from '@dsh-workbench/react';
 import { FormalPreview } from './formal-preview';
 import { CandidateReport } from './view-report';
@@ -18,13 +17,14 @@ export default function ExpandedView({ model }: { model: PreviewModel }) {
   const [showReport,setShowReport]=useState(false);
   useEffect(()=>setShowReport(false),[current?.spec.key]);
   const [versions, setVersions] = useState(() => previewWantsVersions(model.focus));
-  const visible = useNoteSurfaceVisible();
+  const {mode} = useNote<typeof import('./actions')>();
+  const visible = mode === 'expanded';
   useEffect(() => {
     // Expanded frames stay mounted when closed; the same shortcut must work on reopening.
     if (visible && previewWantsVersions(model.focus)) setVersions(true);
-  }, [visible, model.focus]);
+  }, [visible, model.focus, model.focusRequestId]);
   const {useQuery}=useNote<typeof import('./actions')>();
-  const formal = useQuery<{ record: { key: string } | null; freshness: string }>('formalPreview', {}, { enabled: !!config?.projectId });
+  const formal = useQuery('formalPreview', {}, { enabled: !!config?.projectId });
   const busy = ['starting', 'stopping', 'checking'].includes(effectiveStatus);
   const cancellable = ['starting', 'checking'].includes(effectiveStatus);
   const playing = canViewPreview(effectiveStatus) && current?.live && attachedHere;
@@ -78,7 +78,7 @@ export default function ExpandedView({ model }: { model: PreviewModel }) {
       </div>}
       </>}
     </div>
-    {model.queryError&&<p role="alert">{String(model.queryError.message??model.queryError)}<Button onPress={model.resetPage}>重新读取</Button></p>}
+    <QueryState query={model.query}>{()=>null}</QueryState>
     {current&&<div><Button size="sm" aria-expanded={showReport} onPress={()=>setShowReport(value=>!value)}>查看检查与诊断</Button>{showReport&&<CandidateReport candidate={current.owner} surface={current.surface}/>}</div>}
     {config?.projectId && <footer className="preview-context">{compact ? <><strong>{title}</strong><small style={{color:current ? TONE[current.status] : undefined}}>{current ? STATUS[current.status] ?? current.status : `${rows.length} 个版本`}</small><Button size="sm" variant="secondary" onPress={attachedHere || !current ? () => openPlayer() : () => startAndAttach(current.spec.key)}>{attachedHere ? '进入试玩' : current ? '启动试玩' : '打开试玩'}</Button></> : <PreviewReferences candidate={current?.owner}/>}</footer>}
 
@@ -93,7 +93,7 @@ export default function ExpandedView({ model }: { model: PreviewModel }) {
             {(!closed ? group.rows : selected ? [selected] : []).map(row => <Button size="sm" variant={row.spec.key === current?.spec.key ? 'secondary' : 'tertiary'} className="preview-version-row" key={row.spec.key} aria-pressed={row.spec.key === current?.spec.key} onPress={() => { if (canViewPreview(row.status)) attach(row.spec.key); else setActiveKey(row.spec.key); setError(''); setVersions(false); }}><span>{row.name}</span><small>{STATUS[row.status] ?? row.status}</small></Button>)}
           </section>;
         })}
-        <div><Button size="sm" isDisabled={model.cursors.length===1} onPress={model.previousPage}>上一页</Button><Button size="sm" isDisabled={!model.page.data?.next} onPress={model.nextPage}>下一页</Button><Button size="sm" onPress={model.resetPage}>回到首页</Button></div>
+        <div><Button size="sm" isDisabled={!model.page.hasPrevious} onPress={model.previousPage}>上一页</Button><Button size="sm" isDisabled={!model.page.hasNext} onPress={model.nextPage}>下一页</Button><Button size="sm" onPress={model.resetPage}>回到首页</Button></div>
         {!rows.length && <p>尚无候选预览。</p>}
       </ScrollShadow>
     </NoteDialog>
@@ -112,7 +112,7 @@ export default function ExpandedView({ model }: { model: PreviewModel }) {
         {current?.live && <Button variant="tertiary" isDisabled={effectiveStatus === 'stopping'} onPress={() => closeMenu(() => run(() => actions.stop({ key: current.owner.key, surface: current.surface })))}>停止当前端预览</Button>}
         {currentIsCandidate && <Button variant="tertiary" isDisabled={effectiveStatus === 'stopping'} onPress={() => closeMenu(() => run(() => actions.archive({ key: current!.owner.key })))}>归档当前候选及预览</Button>}
         <Button variant="tertiary" aria-expanded={showArchive} onPress={() => setShowArchive(!showArchive)}>已归档（{archived.length}）{showArchive ? '▾' : '▸'}</Button>
-        {showArchive && <div><Button size="sm" isDisabled={model.archiveCursors.length===1} onPress={model.previousArchive}>上一页</Button><Button size="sm" isDisabled={!model.archivePage.data?.next} onPress={model.nextArchive}>下一页</Button>{!archived.length && <p>暂无归档候选</p>}{archived.map(spec => <article key={spec.key}><strong>{label(spec)}</strong><div className="preview-dialog-actions"><Button size="sm" variant="secondary" onPress={() => run(() => actions.restore({ key: spec.key }))}>恢复</Button><Button size="sm" variant="tertiary" onPress={() => { if (confirmForget === spec.key) { setConfirmForget(null); run(() => actions.forget({ key: spec.key })); } else setConfirmForget(spec.key); }}>{confirmForget === spec.key ? '确认永久删除' : '删除'}</Button>{confirmForget === spec.key && <Button size="sm" variant="tertiary" onPress={() => setConfirmForget(null)}>取消</Button>}</div></article>)}</div>}
+        {showArchive && <div><Button size="sm" isDisabled={!model.archivePage.hasPrevious} onPress={model.previousArchive}>上一页</Button><Button size="sm" isDisabled={!model.archivePage.hasNext} onPress={model.nextArchive}>下一页</Button>{!archived.length && <p>暂无归档候选</p>}{archived.map(spec => <article key={spec.key}><strong>{label(spec)}</strong><div className="preview-dialog-actions"><Button size="sm" variant="secondary" onPress={() => run(() => actions.restore({ key: spec.key }))}>恢复</Button><Button size="sm" variant="tertiary" onPress={() => { if (confirmForget === spec.key) { setConfirmForget(null); run(() => actions.forget({ key: spec.key })); } else setConfirmForget(spec.key); }}>{confirmForget === spec.key ? '确认永久删除' : '删除'}</Button>{confirmForget === spec.key && <Button size="sm" variant="tertiary" onPress={() => setConfirmForget(null)}>取消</Button>}</div></article>)}</div>}
       </ScrollShadow>
     </NoteDialog>
 

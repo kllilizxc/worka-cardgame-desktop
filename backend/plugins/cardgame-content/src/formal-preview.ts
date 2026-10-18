@@ -5,10 +5,8 @@ import { mkdir, readFile, rename, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { createGamePreviewSnapshot, readGamePreviewProjectRevision, verifyBattleSnapshot } from './battle-snapshot';
 
-export interface FormalPreviewRecord extends Record<string, string> {
-  projectId: string; key: string; snapshotId: string; createdAt: string;
-  commit: string; contentRevision: string; runtimeRevision: string; snapshotRevision: string;
-}
+import type {FormalPreviewRecord} from './contract';
+export type {FormalPreviewRecord} from './contract';
 const run = promisify(execFile);
 const git = async (cwd: string, ...args: string[]) => (await run('git', ['-c', `core.hooksPath=${devNull}`, '-c', 'commit.gpgsign=false', ...args], {
   cwd, timeout: 120_000, maxBuffer: 1024 * 1024, env: { ...process.env, GIT_CONFIG_GLOBAL: devNull, GIT_CONFIG_NOSYSTEM: '1', GIT_TERMINAL_PROMPT: '0' },

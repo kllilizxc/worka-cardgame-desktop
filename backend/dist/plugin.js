@@ -5917,11 +5917,203 @@ function json(params) {
   return jsonSchema;
 }
 // ../node_modules/@realiz3r/worka/dist/extension-contracts.js
-function i(t) {
+function J(t) {
   return Object.freeze({ ...t });
 }
-function d(t) {
+function N(t) {
   return Object.freeze({ ...t });
+}
+class m extends Error {
+  limitBytes;
+  code = "resource_json_limit";
+  constructor(t) {
+    super(`Display resource JSON exceeds ${t} bytes; use a smaller projection or pagination`);
+    this.limitBytes = t;
+    this.name = "JsonLimitError";
+  }
+}
+function E(t) {
+  let o = 0;
+  for (let i = 0;i < t.length; i++) {
+    let a = t.charCodeAt(i);
+    if (a < 128)
+      o++;
+    else if (a < 2048)
+      o += 2;
+    else if (a >= 55296 && a <= 56319 && i + 1 < t.length && t.charCodeAt(i + 1) >= 56320 && t.charCodeAt(i + 1) <= 57343)
+      o += 4, i++;
+    else
+      o += 3;
+  }
+  return o;
+}
+function h(t, o) {
+  if (!Number.isSafeInteger(o) || o < 0)
+    throw RangeError("Invalid JSON byte limit");
+  let i = [], a = "", u = 0, s = (e, r = e.length) => {
+    if (u + r > o)
+      throw new m(o);
+    if (u += r, a += e, a.length >= 4096)
+      i.push(a), a = "";
+  }, l = (e) => {
+    if (e.length + u + 2 > o)
+      throw new m(o);
+    s('"');
+    for (let r = 0;r < e.length; r++) {
+      let n = e.charCodeAt(r);
+      if (n === 34)
+        s("\\\"");
+      else if (n === 92)
+        s("\\\\");
+      else if (n === 8)
+        s("\\b");
+      else if (n === 9)
+        s("\\t");
+      else if (n === 10)
+        s("\\n");
+      else if (n === 12)
+        s("\\f");
+      else if (n === 13)
+        s("\\r");
+      else if (n < 32)
+        s(`\\u${n.toString(16).padStart(4, "0")}`);
+      else if (n < 128)
+        s(e[r]);
+      else if (n < 2048)
+        s(e[r], 2);
+      else if (n >= 55296 && n <= 56319 && r + 1 < e.length && e.charCodeAt(r + 1) >= 56320 && e.charCodeAt(r + 1) <= 57343)
+        s(e.slice(r, r + 2), 4), r++;
+      else if (n >= 55296 && n <= 57343)
+        s(`\\u${n.toString(16)}`);
+      else
+        s(e[r], 3);
+    }
+    s('"');
+  }, b = (e, r) => {
+    if (e !== null && (typeof e === "object" || typeof e === "bigint") && typeof e.toJSON === "function")
+      e = e.toJSON(r);
+    if (e instanceof Number || e instanceof String || e instanceof Boolean)
+      e = e.valueOf();
+    return e;
+  }, y = (e) => e === undefined || typeof e === "function" || typeof e === "symbol", f = [], p = new Set;
+  function* x(e, r) {
+    if (r) {
+      let n = e, g = n.length;
+      for (let d = 0;d < g; d++)
+        yield [String(d), n[d]];
+    } else
+      for (let n in e)
+        if (Object.hasOwn(e, n))
+          yield [n, e[n]];
+  }
+  let c = (e) => {
+    if (e === null || y(e)) {
+      s("null");
+      return;
+    }
+    if (typeof e === "string") {
+      l(e);
+      return;
+    }
+    if (typeof e === "number") {
+      s(Number.isFinite(e) ? String(e) : "null");
+      return;
+    }
+    if (typeof e === "boolean") {
+      s(String(e));
+      return;
+    }
+    if (typeof e === "bigint")
+      throw TypeError("Cannot serialize BigInt as JSON");
+    let r = e;
+    if (p.has(r))
+      throw TypeError("Cannot serialize circular JSON");
+    let n = Array.isArray(r);
+    s(n ? "[" : "{"), p.add(r), f.push({ value: r, iterator: x(r, n), array: n, first: true });
+  };
+  if (t = b(t, ""), y(t))
+    throw TypeError("Resource result must be JSON");
+  c(t);
+  while (f.length) {
+    let e = f[f.length - 1], r = e.iterator.next();
+    if (r.done) {
+      s(e.array ? "]" : "}"), p.delete(e.value), f.pop();
+      continue;
+    }
+    let [n, g] = r.value, d = b(g, n);
+    if (!e.array && y(d))
+      continue;
+    if (!e.first)
+      s(",");
+    if (e.first = false, !e.array)
+      l(n), s(":");
+    c(d);
+  }
+  if (a)
+    i.push(a);
+  return i.join("");
+}
+function k(t, o) {
+  return btoa(JSON.stringify({ signature: t, position: o })).replaceAll("+", "-").replaceAll("/", "_").replace(/=+$/, "");
+}
+function P(t, o) {
+  if (t === undefined)
+    return -1;
+  if (typeof t !== "string" || t.length > 32768)
+    throw Error("Invalid collection cursor");
+  let i;
+  try {
+    i = JSON.parse(atob(t.replaceAll("-", "+").replaceAll("_", "/")));
+  } catch {
+    throw Error("Invalid collection cursor");
+  }
+  if (!i || i.signature !== o || !Number.isSafeInteger(i.position) || i.position < 0)
+    throw Object.assign(Error("Collection cursor is stale or belongs to another query; restart pagination"), { code: "collection-stale" });
+  return i.position;
+}
+function O(t, o) {
+  return JSON.stringify([t, o], (i, a) => a && typeof a === "object" && !Array.isArray(a) ? Object.fromEntries(Object.entries(a).sort(([u], [s]) => u < s ? -1 : u > s ? 1 : 0)) : a);
+}
+var v = 1048576;
+function C(t = 1048576) {
+  return t - Math.min(2048, Math.floor(t / 4));
+}
+function T() {
+  return C(C());
+}
+async function D(t, o, i) {
+  let a = t.length;
+  if (!Number.isSafeInteger(a) || a < 0)
+    throw Error("Invalid query row count");
+  let { cursor: u, limit: s = 50, maxBytes: l = T(), ...b } = o;
+  if (!Number.isSafeInteger(s) || s < 1 || s > 100 || !Number.isSafeInteger(l) || l < 256 || l > v)
+    throw Error("Invalid query page budget");
+  if (typeof i.revision !== "string" || !i.revision)
+    throw Error("A query page requires a source revision");
+  let y = O("query-page", [i.scope, b, i.revision]), f = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(y)), p = [...new Uint8Array(f)].map((r) => r.toString(16).padStart(2, "0")).join(""), x = P(u, p);
+  if (x >= a)
+    throw Object.assign(Error("Collection cursor is stale or belongs to another query; restart pagination"), { code: "collection-stale" });
+  let c = { items: [], revision: i.revision, total: a }, e = 0;
+  for (let r = x + 1;r < a && c.items.length < s; r++) {
+    let n = r + 1 < a ? k(p, r) : undefined, g = { items: [], revision: c.revision, total: c.total, ...n ? { next: n } : {} }, d = t.at(r), w;
+    try {
+      w = E(h(d, l));
+    } catch (S) {
+      if (!(S instanceof m) || !c.items.length)
+        throw S;
+      break;
+    }
+    if (E(h(g, l)) + e + w + c.items.length > l) {
+      if (!c.items.length)
+        throw new m(l);
+      break;
+    }
+    if (c.items.push(d), e += w, n)
+      c.next = n;
+    else
+      delete c.next;
+  }
+  return h(c, l), c;
 }
 
 // plugins/cardgame-content/src/contract.ts
@@ -6151,6 +6343,31 @@ var pinnedIdentity = object({
   freshness: _enum(["current", "stale", "unavailable"]).optional(),
   currentRevision: textSchema.optional()
 });
+var candidateBinding = object({
+  productionId: textSchema,
+  candidateId: textSchema,
+  candidateHash: textSchema,
+  commit: textSchema,
+  productionRevision: numberSchema,
+  requirementRevision: numberSchema.nullable(),
+  round: numberSchema.nullable(),
+  currentRequirementRevision: numberSchema,
+  currentRound: numberSchema,
+  current: booleanSchema,
+  status: textSchema
+});
+var previewReference = pinnedIdentity.extend({ kind: literal("candidate"), binding: candidateBinding });
+var formalPreviewRecordSchema = object({
+  projectId: textSchema,
+  key: textSchema,
+  snapshotId: textSchema,
+  createdAt: textSchema,
+  commit: textSchema,
+  contentRevision: textSchema,
+  runtimeRevision: textSchema,
+  snapshotRevision: textSchema
+});
+var formalPreview = object({ record: formalPreviewRecordSchema.nullable(), freshness: _enum(["missing", "current", "stale", "unavailable"]), error: textSchema.optional() });
 var pinnedPage = object({ items: array(pinnedIdentity), limit: numberSchema });
 var reportRef = object({ experimentId: textSchema, reportId: textSchema });
 var candidateRef = object({
@@ -6430,13 +6647,15 @@ var detailInput = object({
 });
 function query(op, input, output) {
   const response = output.and(object({ projectGeneration: textSchema.optional() }));
-  return { input: input.strict().nullish(), output: response, resource: d({
+  return { input: input.strict().nullish(), output: response, resource: N({
     name: "extension.cardgame-content.query",
     input: input.extend({ projectId: textSchema.min(1), projectGeneration: textSchema.optional(), op: literal(op) }).strict(),
     output: response
   }) };
 }
 var contentQueries = {
+  formalPreview: query("formalPreview", emptyInputSchema, formalPreview),
+  previewReferenceTarget: query("previewReferenceTarget", object({ key: textSchema, commit: textSchema }), previewReference),
   status: query("status", emptyInputSchema, statusSchema),
   documents: query("documents", listInput, pageSchema(documentItemSchema)),
   directories: query("directories", listInput, pageSchema(directorySchema)),
@@ -6571,9 +6790,10 @@ var registeredCandidate = object({
 var command = (method, input, output) => ({
   input: input.strict(),
   output,
-  method: i({ extension: "cardgame-content", method, input: input.extend({ projectId: textSchema.min(1), projectGeneration: textSchema.optional() }).strict(), output })
+  method: J({ extension: "cardgame-content", method, input: input.extend({ projectId: textSchema.min(1), projectGeneration: textSchema.optional() }).strict(), output })
 });
 var contentActions = {
+  prepareFormalPreview: command("prepareFormalPreview", object({ fresh: booleanSchema.optional() }), formalPreviewRecordSchema),
   pinReference: command("pinReference", object({
     kind: textSchema,
     id: textSchema,
@@ -6691,7 +6911,7 @@ var contentActions = {
     context: jsonObject
   }), object({ item: object({ id: textSchema }) }))
 };
-var configureProjectContract = i({
+var configureProjectContract = J({
   extension: "cardgame-content",
   method: "configureProject",
   input: strictObject({ root: textSchema.trim().min(1), desktopId: textSchema.optional() }),
@@ -6738,6 +6958,23 @@ var localActions = {
     themeId: textSchema,
     expectedRevision: textSchema
   }), output: cardSchema }
+};
+var todoImageSchema = object({ id: textSchema, dataUrl: textSchema, type: _enum(["image/png", "image/jpeg", "image/webp", "image/gif"]).optional(), name: textSchema.optional(), width: numberSchema.optional(), height: numberSchema.optional() });
+var todoMetadata = { projectId: textSchema, projectGeneration: textSchema.optional(), id: textSchema, status: _enum(["todo", "in_progress", "done", "blocked"]), completed: booleanSchema.optional(), priority: _enum(["low", "medium", "high"]), category: textSchema.optional(), dueDate: textSchema.optional(), taskId: textSchema.optional(), delegationId: textSchema.optional(), productionId: textSchema.optional(), revision: numberSchema, requirementRevision: numberSchema, createdAt: textSchema, updatedAt: textSchema };
+var todoRequirementSchema = object({ ...todoMetadata, title: textSchema, description: textSchema.optional(), images: array(todoImageSchema).optional(), conclusion: textSchema.optional() });
+var todoSummarySchema = object({ ...todoMetadata, title: textSchema, titleTruncated: booleanSchema.optional(), description: textSchema.optional(), descriptionTruncated: booleanSchema.optional(), conclusion: textSchema.optional(), conclusionTruncated: booleanSchema.optional(), imageCount: numberSchema, imageNames: stringListSchema, hasDelivery: booleanSchema.optional() });
+var todoTextSchema = todoRequirementSchema.omit({ images: true, conclusion: true });
+var todoReadSchema = object({ item: todoRequirementSchema, requirementFingerprint: textSchema });
+var todoReceiptSchema = object({ projectId: textSchema, projectGeneration: textSchema.optional(), id: textSchema, revision: numberSchema, requirementRevision: numberSchema, requirementFingerprint: textSchema });
+var todoHistorySchema = object({ history: array(object({ id: numberSchema, projectId: textSchema, itemId: textSchema, kind: literal("todo"), event: textSchema, revision: numberSchema, payload: json(), createdAt: textSchema })), nextCursor: textSchema.optional(), historyLimit: numberSchema });
+var workflowReadContracts = {
+  todoHistory: query("todo", object({ projectId: textSchema.optional(), projectGeneration: textSchema.optional(), id: textSchema, view: literal("history"), historyCursor: textSchema.optional(), historyLimit: numberSchema.optional() }), todoHistorySchema),
+  todoSummary: query("todo", object({ id: textSchema, view: literal("summary") }), object({ item: todoSummarySchema })),
+  todoTexts: query("todos", object({ projectId: textSchema.optional(), view: literal("text"), cursor: textSchema.optional(), limit: numberSchema.optional(), q: textSchema.optional(), category: textSchema.optional(), status: _enum(["todo", "in_progress", "done", "blocked"]).optional() }), object({ items: array(todoTextSchema), next: textSchema.optional(), revision: textSchema, total: numberSchema })),
+  workflowStatus: query("workflowStatus", emptyInputSchema, object({ counts: object({ todos: numberSchema, todo: numberSchema, inProgress: numberSchema, done: numberSchema, blocked: numberSchema }) })),
+  categories: query("categories", object({ projectId: textSchema.optional(), cursor: textSchema.optional(), limit: numberSchema.optional() }), object({ items: array(object({ category: textSchema, count: numberSchema.int().nonnegative() })), next: textSchema.optional(), revision: textSchema, total: numberSchema.int().nonnegative() })),
+  todos: query("todos", object({ projectId: textSchema.optional(), cursor: textSchema.optional(), limit: numberSchema.optional(), q: textSchema.optional(), category: textSchema.optional(), status: _enum(["todo", "in_progress", "done", "blocked"]).optional() }), object({ items: array(todoSummarySchema), next: textSchema.optional(), revision: textSchema, total: numberSchema })),
+  todo: query("todo", object({ projectId: textSchema.optional(), projectGeneration: textSchema.optional(), id: textSchema }), todoReadSchema)
 };
 
 // project-binding.ts
@@ -13349,36 +13586,71 @@ class DurableWorkflowStore {
     }
     return Object.values(this.ensureFallback().todos).filter((row) => row.projectId === projectId).map(clone2);
   }
-  listTodosPage(projectId, input) {
-    const limit = limitOf(input.limit);
-    const cursor = decodeCursor2(input.cursor);
-    const status = input.status === undefined ? undefined : normalizeStatus(input.status);
-    const q = optionalText(input.q ?? input.search)?.toLocaleLowerCase();
-    if (this.native) {
-      const clauses = ["project_id = ?"];
-      const params = [projectId];
-      if (status) {
-        clauses.push("status = ?");
-        params.push(status);
-      }
-      if (q) {
-        clauses.push("(lower(title) LIKE ? OR lower(payload_json) LIKE ?)");
-        params.push(`%${q}%`, `%${q}%`);
-      }
-      if (cursor?.updatedAt !== undefined && cursor.id !== undefined) {
-        clauses.push("(updated_at < ? OR (updated_at = ? AND id < ?))");
-        params.push(String(cursor.updatedAt), String(cursor.updatedAt), String(cursor.id));
-      }
-      const rows = this.statement(`SELECT payload_json,updated_at,id FROM todos WHERE ${clauses.join(" AND ")} ORDER BY updated_at DESC,id DESC LIMIT ?`).all(...params, limit + 1);
-      const hasNext = rows.length > limit;
-      const items = rows.slice(0, limit).map((row) => JSON.parse(row.payload_json));
-      const totalParams = [projectId, ...status ? [status] : [], ...q ? [`%${q}%`, `%${q}%`] : []];
-      const total = Number(this.statement(`SELECT COUNT(*) AS count FROM todos WHERE ${clauses.filter((clause) => !clause.startsWith("(updated_at")).join(" AND ")}`).get(...totalParams).count);
-      return { projectId, items, limit, total, ...hasNext && items.length ? { nextCursor: encodeCursor2({ updatedAt: items.at(-1).updatedAt, id: items.at(-1).id }) } : {} };
+  todoFilter(projectId, input) {
+    const status = input.status === undefined ? undefined : normalizeStatus(input.status), q = optionalText(input.q ?? input.search)?.replace(/[A-Z]/g, (char) => char.toLowerCase()), category = optionalText(input.category);
+    const clauses = ["project_id = ?"], params = [projectId];
+    if (status) {
+      clauses.push("status = ?");
+      params.push(status);
     }
-    const items = this.listTodos(projectId).filter((item) => (!status || item.status === status) && (!q || `${item.title}
-${item.description ?? ""}`.toLocaleLowerCase().includes(q)));
-    return pageRecords(items, input);
+    if (category) {
+      clauses.push("json_extract(payload_json,'$.category') = ?");
+      params.push(category);
+    }
+    if (input.id) {
+      clauses.push("id = ?");
+      params.push(input.id);
+    }
+    if (q) {
+      clauses.push("(instr(lower(title),?) > 0 OR instr(lower(COALESCE(json_extract(payload_json,'$.description'),'')),?) > 0)");
+      params.push(q, q);
+    }
+    const matches = (item) => (!status || item.status === status) && (!category || item.category === category) && (!input.id || item.id === input.id) && (!q || [item.title, item.description ?? ""].some((value) => value.replace(/[A-Z]/g, (char) => char.toLowerCase()).includes(q)));
+    return { where: clauses.join(" AND "), params, matches };
+  }
+  listTodoSummaries(projectId, input) {
+    const filter = this.todoFilter(projectId, input);
+    if (!this.native)
+      return Object.values(this.ensureFallback().todos).filter(filter.matches).filter((item) => item.projectId === projectId).sort(todoOrder).map(todoSummary);
+    const rows = this.statement(`SELECT project_id AS projectId,id,substr(title,1,160) AS title,length(title)>160 AS titleTruncated,status,priority,created_at AS createdAt,updated_at AS updatedAt,revision,
+      json_extract(payload_json,'$.requirementRevision') AS requirementRevision,json_extract(payload_json,'$.completed') AS completed,
+      substr(json_extract(payload_json,'$.description'),1,240) AS description,length(json_extract(payload_json,'$.description'))>240 AS descriptionTruncated,
+      substr(json_extract(payload_json,'$.conclusion'),1,240) AS conclusion,length(json_extract(payload_json,'$.conclusion'))>240 AS conclusionTruncated,
+      json_extract(payload_json,'$.category') AS category,json_extract(payload_json,'$.dueDate') AS dueDate,json_extract(payload_json,'$.taskId') AS taskId,json_extract(payload_json,'$.execution.delegationId') AS delegationId,json_extract(payload_json,'$.productionId') AS productionId,
+      COALESCE(json_array_length(payload_json,'$.images'),0) AS imageCount,
+      (SELECT json_group_array(json_extract(value,'$.name')) FROM json_each(payload_json,'$.images') WHERE json_extract(value,'$.name') IS NOT NULL) AS imageNames,
+      json_type(payload_json,'$.delivery') IS NOT NULL AS hasDelivery
+      FROM todos WHERE ${filter.where} ORDER BY updated_at DESC,id DESC`).all(...filter.params);
+    return rows.map((row) => todoSummarySchema.parse(cleanTodoProjection({ ...row, imageNames: JSON.parse(String(row.imageNames ?? "[]")), ...Object.fromEntries(["completed", "titleTruncated", "descriptionTruncated", "conclusionTruncated", "hasDelivery"].map((name) => [name, row[name] == null ? undefined : Boolean(row[name])])) })));
+  }
+  todoTexts(projectId, input) {
+    const filter = this.todoFilter(projectId, input);
+    const index = this.native ? this.statement(`SELECT id,revision,updated_at AS updatedAt FROM todos WHERE ${filter.where} ORDER BY updated_at DESC,id DESC`).all(...filter.params) : Object.values(this.ensureFallback().todos).filter((item) => item.projectId === projectId && filter.matches(item)).sort(todoOrder).map(({ id, revision, updatedAt }) => ({ id, revision, updatedAt }));
+    const revision = digest4(index.map((item) => [item.id, item.revision, item.updatedAt]));
+    const read = this.native ? this.statement(`SELECT project_id AS projectId,id,title,status,priority,created_at AS createdAt,updated_at AS updatedAt,revision,
+      json_extract(payload_json,'$.requirementRevision') AS requirementRevision,json_extract(payload_json,'$.completed') AS completed,json_extract(payload_json,'$.description') AS description,
+      json_extract(payload_json,'$.category') AS category,json_extract(payload_json,'$.dueDate') AS dueDate,json_extract(payload_json,'$.taskId') AS taskId,json_extract(payload_json,'$.execution.delegationId') AS delegationId,json_extract(payload_json,'$.productionId') AS productionId
+      FROM todos WHERE project_id = ? AND id = ?`) : undefined;
+    return { revision, rows: { length: index.length, at: (position) => {
+      const expected = index[position];
+      if (!expected)
+        return;
+      const row = read ? read.get(projectId, expected.id) : this.ensureFallback().todos[key(projectId, expected.id)];
+      if (!row || row.revision !== expected.revision || row.updatedAt !== expected.updatedAt)
+        throw Object.assign(new Error("Todo collection changed; restart pagination"), { code: "collection-stale" });
+      const item = todoTextSchema.parse(cleanTodoProjection({ ...row, ...!read && typeof row.execution?.delegationId === "string" ? { delegationId: row.execution.delegationId } : {}, ...row.completed == null ? {} : { completed: Boolean(row.completed) } }));
+      return { ...item, ...typeof input.projectGeneration === "string" ? { projectGeneration: input.projectGeneration } : {} };
+    } } };
+  }
+  todoCategories(projectId) {
+    const rows = this.native ? this.statement("SELECT json_extract(payload_json,'$.category') AS category,COUNT(*) AS count FROM todos WHERE project_id = ? AND json_type(payload_json,'$.category') = 'text' AND json_extract(payload_json,'$.category') <> '' GROUP BY category").all(projectId) : (() => {
+      const counts = new Map;
+      for (const item of Object.values(this.ensureFallback().todos))
+        if (item.projectId === projectId && typeof item.category === "string" && item.category)
+          counts.set(item.category, (counts.get(item.category) ?? 0) + 1);
+      return [...counts].map(([category, count]) => ({ category, count }));
+    })();
+    return rows.map((row) => ({ category: row.category, count: Number(row.count) })).sort((left, right) => left.category < right.category ? -1 : left.category > right.category ? 1 : 0);
   }
   countTodos(projectId) {
     if (this.native)
@@ -13677,6 +13949,31 @@ function taskStatusFromReceipt(receipt) {
   if (!value || value === "completed")
     return;
   return value;
+}
+var todoMetadataFields = ["projectId", "id", "status", "completed", "priority", "category", "dueDate", "taskId", "productionId", "revision", "requirementRevision", "createdAt", "updatedAt"];
+function todoMetadata2(item) {
+  return { ...Object.fromEntries(todoMetadataFields.filter((field) => item[field] !== undefined).map((field) => [field, item[field]])), ...typeof item.execution?.delegationId === "string" ? { delegationId: item.execution.delegationId } : {} };
+}
+function todoOrder(a, b) {
+  return Buffer.compare(Buffer.from(b.updatedAt), Buffer.from(a.updatedAt)) || Buffer.compare(Buffer.from(b.id), Buffer.from(a.id));
+}
+function cleanTodoProjection(row) {
+  return Object.fromEntries(Object.entries(row).filter(([, value]) => value !== null && value !== undefined));
+}
+function todoSummary(item) {
+  const excerpt = (name, limit) => {
+    if (typeof item[name] !== "string")
+      return {};
+    const points = Array.from(item[name]);
+    return { [name]: points.slice(0, limit).join(""), [name + "Truncated"]: points.length > limit };
+  };
+  return todoSummarySchema.parse({ ...todoMetadata2(item), ...excerpt("title", 160), ...excerpt("description", 240), ...excerpt("conclusion", 240), imageCount: item.images?.length ?? 0, imageNames: (item.images ?? []).flatMap((image) => image.name ? [image.name] : []), hasDelivery: Boolean(item.delivery) });
+}
+function todoRequirementFingerprint(item) {
+  return digest4([item.title, item.description ?? "", (item.images ?? []).map((image) => [image.id, image.dataUrl, image.type ?? null, image.name ?? null, image.width ?? null, image.height ?? null])]);
+}
+function projectTodoRequirement(item, projectGeneration) {
+  return todoRequirementSchema.parse({ ...todoMetadata2(item), ...typeof projectGeneration === "string" ? { projectGeneration } : {}, title: item.title, ...item.description !== undefined ? { description: item.description } : {}, ...item.images ? { images: item.images } : {}, ...item.conclusion !== undefined ? { conclusion: item.conclusion } : {} });
 }
 function createWorkflowService(options) {
   const projects = new Map;
@@ -13996,11 +14293,19 @@ function createWorkflowService(options) {
       if (!item)
         throw new WorkflowError("not-found", `找不到 Todo：${id}`);
       const requirement = todoRequirement(item);
-      const businessKey = text(input.businessKey ?? `todo:${projectId}:${id}`, "businessKey");
+      const projectGeneration = typeof input.projectGeneration === "string" ? input.projectGeneration : undefined;
+      const identity = projectGeneration ? `${projectId}:${projectGeneration}:${id}` : `${projectId}:${id}`;
+      const businessKey = text(input.businessKey ?? `todo:${identity}`, "businessKey");
       const scope = defaultScope(input.scope);
+      const previousRequest = item.delivery?.payload.projectGeneration === projectGeneration ? item.delivery?.requestId : undefined;
+      const request = requestId(input.requestId ?? previousRequest, `todo-repair:${identity}:${item.requirementRevision}`);
+      const requestKey = projectGeneration ? `cardgame-todo-request:${projectGeneration}:${request}` : request;
       const payload = {
         projectId,
+        ...projectGeneration ? { projectGeneration, todoObjectId: `cardgame-todo:${JSON.stringify([projectId, projectGeneration, id])}` } : {},
         itemId: id,
+        requestId: request,
+        requestKey,
         businessKey,
         goal: optionalText(input.goal) ?? `处理待办：${item.title}`,
         scope,
@@ -14009,9 +14314,8 @@ function createWorkflowService(options) {
         resumePaused: true,
         delegationId: item.execution?.delegationId
       };
-      const request = requestId(input.requestId ?? item.delivery?.requestId, `todo-repair:${projectId}:${id}:${item.requirementRevision}`);
       const fingerprint = digest4({ operation: "repair", payload: { ...payload, delegationId: undefined } });
-      const prior = store.getRequest(projectId, request);
+      const prior = store.getRequest(projectId, requestKey);
       if (prior && prior.fingerprint !== fingerprint)
         throw new WorkflowRequestIdReuseError(undefined, { requestId: request, previous: prior });
       const at = iso(now());
@@ -14023,7 +14327,7 @@ function createWorkflowService(options) {
         next.revision += 1;
         next.updatedAt = at;
         touchTodo(store, next, "delegation-prepared", { requestId: request, businessKey }, at);
-        store.putRequest({ projectId, requestId: request, operation: "repair", fingerprint, todoId: id, status: "pending", payload: transportPayload, createdAt: prior?.createdAt ?? at, updatedAt: at });
+        store.putRequest({ projectId, requestId: requestKey, operation: "repair", fingerprint, todoId: id, status: "pending", payload: transportPayload, createdAt: prior?.createdAt ?? at, updatedAt: at });
         emit({ projectId, kind: "todo", id, revision: next.revision });
         return { item: next, payload: transportPayload, requestId: request, fingerprint };
       }
@@ -14544,7 +14848,7 @@ function createWorkflowService(options) {
         next.updatedAt = at;
         touchTodo(store, next, "delegated", { requestId: optionalText(input.requestId), status }, at);
         if (next.delivery) {
-          const prior = store.getRequest(projectId, next.delivery.requestId);
+          const prior = store.getRequest(projectId, optionalText(next.delivery.payload.requestKey) ?? next.delivery.requestId);
           if (prior)
             store.putRequest({ ...prior, status, result: receipt.result, updatedAt: at });
         }
@@ -14759,16 +15063,38 @@ function createWorkflowService(options) {
     const op = text(input.op ?? input.name ?? input.query, "query");
     const projectId = assertProject(input);
     if (op === "todos") {
-      return store.listTodosPage(projectId, input);
+      if (input.view !== undefined && input.view !== "text")
+        throw new WorkflowError("invalid-input", "未知 Todo 列表视图");
+      if (input.view === "text") {
+        const source = store.todoTexts(projectId, input);
+        return D(source.rows, input, { revision: source.revision, scope: { projectId, projectGeneration: typeof input.projectGeneration === "string" ? input.projectGeneration : null, query: "todos", view: "text" } });
+      }
+      const summaries = store.listTodoSummaries(projectId, input).map((item) => ({ ...item, ...typeof input.projectGeneration === "string" ? { projectGeneration: input.projectGeneration } : {} }));
+      const revision = digest4(summaries.map((item) => [item.id, item.revision, item.updatedAt]));
+      return D(summaries, input, { revision, scope: { projectId, projectGeneration: typeof input.projectGeneration === "string" ? input.projectGeneration : null, query: "todos", view: input.view === "text" ? "text" : "summary" } });
+    }
+    if (op === "categories") {
+      const categories = store.todoCategories(projectId);
+      return D(categories, input, { revision: digest4(categories), scope: { projectId, projectGeneration: typeof input.projectGeneration === "string" ? input.projectGeneration : null, query: "categories" } });
     }
     if (op === "todo") {
       const id = text(input.id ?? input.itemId, "id");
+      if (input.view === "summary") {
+        const item = store.listTodoSummaries(projectId, { id })[0];
+        if (!item)
+          throw new WorkflowError("not-found", `找不到 Todo：${id}`);
+        return { item: { ...item, ...typeof input.projectGeneration === "string" ? { projectGeneration: input.projectGeneration } : {} } };
+      }
       const item = store.getTodo(projectId, id);
       if (!item)
         throw new WorkflowError("not-found", `找不到 Todo：${id}`);
-      const history = store.listHistoryPage(projectId, "todo", id, input);
-      const execution = context?.execution && item.execution ? await context.execution(clone2(item.execution)) : undefined;
-      return { item: clone2(item), history: history.items, ...history.nextCursor ? { nextCursor: history.nextCursor } : {}, historyLimit: history.limit, ...execution !== undefined ? { execution } : {} };
+      if (input.view === "history") {
+        const history = store.listHistoryPage(projectId, "todo", id, input);
+        return { history: history.items, ...history.nextCursor ? { nextCursor: history.nextCursor } : {}, historyLimit: history.limit };
+      }
+      if (input.view !== undefined)
+        throw new WorkflowError("invalid-input", "未知 Todo 详情视图");
+      return { item: projectTodoRequirement(item, input.projectGeneration), requirementFingerprint: todoRequirementFingerprint(item) };
     }
     if (op === "productions") {
       return store.listProductionsPage(projectId, input);
@@ -14830,20 +15156,24 @@ ${item.todoId ?? ""}`.toLocaleLowerCase().includes(q)).map((item) => projectGame
     }
     throw new WorkflowError("unknown-query", `未知工作流查询：${op}`);
   }
+  async function withRequirementFingerprint(pending) {
+    const result = await pending;
+    return { ...result, requirementFingerprint: todoRequirementFingerprint(result.item) };
+  }
   async function command(method, input, context) {
     if (typeof method !== "string" || !method.trim())
       throw new WorkflowError("invalid-input", "command method 不能为空");
     const name = method.trim();
     switch (name) {
       case "createTodo":
-        return createTodo(input);
+        return withRequirementFingerprint(createTodo(input));
       case "updateTodo":
-        return updateTodo(input);
+        return withRequirementFingerprint(updateTodo(input));
       case "deleteTodo":
         return deleteTodo(input);
       case "todoFeedback":
       case "feedback":
-        return todoFeedback(input);
+        return withRequirementFingerprint(todoFeedback(input));
       case "importTodos":
         return importTodos(input);
       case "importProductions":
@@ -15298,7 +15628,7 @@ function createCardPipeline(content, workflow, fonts = {}, candidates, options =
     }
     let todo;
     if (input.todoId) {
-      todo = (await workflow.query({ projectId: input.projectId, op: "todo", id: text2(input.todoId, "待办") })).item;
+      todo = (await workflow.query({ projectId: input.projectId, op: "todo", view: "summary", id: text2(input.todoId, "待办") })).item;
       if (todo.productionId && todo.productionId !== requestedId)
         throw Error("该待办已关联制作单，请打开已有制作单");
     }
@@ -15377,7 +15707,7 @@ function createCardPipeline(content, workflow, fonts = {}, candidates, options =
     }
     if (method === "linkCardCompanion") {
       const source = await content.query({ projectId: input.projectId, op: "card", id: text2(input.sourceCardId, "配套单位") });
-      const { item: todo } = await workflow.query({ projectId: input.projectId, op: "todo", id: text2(input.todoId, "待办") });
+      const { item: todo } = await workflow.query({ projectId: input.projectId, op: "todo", view: "summary", id: text2(input.todoId, "待办") });
       if (source.kind !== "unit" || source.revision !== input.sourceRevision)
         throw Error("配套单位已变化，请刷新后重试");
       if (todo.productionId && todo.productionId !== production.id)

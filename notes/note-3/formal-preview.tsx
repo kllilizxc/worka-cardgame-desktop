@@ -4,7 +4,7 @@ import {useNote} from '@dsh-workbench/react';
 
 export function FormalPreview({ onOpen }: { onOpen(key: string): void }) {
   const {actions,useQuery}=useNote<typeof import('./actions')>();
-  const resource = useQuery<{ record: { key: string; commit: string; createdAt: string } | null; freshness: 'missing' | 'current' | 'stale' | 'unavailable'; error?: string }>('formalPreview');
+  const resource = useQuery('formalPreview',{});
 
   const [busy, setBusy] = useState(false), [error, setError] = useState('');
   const record = resource.data?.record;

@@ -9,8 +9,8 @@
   "files": {
     ".gitattributes": "d6504560a89539dfc9e0a7d9d0b37e48d526efd4b5d52f12d836704ba5545256",
     "LICENSE": "b51593dd875fcde7a5af0c84ca7b67b96ed5c2d174d9f5ca178d8bd07a2a6a50",
-    "README.md": "c3b7032ddc5b53fc923cb4b94183fd8a612a1f69dbb2c560fe167e1240e72c31",
-    "dist/plugin.js": "b14b9f6e4d070ec08e996fcf9a6047eeac2041b978fc57d5cf700c56aff179d4",
+    "README.md": "1d97a64c03e913813ac8964639a3a455dd829d179dfb5590d8dfbb420af05f55",
+    "dist/plugin.js": "144d07d179818f58aa5cdeb17de9b7bd26f47a0518ff49e790df7347a027776a",
     "package.json": "2164bc24e83999dfffdfad2e839e6b037934d5cc4b098cade6e324b623f2ce34",
     "plugins/cardgame-content/analysis/battle-browser-adapter.ts": "73f0ef40e256fa6ffc5c7e17d3066a290206a3d7b06e8310893c73bf7bfe950c",
     "plugins/cardgame-content/analysis/battle-server.ts": "e0e5fcec36215a41ca86767da390a8cbc0c449e55a9d7b18f09a9758e7762cbe",
@@ -21,14 +21,14 @@
     "plugins/cardgame-content/src/battle-experiment.ts": "6d46fe49dcf37f2ff92927554ea6fd3427967eee60c2e8492c4620f048eb3111",
     "plugins/cardgame-content/src/battle-snapshot.ts": "9179eb743dc3478d79641986eb41c88be379e09d47b6e7542c9dc8e4bbd64ff2",
     "plugins/cardgame-content/src/card-collections.ts": "5bbb26f3cf63f73b860bce9b2f50b6aad50aa622f9e86c35777de7b67fb14579",
-    "plugins/cardgame-content/src/card-pipeline.ts": "8e71b13cd688f7022de1c14aaea4aa7da5a0b293f236a5ed56461eee064a2501",
+    "plugins/cardgame-content/src/card-pipeline.ts": "827d2a2b04f68b20d41254c956b30fa8e9e5b39744301328ffe3ac502b52b3bc",
     "plugins/cardgame-content/src/changes.ts": "1f92f1745b1098c7a35e2da3bc6c115459ae7846fc367874b5fdc9484136128e",
     "plugins/cardgame-content/src/codex-imagegen.ts": "ccf2c6928275519063c3780958ff678d7c56fcfc1de876e1b6e6f08120b4c041",
     "plugins/cardgame-content/src/content.ts": "6d1b10d18d42cb8d3e94feb042a7092a06a6bf50038f2a5463936dc831f49ab4",
     "plugins/cardgame-content/src/context.ts": "fcafe8845481be1e048b7a7ff6ce970ec6b83119b02ec105c14c7c602c8a276d",
-    "plugins/cardgame-content/src/contract.ts": "457132034f9d35fd25323d776ef680a481903f47c3280c7e1bed29139049b347",
+    "plugins/cardgame-content/src/contract.ts": "2c9b6379ea6d1147b4f5762b1b70bdc9fabebcfbdbe3612483084abf3d84dc68",
     "plugins/cardgame-content/src/deck-plan.ts": "12362d606db6b380be8b8c1fa8d08ee613f2468f0529a1186bece1fcdc166929",
-    "plugins/cardgame-content/src/formal-preview.ts": "0f55cfebf48d3788f4c28c229dbd5c5c46e65165391fa7a3c11d37d0a00a385b",
+    "plugins/cardgame-content/src/formal-preview.ts": "78788264a8af9ab6d4c319bc8ea4e4e6f2f03b83f2408084cfa33837eb70670b",
     "plugins/cardgame-content/src/game-adoption.ts": "827b583d285613f8d492e9c21f4452ab8016ff0b6dd6daa8e0d8d598a1bb6883",
     "plugins/cardgame-content/src/game-candidates.ts": "4705d390443813c0e8295955ed35bd19abd1daf66f9278289b6301661429bd8b",
     "plugins/cardgame-content/src/media.ts": "5ad87de291e081b53464c34721b8e727cd159e873c0c786859e615f31c3ae021",
@@ -43,7 +43,7 @@
     "plugins/cardgame-content/src/story-execution.ts": "e8121b37fc453db7badbf81ce04dd19e6b96d434964770de835d607a06b4f2e2",
     "plugins/cardgame-content/src/story-rules.ts": "2d3bf72deb1ae587f3a791e4b111272b77074a55a867b1a1045d9273846e76c2",
     "plugins/cardgame-content/src/types.ts": "8339c06fe12195e63b58a8017130d29f1b707192201f9244e2975d03782d36de",
-    "plugins/cardgame-content/src/workflow.ts": "68474db0403acf1979ad8168b8fb9ecd9b740c8c643b365d9ed6d7040ee9f83a"
+    "plugins/cardgame-content/src/workflow.ts": "c5770db6f99d33e0694633810035be0148d8cfb1c8ad9bd061a9a97b43606fe7"
   },
-  "integrity": "sha256-3c999977dce1753d88fefcc25388934d2a14761e633bf92bcdb2326822c99f9a"
+  "integrity": "sha256-6daf983990123c161eb90bfea1e0b439960f8bef76ad56365cb30b366065ae49"
 }

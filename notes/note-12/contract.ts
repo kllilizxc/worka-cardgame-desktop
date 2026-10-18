@@ -71,6 +71,18 @@ const storyScene = z.object({
 const pinnedIdentity = z.object({
     key: textSchema, projectId: textSchema, kind: textSchema, id: textSchema, revision: textSchema, title: textSchema, anchor: textSchema.optional(), path: textSchema.optional(), context: jsonObject.optional(), binding: jsonObject.optional(), freshness: z.enum(['current', 'stale', 'unavailable']).optional(), currentRevision: textSchema.optional()
 });
+const candidateBinding = z.object({
+    productionId:textSchema,candidateId:textSchema,candidateHash:textSchema,commit:textSchema,productionRevision:numberSchema,
+    requirementRevision:numberSchema.nullable(),round:numberSchema.nullable(),currentRequirementRevision:numberSchema,
+    currentRound:numberSchema,current:booleanSchema,status:textSchema
+});
+const previewReference = pinnedIdentity.extend({kind:z.literal('candidate'),binding:candidateBinding});
+export const formalPreviewRecordSchema = z.object({
+    projectId:textSchema,key:textSchema,snapshotId:textSchema,createdAt:textSchema,commit:textSchema,
+    contentRevision:textSchema,runtimeRevision:textSchema,snapshotRevision:textSchema
+});
+export type FormalPreviewRecord=z.output<typeof formalPreviewRecordSchema>;
+const formalPreview = z.object({record:formalPreviewRecordSchema.nullable(),freshness:z.enum(['missing','current','stale','unavailable']),error:textSchema.optional()});
 const pinnedPage = z.object({ items: z.array(pinnedIdentity), limit: numberSchema });
 const reportRef = z.object({ experimentId: textSchema, reportId: textSchema }), candidateRef = z.object({
     productionId: textSchema, candidateId: textSchema, candidateHash: textSchema
@@ -161,6 +173,8 @@ function query<const N extends string,S extends z.ZodRawShape,O extends z.ZodTyp
     })};
 }
 export const contentQueries = {
+    formalPreview:query('formalPreview',emptyInputSchema,formalPreview),
+    previewReferenceTarget:query('previewReferenceTarget',z.object({key:textSchema,commit:textSchema}),previewReference),
     status: query('status', emptyInputSchema, statusSchema), documents: query('documents', listInput, pageSchema(documentItemSchema)), directories: query('directories', listInput, pageSchema(directorySchema)), document: query('document', detailInput, documentSchema), documentMeta: query('documentMeta', detailInput, documentMetaSchema), backlinks: query('backlinks', listInput, pageSchema(backlinkSchema)), graph: query('graph', detailInput.extend({
         depth: numberSchema.optional(), maxNodes: numberSchema.optional(), limit: numberSchema.optional()
     }), graphSchema), movePreview: query('movePreview', detailInput.extend({ toPath: textSchema.optional(), targetPath: textSchema.optional() }), movePreviewSchema),
@@ -216,6 +230,7 @@ const command=<const N extends string,S extends z.ZodRawShape,O extends z.ZodTyp
     input:input.strict(),output,method:extensionMethod({extension:'cardgame-content',method,input:input.extend({projectId:textSchema.min(1),projectGeneration:textSchema.optional()}).strict(),output})
 });
 export const contentActions = {
+    prepareFormalPreview:command('prepareFormalPreview',z.object({fresh:booleanSchema.optional()}),formalPreviewRecordSchema),
     pinReference: command('pinReference', z.object({
         kind: textSchema, id: textSchema, anchor: textSchema.optional(), context: jsonObject.optional(), revision: textSchema
     }), pinnedPage), removePinnedReference: command('removePinnedReference', z.object({ key: textSchema }), z.object({ removed: z.literal(true) })), prepareBattleExperiment: command('prepareBattleExperiment', z.object({ fresh: booleanSchema.optional(), candidate: candidateRef.optional() }), z.object({
@@ -274,3 +289,29 @@ export const localActions = {
             id: textSchema, themeId: textSchema, expectedRevision: textSchema
         }), output: cardSchema }
 };
+
+/** Workflow reads contain displayed facts, never frozen delivery payloads or execution history. */
+export const todoImageSchema=z.object({id:textSchema,dataUrl:textSchema,type:z.enum(['image/png','image/jpeg','image/webp','image/gif']).optional(),name:textSchema.optional(),width:numberSchema.optional(),height:numberSchema.optional()});
+const todoMetadata={projectId:textSchema,projectGeneration:textSchema.optional(),id:textSchema,status:z.enum(['todo','in_progress','done','blocked']),completed:booleanSchema.optional(),priority:z.enum(['low','medium','high']),category:textSchema.optional(),dueDate:textSchema.optional(),taskId:textSchema.optional(),delegationId:textSchema.optional(),productionId:textSchema.optional(),revision:numberSchema,requirementRevision:numberSchema,createdAt:textSchema,updatedAt:textSchema};
+export const todoRequirementSchema=z.object({...todoMetadata,title:textSchema,description:textSchema.optional(),images:z.array(todoImageSchema).optional(),conclusion:textSchema.optional()});
+export const todoSummarySchema=z.object({...todoMetadata,title:textSchema,titleTruncated:booleanSchema.optional(),description:textSchema.optional(),descriptionTruncated:booleanSchema.optional(),conclusion:textSchema.optional(),conclusionTruncated:booleanSchema.optional(),imageCount:numberSchema,imageNames:stringListSchema,hasDelivery:booleanSchema.optional()});
+export const todoTextSchema=todoRequirementSchema.omit({images:true,conclusion:true});
+export const todoReadSchema=z.object({item:todoRequirementSchema,requirementFingerprint:textSchema});
+export const todoReceiptSchema=z.object({projectId:textSchema,projectGeneration:textSchema.optional(),id:textSchema,revision:numberSchema,requirementRevision:numberSchema,requirementFingerprint:textSchema});
+export const todoHistorySchema=z.object({history:z.array(z.object({id:numberSchema,projectId:textSchema,itemId:textSchema,kind:z.literal('todo'),event:textSchema,revision:numberSchema,payload:z.json(),createdAt:textSchema})),nextCursor:textSchema.optional(),historyLimit:numberSchema});
+export const workflowReadContracts={
+ todoHistory:query('todo',z.object({projectId:textSchema.optional(),projectGeneration:textSchema.optional(),id:textSchema,view:z.literal('history'),historyCursor:textSchema.optional(),historyLimit:numberSchema.optional()}),todoHistorySchema),
+ todoSummary:query('todo',z.object({id:textSchema,view:z.literal('summary')}),z.object({item:todoSummarySchema})),
+ todoTexts:query('todos',z.object({projectId:textSchema.optional(),view:z.literal('text'),cursor:textSchema.optional(),limit:numberSchema.optional(),q:textSchema.optional(),category:textSchema.optional(),status:z.enum(['todo','in_progress','done','blocked']).optional()}),z.object({items:z.array(todoTextSchema),next:textSchema.optional(),revision:textSchema,total:numberSchema})),
+ workflowStatus:query('workflowStatus',emptyInputSchema,z.object({counts:z.object({todos:numberSchema,todo:numberSchema,inProgress:numberSchema,done:numberSchema,blocked:numberSchema})})),
+ categories:query('categories',z.object({projectId:textSchema.optional(),cursor:textSchema.optional(),limit:numberSchema.optional()}),z.object({items:z.array(z.object({category:textSchema,count:numberSchema.int().nonnegative()})),next:textSchema.optional(),revision:textSchema,total:numberSchema.int().nonnegative()})),
+ todos:query('todos',z.object({projectId:textSchema.optional(),cursor:textSchema.optional(),limit:numberSchema.optional(),q:textSchema.optional(),category:textSchema.optional(),status:z.enum(['todo','in_progress','done','blocked']).optional()}),z.object({items:z.array(todoSummarySchema),next:textSchema.optional(),revision:textSchema,total:numberSchema})),
+ todo:query('todo',z.object({projectId:textSchema.optional(),projectGeneration:textSchema.optional(),id:textSchema}),todoReadSchema),
+};
+export type TodoImage=z.output<typeof todoImageSchema>;
+export type TodoRequirement=z.output<typeof todoRequirementSchema>;
+export type TodoSummary=z.output<typeof todoSummarySchema>;
+export type TodoRead=z.output<typeof workflowReadContracts.todo.output>;
+export type TodoReceipt=z.output<typeof todoReceiptSchema>;
+
+export type TodoText=z.output<typeof todoTextSchema>;

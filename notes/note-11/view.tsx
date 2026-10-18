@@ -1,11 +1,10 @@
-import {useViewProps} from './surface';
-import {NoteIcon} from '@dsh-workbench/react';
+import {NoteIcon,useNote,useNoteDraft,QueryState} from '@dsh-workbench/react';
 
 import React, { useEffect, useMemo, useRef, useState } from "react";
 // @ts-expect-error The note bundler loads the shared stylesheet export.
 import "@heroui/styles/css";
-import {useActions,useNoteConfig,useResource,useWorkbench,type WidgetProps} from './surface';
-import type { TodoState, TodoPage, TodoItem, TodoImage, TodoPriority, TodoStatus } from "./actions";
+import {jsonObject} from './contract';
+import type { TodoState, TodoPage, TodoItem, TodoImage, TodoPriority, TodoStatus, TodoRequirement, TodoRead } from "./actions";
 import { ImageAttachments, MAX_PASTED_IMAGES, mergePastedImages, pasteClipboardImages } from "./images";
 
 function cardGameLink(context: { projectId: string; kind: "production"; id: string; intent: "open" }): string {
@@ -115,48 +114,88 @@ function SvgClock({ size = 11 }: { size?: number }) {
   );
 }
 
-function RequirementEditor({item,onSave}:{item:TodoItem;onSave:(input:any)=>Promise<unknown>}) {
-  const [draft,setDraft]=useState<{title:string;description:string;images:TodoImage[];base:{title:string;description:string;images:TodoImage[]}}|null>(null);
-  const [pending,setPending]=useState(false);const [error,setError]=useState('');
-  const edit=()=>{setError('');const images=item.images??[];setDraft({title:item.title,description:item.description??'',images,base:{title:item.title,description:item.description??'',images}});};
+function requirementFields(item?:TodoRequirement) {
+  return {title:item?.title??'',description:item?.description??'',images:(item?.images??[]).map(image=>({...image}))};
+}
+function requirementItem(value:unknown,scope:{projectId:string;itemId:string;projectGeneration?:string}):TodoRequirement|undefined {
+  const item=(value as {item?:TodoRequirement}|null)?.item;
+  const generation=(value as {projectGeneration?:unknown}|null)?.projectGeneration;
+  return generation===scope.projectGeneration&&item?.id===scope.itemId&&item.projectId===scope.projectId&&typeof item.title==='string'&&typeof item.revision==='number'?item:undefined;
+}
+function RequirementEditor({item,projectGeneration,onSaved}:{item:TodoItem;projectGeneration?:string;onSaved:()=>void}) {
+  const {metadata,actions,useQuery}=useNote<typeof import('./actions')>();
+  // A configuration change must never redirect an already open requirement.
+  const [scope]=useState(()=>({projectId:item.projectId,itemId:item.id,...(projectGeneration?{projectGeneration}:{})}));
+  const [editing,setEditing]=useState(false);
+  const [pasteError,setPasteError]=useState('');
+  const detail=useQuery('todo',{projectId:scope.projectId,id:scope.itemId,...(scope.projectGeneration?{projectGeneration:scope.projectGeneration}:{})},{enabled:editing});
+  const current=requirementItem(detail.data,scope);
+  const source=detail.draftSource(value=>{
+    const selected=requirementItem(value,scope);
+    return {value:requirementFields(selected),revision:selected?(value as TodoRead).requirementFingerprint:undefined};
+  });
+  const draft=useNoteDraft({key:`todo-requirement:${metadata.id}:${scope.projectId}:${scope.projectGeneration??"legacy"}:${scope.itemId}`,
+    source:{...source,ready:source.ready&&Boolean(current),error:source.error??(detail.data!==undefined&&!current?new Error('待办来源无效，请重新读取'):undefined),
+      refresh:async()=>{const next=await source.refresh();if(next.revision===undefined)throw new Error('待办来源无效，请重新读取');return next;}},
+    save:async(value,context)=>{
+      if(typeof context.revision!=='string')throw Error('需求来源未就绪');
+      const result=await actions.editTodo({...scope,...value,baseFingerprint:context.revision},context);
+      if(result.projectId!==scope.projectId||result.projectGeneration!==scope.projectGeneration||result.id!==scope.itemId)throw Error('待办保存回执无效，请核对当前事项');
+      return {value:{...value,title:value.title.trim(),description:value.description.trim()},revision:result.requirementFingerprint};
+    }});
+  // Recovered drafts reopen their editor; ordinary rows do not read details.
+  useEffect(()=>{if(draft.dirty)setEditing(true);},[draft.dirty]);
+  const edit=()=>{setPasteError('');setEditing(true);};
   const handlePaste=async(event:React.ClipboardEvent<HTMLElement>)=>{
+    const editor=event.currentTarget.closest('form');
     try { const additions=await pasteClipboardImages(event);if(!additions.length)return;
-      if(draft)setDraft({...draft,images:mergePastedImages(draft.images,additions)});
-    } catch(error) {setError(String(error instanceof Error?error.message:error));}
+      if(editor?.isConnected)draft.set(previous=>({...previous,images:mergePastedImages(previous.images,additions)}));
+    } catch(error) {if(editor?.isConnected)setPasteError(String(error instanceof Error?error.message:error));}
   };
-  if(!draft)return <div onDoubleClick={event=>{if(!(event.target as HTMLElement).closest('button'))edit();}} onKeyDown={event=>{if(event.key==='Enter' && !(event.target as HTMLElement).closest('button')){event.preventDefault();edit();}}} tabIndex={0} title="双击编辑" aria-label={`编辑待办：${item.title}`} style={{flex:1,minWidth:0}}>
-    <h3 style={{margin:0,fontSize:13.5,fontWeight:500,whiteSpace:'pre-wrap'}}>{item.title}</h3>
-    {item.description&&<p style={{fontSize:12,whiteSpace:'pre-wrap',margin:'4px 0'}}>{item.description}</p>}
-    <ImageAttachments images={item.images}/>
+  const displayed=item;
+  const imageCount='imageCount' in item?item.imageCount:item.images?.length??0;
+  const imageNames='imageNames' in item?item.imageNames:(item.images??[]).flatMap(image=>image.name?[image.name]:[]);
+  if(!editing&&!draft.dirty)return <div onDoubleClick={event=>{if(!(event.target as HTMLElement).closest('button'))edit();}} onKeyDown={event=>{if(event.key==='Enter' && !(event.target as HTMLElement).closest('button')){event.preventDefault();edit();}}} tabIndex={0} title="双击编辑" aria-label={`编辑待办：${displayed.title}`} style={{flex:1,minWidth:0}}>
+    <h3 style={{margin:0,fontSize:13.5,fontWeight:500,whiteSpace:'pre-wrap'}}>{displayed.title}{'titleTruncated' in displayed&&displayed.titleTruncated?'…':''}</h3>
+    {displayed.description&&<p style={{fontSize:12,whiteSpace:'pre-wrap',margin:'4px 0'}}>{displayed.description}{'descriptionTruncated' in displayed&&displayed.descriptionTruncated?'…':''}</p>}
+    <button type="button" onClick={edit}> {imageCount?`查看 ${imageCount} 张图片 / 编辑需求`:'编辑需求'} </button>
+    {imageNames.length>0&&<small>{imageNames.join('、')}</small>}
   </div>;
-  return <form style={{display:'grid',gap:6,flex:1,minWidth:0}} onSubmit={async event=>{event.preventDefault();setPending(true);setError('');try{await onSave({itemId:item.id,title:draft.title,description:draft.description,images:draft.images,base:draft.base});setDraft(null);}catch(error){setError(String(error instanceof Error?error.message:error));}finally{setPending(false);}}}>
-    <textarea autoFocus aria-label="待办标题" rows={2} value={draft.title} onChange={event=>setDraft({...draft,title:event.target.value})} onPaste={handlePaste}/>
-    <textarea aria-label="待办详情" rows={3} value={draft.description} onChange={event=>setDraft({...draft,description:event.target.value})} onPaste={handlePaste} placeholder="待办详情"/>
-    <ImageAttachments images={draft.images} onRemove={id=>setDraft(current=>current?{...current,images:current.images.filter(image=>image.id!==id)}:current)}/>
+  if(editing&&!current&&!draft.dirty)return <QueryState query={detail}>{()=>null}</QueryState>;
+  const error=draft.error?.message??pasteError;
+  return <form style={{display:'grid',gap:6,flex:1,minWidth:0}} onSubmit={async event=>{event.preventDefault();if(draft.dirty&&draft.value.title.trim()&&await draft.save())onSaved();}}>
+    <textarea autoFocus aria-label="待办标题" rows={2} value={draft.value.title} onChange={event=>draft.set(previous=>({...previous,title:event.target.value}))} onPaste={handlePaste}/>
+    <textarea aria-label="待办详情" rows={3} value={draft.value.description} onChange={event=>draft.set(previous=>({...previous,description:event.target.value}))} onPaste={handlePaste} placeholder="待办详情"/>
+    <ImageAttachments images={draft.value.images} onRemove={id=>draft.set(previous=>({...previous,images:previous.images.filter(image=>image.id!==id)}))}/>
+    {current?.conclusion&&<details><summary>执行结论</summary><p style={{whiteSpace:'pre-wrap'}}>{current.conclusion}</p></details>}
     <small>在标题或详情中粘贴图片 · 最多 {MAX_PASTED_IMAGES} 张</small>
     <small>保存后点击“继续交付”，才会发送到执行台。</small>
     {error&&<span role="alert">{error}</span>}
-    <div><button type="submit" disabled={pending||!draft.title.trim()}>保存修改</button><button type="button" disabled={pending} onClick={()=>setDraft(null)}>取消</button></div>
+    <div><button type="submit" disabled={draft.saving||!draft.dirty||!draft.value.title.trim()}>保存修改</button><button type="button" disabled={draft.saving} onClick={()=>{draft.reset();setEditing(false);setPasteError('');}}>取消</button></div>
   </form>;
 }
 
+const CATEGORY_BUTTON_STYLE:React.CSSProperties={flexShrink:0,fontSize:12,minHeight:44,padding:"6px 12px",border:0,borderRadius:"var(--wb-radius-small)",background:"transparent",color:"var(--wb-ink-soft)",cursor:"pointer"};
+
 export default function View(){
- const { data: storedData, mode, metadata }=useViewProps<TodoState>();
-  const config = useNoteConfig<{projectId?:string; notes?:Record<string,string>}>();
-  const projectId = config?.projectId || storedData?.projectId || "";
-  const [cursor, setCursor] = useState<string>();
-  const [loaded, setLoaded] = useState<TodoItem[]>([]);
-  const page = useResource<TodoPage>("todos", {projectId, limit:100, ...(cursor ? {cursor} : {})}, {enabled:!!projectId});
-  const totals = useResource<{counts:{todos:number;todo:number;inProgress:number;done:number;blocked:number}}>("workflowStatus", {projectId}, {enabled:!!projectId});
+ const {state:storedData,mode,metadata,config,useQuery,usePagedQuery,actions,host:workbench}=useNote<typeof import('./actions')>();
+  const projectId=config.projectId||(typeof storedData.projectId==='string'?storedData.projectId:'');
+  const [loaded,setLoaded]=useState<{revision?:string;items:TodoItem[]}>({items:[]});
+  const [filterCategory,setFilterCategory]=useState<string|null>(null);
+  const page=usePagedQuery('todos',{projectId,limit:100,...(filterCategory!==null?{category:filterCategory}:{})},{enabled:!!projectId});
+  const categoryPage=usePagedQuery('categories',{projectId,limit:100},{enabled:!!projectId&&mode==='expanded'});
+  const totals=useQuery('workflowStatus',{projectId},{enabled:!!projectId});
   const focus = useMemo(() => typeof window === "undefined" ? undefined : decodeCardGameFocus(new URLSearchParams(window.location.search).get("focus")), []);
   const [draftContext, setDraftContext] = useState<Record<string,unknown> | undefined>(() => focus?.projectId === projectId && focus.kind === "todo" && focus.intent === "draft" ? focus.context : undefined);
-  const focused = useResource<{item:TodoItem}>("todo", {projectId,id:focus?.id || ""}, {enabled:!!projectId && focus?.projectId === projectId && focus?.kind === "todo" && !!focus.id});
-  useEffect(() => { const incoming=page.data?.items??[]; setLoaded(old => cursor ? [...old.filter(item=>!incoming.some(next=>next.id===item.id)),...incoming].slice(-500) : incoming); }, [page.data,cursor]);
-  const data = { items: loaded, executionDesk: {noteId: config?.notes?.execution || ""} };
+  const focused = useQuery("todo", {projectId,id:focus?.id || ""}, {enabled:!!projectId && focus?.projectId === projectId && focus?.kind === "todo" && !!focus.id});
+  useEffect(()=>{
+    const incoming=page.data;if(!incoming)return;
+    setLoaded(old=>({revision:incoming.revision,items:page.pageIndex>0&&old.revision===incoming.revision?[...old.items.filter(item=>!incoming.items.some(next=>next.id===item.id)),...incoming.items].slice(-500):incoming.items}));
+  },[page.data,page.pageIndex]);
+  const data = { items: loaded.items, executionDesk: {noteId: config?.notes?.execution || ""} };
   const draftRef = contentReferenceFromDraft(draftContext);
-  const changed = () => setCursor(undefined);
+  const changed=()=>{page.reset();void page.refresh();};
 
-  const actions = useActions<typeof import("./actions")>();
   const [quickInput, setQuickInput] = useState(() => {
     if (!draftContext) return "";
     if (typeof draftContext.title === "string") return draftContext.title;
@@ -171,7 +210,6 @@ export default function View(){
   const [columnInputPriority, setColumnInputPriority] = useState<TodoPriority>("medium");
   const [isAiLoading, setIsAiLoading] = useState(false);
   const [toast, setToast] = useState<string | null>(null);
-  const [filterCategory, setFilterCategory] = useState<string>("ALL");
   const [delegatingItemId, setDelegatingItemId] = useState<string | null>(null);
   // Config arrives asynchronously. Apply the deep-link context once its project
   // is known, without replacing text already entered or restoring a saved draft.
@@ -188,24 +226,21 @@ export default function View(){
   }, [focus, projectId]);
 
 
-  const workbench = useWorkbench();
-  const items: TodoItem[] = useMemo(() => {
-    const selected=focused.data?.item;
+  const items = useMemo(() => {
+    const selected=focused.data&&'item' in focused.data?focused.data.item:undefined;
     const source=selected&&!data.items.some(item=>item.id===selected.id)?[selected,...data.items]:data.items;
     return source.map(item=>({...item,status:normalizeStatus(item),delivery:item.status === "blocked" ? "需要处理" : item.status === "done" ? "已完成" : "执行进展",next:"打开执行台"}));
   }, [data.items,focused.data]);
   useEffect(() => { if(focus?.id) document.getElementById(`todo-${focus.id}`)?.scrollIntoView({block:"center"}); }, [focus?.id,focused.data]);
 
   const categories = useMemo(() => {
-    const set = new Set<string>();
-    items.forEach((i) => {
-      if (i.category) set.add(i.category);
-    });
-    return ["ALL", ...Array.from(set)];
-  }, [items]);
+    const current:Array<{category:string;count?:number}>=categoryPage.items;
+    return filterCategory!==null&&!current.some(item=>item.category===filterCategory)
+      ? [{category:filterCategory},...current] : current;
+  }, [categoryPage.items,filterCategory]);
 
   const filteredItems = useMemo(() => {
-    if (filterCategory === "ALL") return items;
+    if (filterCategory === null) return items;
     return items.filter((i) => i.category === filterCategory);
   }, [items, filterCategory]);
 
@@ -244,7 +279,7 @@ export default function View(){
     const title = quickInput.trim() || (quickImages.length ? "图片待办" : "");
     if (!title) return;
     try {
-      await actions.addTodo({ title, images: quickImages, status: "todo", priority: "medium", ...(draftContext ? {context:draftContext} : {}) });
+      await actions.addTodo({ title, images: quickImages, status: "todo", priority: "medium", ...(draftContext ? {context:jsonObject.parse(draftContext)} : {}) });
       setQuickInput(""); setQuickImages([]); setDraftContext(undefined); changed();
       showToast("已录入待办");
     } catch (err) { showToast(err instanceof Error ? err.message : "录入失败"); }
@@ -256,7 +291,7 @@ export default function View(){
     try {
       await actions.addTodo({
         title, images: columnInputImages, status, priority: columnInputPriority,
-        category: columnInputCategory, ...(draftContext ? {context:draftContext} : {}),
+        category: columnInputCategory, ...(draftContext ? {context:jsonObject.parse(draftContext)} : {}),
       });
       setColumnInputTitle(""); setColumnInputImages([]); setActiveColumnInput(null);
       setDraftContext(undefined); changed(); showToast("任务已加入看板");
@@ -313,14 +348,16 @@ export default function View(){
     if (delegatingItemId) return;
     setDelegatingItemId(item.id);
     try {
-      const result = await actions.delegateTodo({ itemId: item.id, projectId }); changed();
-      showToast(result.updateStatus === "queued" ? "调整已保存，等待原任务继续" : "需求已送入执行台原会话");
+      await actions.delegateTodo({ itemId: item.id, projectId,projectGeneration:item.projectGeneration }); changed();
+      showToast("需求已送入执行台原会话");
     } catch (err) {
       showToast(err instanceof Error ? err.message : "交办失败");
     } finally {
       setDelegatingItemId(null);
     }
   };
+
+  if(projectId&&!page.data&&!loaded.items.length&&!focused.data)return <QueryState query={page}>{()=>null}</QueryState>;
 
   // ==========================================
   // COMPACT MODE: 手机桌面小组件 (固定高度摘要)
@@ -341,6 +378,7 @@ export default function View(){
           width: "100%",
         }}
       >
+        <QueryState query={page}>{()=>null}</QueryState>
         {/* Top Header */}
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
           <div style={{ display: "flex", alignItems: "center", gap: 9 }}>
@@ -505,7 +543,7 @@ export default function View(){
                   {item.title}
                 </span>
 
-                {item.images?.length ? <span aria-label={`${item.images.length} 张图片`} style={{fontSize:11,color:"var(--wb-muted)"}}>▧{item.images.length > 1 ? ` ${item.images.length}` : ""}</span> : null}
+                {('imageCount' in item?item.imageCount:item.images?.length) ? <span aria-label={`${'imageCount' in item?item.imageCount:item.images?.length} 张图片`} style={{fontSize:11,color:"var(--wb-muted)"}}>▧{'imageCount' in item?item.imageCount:item.images?.length}</span> : null}
 
                 {item.status === "in_progress" && (
                   <span
@@ -542,7 +580,7 @@ export default function View(){
             );
           })}
 
-          {items.length === 0 && (
+          {items.length === 0 && !page.loading && !page.error && (
             <div style={{ fontSize: 12, color: "var(--wb-muted-light)", textAlign: "center", padding: "16px 0" }}>
               暂无待办事项，输入上方内容回车快速添加
             </div>
@@ -746,35 +784,21 @@ export default function View(){
         </div>
       </header>
 
-      {/* 分类标签过滤栏 */}
-      <div style={{ display: "flex", alignItems: "center", gap: 6, overflowX: "auto", padding: "0 2px" }}>
-        <span style={{ fontSize: 11, fontWeight: 600, color: "var(--wb-muted-light)", marginRight: 4, letterSpacing: "0.05em", fontFamily: "ui-monospace, monospace" }}>
-          CATEGORY:
-        </span>
-        {categories.map((cat) => {
-          const isSelected = filterCategory === cat;
-          return (
-            <button
-              key={cat}
-              type="button"
-              onClick={() => setFilterCategory(cat)}
-              style={{
-                fontSize: 11,
-                padding: "3px 10px",
-                borderRadius: 5,
-                border: isSelected ? "1px solid var(--wb-accent)" : "1px solid var(--wb-line)",
-                background: isSelected ? "var(--wb-accent)" : "var(--wb-paper)",
-                color: isSelected ? "var(--wb-paper)" : "var(--wb-ink-soft)",
-                fontWeight: isSelected ? 600 : 400,
-                cursor: "pointer",
-                transition: "all 0.12s ease",
-                boxShadow: isSelected ? "0 1px 4px rgba(37,99,235,0.25)" : "none",
-              }}
-            >
-              {cat}
-            </button>
-          );
-        })}
+      {/* Classification pages are independent of the Todo result page. */}
+      <div aria-label="待办分类" style={{display:"grid",gap:8,minWidth:0}}>
+        <div style={{display:"flex",alignItems:"center",gap:6,overflowX:"auto",padding:"0 2px"}}>
+          <button type="button" aria-pressed={filterCategory===null} onClick={()=>setFilterCategory(null)} style={{...CATEGORY_BUTTON_STYLE,background:filterCategory===null?"var(--wb-accent-pale)":"transparent",color:filterCategory===null?"var(--wb-accent)":"var(--wb-ink-soft)",fontWeight:filterCategory===null?600:400}}>全部</button>
+          {categories.map(({category,count})=><button key={category} type="button" aria-pressed={filterCategory===category}
+            onClick={()=>setFilterCategory(category)} style={{...CATEGORY_BUTTON_STYLE,background:filterCategory===category?"var(--wb-accent-pale)":"transparent",color:filterCategory===category?"var(--wb-accent)":"var(--wb-ink-soft)",fontWeight:filterCategory===category?600:400}}>
+            {category}{count!==undefined&&<span style={{marginLeft:6,fontVariantNumeric:"tabular-nums",color:"var(--wb-muted)"}}>{count}</span>}
+          </button>)}
+        </div>
+        <div style={{display:"flex",alignItems:"center",gap:8,flexWrap:"wrap",fontSize:12,color:"var(--wb-muted)"}}>
+          {categoryPage.total!==undefined&&<span>共 {categoryPage.total} 个分类 · 第 {categoryPage.pageIndex+1} 页</span>}
+          {categoryPage.hasPrevious&&<button type="button" disabled={categoryPage.loading} onClick={categoryPage.previous} style={CATEGORY_BUTTON_STYLE}>上一页分类</button>}
+          {categoryPage.hasNext&&<button type="button" disabled={categoryPage.loading} onClick={categoryPage.next} style={CATEGORY_BUTTON_STYLE}>下一页分类</button>}
+        </div>
+        <QueryState query={categoryPage}>{()=>null}</QueryState>
       </div>
 
       {/* Kanban Board Grid: 铺满高度与微质感色彩强化 */}
@@ -963,6 +987,7 @@ export default function View(){
                 {colItems.map((item) => {
                   const pri = item.priority ? PRIORITY_META[item.priority] : PRIORITY_META.medium;
                   const createdTime = item.createdAt ? new Date(item.createdAt).toLocaleDateString([], { month: "2-digit", day: "2-digit" }) : "";
+                  const projectGeneration=item.projectGeneration??focused.data?.projectGeneration;
 
                   return (
                     <div
@@ -980,7 +1005,7 @@ export default function View(){
                         transition: "all 0.15s ease",
                       }}
                     >
-                      <RequirementEditor item={item} onSave={async input=>{const result=await actions.editTodo(input);changed();return result;}}/>
+                      <RequirementEditor key={`${item.projectId}:${projectGeneration??"legacy"}:${item.id}`} item={item} projectGeneration={projectGeneration} onSaved={changed}/>
                       {item.taskId && <button type="button" onClick={()=>void workbench.openNote(data.executionDesk.noteId,item.taskId)} style={{border:0,background:'var(--wb-accent-pale)',color:'var(--wb-accent)',padding:'6px 8px',borderRadius:6,fontSize:12,textAlign:'left'}}>{String(item.delivery || "执行进展")} · {String(item.next || "打开执行台")} ↗</button>}
                       {item.conclusion && (
                         <div
@@ -1077,10 +1102,10 @@ export default function View(){
                               opacity: delegatingItemId !== null && delegatingItemId !== item.id ? 0.55 : 1,
                             }}
                           >
-                            {delegatingItemId === item.id ? "提交中…" : item.taskId || item.delegation || item.deliveryIntent ? "继续交付" : "交办"}
+                            {delegatingItemId === item.id ? "提交中…" : item.taskId || ('hasDelivery' in item&&item.hasDelivery) ? "继续交付" : "交办"}
                           </button>
 
-                          {config?.notes?.production && <button type="button" style={{border:0,background:"transparent",color:"var(--wb-muted)",fontSize:11,cursor:"pointer"}} onClick={async()=>{try{if(!item.productionId)await actions.productionRequest({projectId,todoId:item.id,title:item.title,brief:item.description||item.title});await workbench.openNote(config.notes!.production,item.productionId?cardGameLink({projectId,kind:'production',id:item.productionId,intent:'open'}):undefined);if(!item.productionId)showToast('制作单请求已送达，建立后会显示在制作便笺');}catch(error){showToast(error instanceof Error?error.message:String(error));}}}>{item.productionId?"制作单":"转为制作单"}</button>}
+                          {config?.notes?.production && <button type="button" style={{border:0,background:"transparent",color:"var(--wb-muted)",fontSize:11,cursor:"pointer"}} onClick={async()=>{try{if(!item.productionId)await actions.productionRequest({projectId,todoId:item.id});await workbench.openNote(config.notes!.production,item.productionId?cardGameLink({projectId,kind:'production',id:item.productionId,intent:'open'}):undefined);if(!item.productionId)showToast('制作单请求已送达，建立后会显示在制作便笺');}catch(error){showToast(error instanceof Error?error.message:String(error));}}}>{item.productionId?"制作单":"转为制作单"}</button>}
                           {col.id !== "todo" && (
                             <button
                               type="button"
@@ -1144,7 +1169,7 @@ export default function View(){
                   );
                 })}
 
-                {colItems.length === 0 && !isAdding && (
+                {colItems.length === 0 && !isAdding && !page.loading && !page.error && (
                   <div
                     style={{
                       flex: 1,
@@ -1167,7 +1192,8 @@ export default function View(){
           );
         })}
       </div>
-      {(page.data?.nextCursor || totalCount > items.length) && <div style={{display:"flex",alignItems:"center",gap:12,fontSize:12,color:"var(--wb-muted)"}}><span>当前载入 {items.length} / {totalCount} 项</span>{page.data?.nextCursor && <button type="button" disabled={page.loading} onClick={()=>setCursor(page.data?.nextCursor)}>加载更多</button>}</div>}
+      <QueryState query={page}>{()=>null}</QueryState>
+      {(page.hasNext || (page.total??totalCount) > items.length) && <div style={{display:"flex",alignItems:"center",gap:12,fontSize:12,color:"var(--wb-muted)"}}><span>当前载入 {items.length} / {page.total??totalCount} 项</span>{page.hasNext && <button type="button" disabled={page.loading} onClick={page.next}>加载更多</button>}</div>}
     </div>
   );
 }

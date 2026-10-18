@@ -39,11 +39,12 @@ export const events = {
     name: 'cardgame.todo.delegationRequested',
     visibility: 'public',
     description: '用户明确交办 CardGame 待办后，通知连线处理已持久化的同一请求。',
-    payload: z.object({
-      projectId: z.string().min(1), todoId: z.string().min(1), requestId: z.string().min(1),
-      payload: z.record(z.string(), z.json()), requirementRevision: z.number(),
+    payload: z.strictObject({
+      projectId: z.string().min(1),projectGeneration:z.string().min(1), todoId: z.string().min(1), todoObjectId: z.string().min(1),
+      requestId: z.string().min(1), requestKey: z.string().min(1),
+      payload: z.strictObject({goal:z.string().min(1),scope:z.array(z.string()),cwd:z.string().optional()}), requirementRevision: z.number().int().positive(),
     }),
-    objectRef: '/todoId',
+    objectRef: '/todoObjectId',
   }),
   cardGameProductionRequested: note.event({
     name: 'cardgame.todo.productionRequested',

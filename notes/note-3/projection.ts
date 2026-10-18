@@ -1,4 +1,4 @@
-import type { CandidateInput, CandidateSpec, SurfaceStatus, Data } from './model';
+import type { CandidateInput, CandidateSpec, SurfaceDisplay, Data, CandidateDisplay, DisplayData } from './model';
 import type { Snapshot } from '@dsh-workbench/runtime';
 
 /** A task owns one candidate; extra surfaces share that candidate's identity. */
@@ -26,9 +26,9 @@ export function validateCandidateIdentity(input: Partial<Pick<CandidateInput, 'k
 }
 
 /** One row per surface, exactly as the host reported it. */
-export type PreviewRow = { candidate: CandidateSpec; surface: string; name: string; url?: string; status?: SurfaceStatus; desired: NonNullable<CandidateSpec['desired']>[string] };
+export type PreviewRow = { candidate: CandidateDisplay; surface: string; name: string; url?: string; status?: SurfaceDisplay; desired: NonNullable<CandidateSpec['desired']>[string] };
 
-export function previewRows(data:Pick<Data,'candidates'>):PreviewRow[]{
+export function previewRows(data:Pick<DisplayData,'candidates'>):PreviewRow[]{
   return (data.candidates??[]).flatMap(candidate=>{
     const names=candidate.surfaces?.length?candidate.surfaces.map(s=>s.name):Object.keys({...candidate.desired,...candidate.status}).length?Object.keys({...candidate.desired,...candidate.status}):[''];
     return names.map(surface=>{

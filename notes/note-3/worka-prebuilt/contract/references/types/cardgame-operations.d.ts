@@ -1,7 +1,16 @@
-import { z } from '@dsh-workbench/runtime';
+import { z, type NoteActionContext, type NoteQueryContext } from '@dsh-workbench/runtime';
 export declare const prepareFormalPreview: import("@dsh-workbench/runtime").NoteOperation<z.ZodObject<{
     fresh: z.ZodOptional<z.ZodBoolean>;
-}, z.core.$strip>, z.ZodJSONSchema, import("@dsh-workbench/runtime").NoteActionContext<import("@dsh-workbench/runtime").NoteModel<z.ZodObject<{
+}, z.core.$strict>, z.ZodObject<{
+    projectId: z.ZodString;
+    key: z.ZodString;
+    snapshotId: z.ZodString;
+    createdAt: z.ZodString;
+    commit: z.ZodString;
+    contentRevision: z.ZodString;
+    runtimeRevision: z.ZodString;
+    snapshotRevision: z.ZodString;
+}, z.core.$strip>, NoteActionContext<import("@dsh-workbench/runtime").NoteModel<z.ZodObject<{
     title: z.ZodString;
     candidates: z.ZodArray<z.ZodObject<{
         key: z.ZodString;
@@ -265,7 +274,27 @@ export declare const pinPreviewReference: import("@dsh-workbench/runtime").NoteO
     key: z.ZodString;
     commit: z.ZodString;
     revision: z.ZodString;
-}, z.core.$strip>, z.ZodJSONSchema, import("@dsh-workbench/runtime").NoteActionContext<import("@dsh-workbench/runtime").NoteModel<z.ZodObject<{
+}, z.core.$strip>, z.ZodObject<{
+    items: z.ZodArray<z.ZodObject<{
+        key: z.ZodString;
+        projectId: z.ZodString;
+        kind: z.ZodString;
+        id: z.ZodString;
+        revision: z.ZodString;
+        title: z.ZodString;
+        anchor: z.ZodOptional<z.ZodString>;
+        path: z.ZodOptional<z.ZodString>;
+        context: z.ZodOptional<z.ZodRecord<z.ZodString, z.ZodJSONSchema>>;
+        binding: z.ZodOptional<z.ZodRecord<z.ZodString, z.ZodJSONSchema>>;
+        freshness: z.ZodOptional<z.ZodEnum<{
+            current: "current";
+            stale: "stale";
+            unavailable: "unavailable";
+        }>>;
+        currentRevision: z.ZodOptional<z.ZodString>;
+    }, z.core.$strip>>;
+    limit: z.ZodNumber;
+}, z.core.$strip>, NoteActionContext<import("@dsh-workbench/runtime").NoteModel<z.ZodObject<{
     title: z.ZodString;
     candidates: z.ZodArray<z.ZodObject<{
         key: z.ZodString;
@@ -527,7 +556,9 @@ export declare const pinPreviewReference: import("@dsh-workbench/runtime").NoteO
 }>>>;
 export declare const removePinnedReference: import("@dsh-workbench/runtime").NoteOperation<z.ZodObject<{
     key: z.ZodString;
-}, z.core.$strip>, z.ZodJSONSchema, import("@dsh-workbench/runtime").NoteActionContext<import("@dsh-workbench/runtime").NoteModel<z.ZodObject<{
+}, z.core.$strict>, z.ZodObject<{
+    removed: z.ZodLiteral<true>;
+}, z.core.$strip>, NoteActionContext<import("@dsh-workbench/runtime").NoteModel<z.ZodObject<{
     title: z.ZodString;
     candidates: z.ZodArray<z.ZodObject<{
         key: z.ZodString;
@@ -788,7 +819,27 @@ export declare const removePinnedReference: import("@dsh-workbench/runtime").Not
     };
 }>>>;
 export declare const cardgameQueries: {
-    formalPreview: import("@dsh-workbench/runtime").NoteOperation<z.ZodNullable<z.ZodObject<{}, z.core.$strip>>, z.ZodJSONSchema, import("@dsh-workbench/runtime").NoteQueryContext<import("@dsh-workbench/runtime").NoteModel<z.ZodObject<{
+    formalPreview: import("@dsh-workbench/runtime").NoteOperation<z.ZodOptional<z.ZodNullable<z.ZodObject<{}, z.core.$strict>>>, z.ZodIntersection<z.ZodObject<{
+        record: z.ZodNullable<z.ZodObject<{
+            projectId: z.ZodString;
+            key: z.ZodString;
+            snapshotId: z.ZodString;
+            createdAt: z.ZodString;
+            commit: z.ZodString;
+            contentRevision: z.ZodString;
+            runtimeRevision: z.ZodString;
+            snapshotRevision: z.ZodString;
+        }, z.core.$strip>>;
+        freshness: z.ZodEnum<{
+            current: "current";
+            missing: "missing";
+            stale: "stale";
+            unavailable: "unavailable";
+        }>;
+        error: z.ZodOptional<z.ZodString>;
+    }, z.core.$strip>, z.ZodObject<{
+        projectGeneration: z.ZodOptional<z.ZodString>;
+    }, z.core.$strip>>, NoteQueryContext<import("@dsh-workbench/runtime").NoteModel<z.ZodObject<{
         title: z.ZodString;
         candidates: z.ZodArray<z.ZodObject<{
             key: z.ZodString;
@@ -1048,10 +1099,41 @@ export declare const cardgameQueries: {
             readonly lazy: readonly ["diagnostics"];
         };
     }>>>;
-    previewReferenceTarget: import("@dsh-workbench/runtime").NoteOperation<z.ZodObject<{
+    previewReferenceTarget: import("@dsh-workbench/runtime").NoteOperation<z.ZodOptional<z.ZodNullable<z.ZodObject<{
         key: z.ZodString;
         commit: z.ZodString;
-    }, z.core.$strip>, z.ZodJSONSchema, import("@dsh-workbench/runtime").NoteQueryContext<import("@dsh-workbench/runtime").NoteModel<z.ZodObject<{
+    }, z.core.$strict>>>, z.ZodIntersection<z.ZodObject<{
+        key: z.ZodString;
+        projectId: z.ZodString;
+        id: z.ZodString;
+        revision: z.ZodString;
+        title: z.ZodString;
+        anchor: z.ZodOptional<z.ZodString>;
+        path: z.ZodOptional<z.ZodString>;
+        context: z.ZodOptional<z.ZodRecord<z.ZodString, z.ZodJSONSchema>>;
+        freshness: z.ZodOptional<z.ZodEnum<{
+            current: "current";
+            stale: "stale";
+            unavailable: "unavailable";
+        }>>;
+        currentRevision: z.ZodOptional<z.ZodString>;
+        kind: z.ZodLiteral<"candidate">;
+        binding: z.ZodObject<{
+            productionId: z.ZodString;
+            candidateId: z.ZodString;
+            candidateHash: z.ZodString;
+            commit: z.ZodString;
+            productionRevision: z.ZodNumber;
+            requirementRevision: z.ZodNullable<z.ZodNumber>;
+            round: z.ZodNullable<z.ZodNumber>;
+            currentRequirementRevision: z.ZodNumber;
+            currentRound: z.ZodNumber;
+            current: z.ZodBoolean;
+            status: z.ZodString;
+        }, z.core.$strip>;
+    }, z.core.$strip>, z.ZodObject<{
+        projectGeneration: z.ZodOptional<z.ZodString>;
+    }, z.core.$strip>>, NoteQueryContext<import("@dsh-workbench/runtime").NoteModel<z.ZodObject<{
         title: z.ZodString;
         candidates: z.ZodArray<z.ZodObject<{
             key: z.ZodString;
@@ -1311,7 +1393,29 @@ export declare const cardgameQueries: {
             readonly lazy: readonly ["diagnostics"];
         };
     }>>>;
-    pinnedReferences: import("@dsh-workbench/runtime").NoteOperation<z.ZodNullable<z.ZodObject<{}, z.core.$strip>>, z.ZodJSONSchema, import("@dsh-workbench/runtime").NoteQueryContext<import("@dsh-workbench/runtime").NoteModel<z.ZodObject<{
+    pinnedReferences: import("@dsh-workbench/runtime").NoteOperation<z.ZodOptional<z.ZodNullable<z.ZodObject<{}, z.core.$strict>>>, z.ZodIntersection<z.ZodObject<{
+        items: z.ZodArray<z.ZodObject<{
+            key: z.ZodString;
+            projectId: z.ZodString;
+            kind: z.ZodString;
+            id: z.ZodString;
+            revision: z.ZodString;
+            title: z.ZodString;
+            anchor: z.ZodOptional<z.ZodString>;
+            path: z.ZodOptional<z.ZodString>;
+            context: z.ZodOptional<z.ZodRecord<z.ZodString, z.ZodJSONSchema>>;
+            binding: z.ZodOptional<z.ZodRecord<z.ZodString, z.ZodJSONSchema>>;
+            freshness: z.ZodOptional<z.ZodEnum<{
+                current: "current";
+                stale: "stale";
+                unavailable: "unavailable";
+            }>>;
+            currentRevision: z.ZodOptional<z.ZodString>;
+        }, z.core.$strip>>;
+        limit: z.ZodNumber;
+    }, z.core.$strip>, z.ZodObject<{
+        projectGeneration: z.ZodOptional<z.ZodString>;
+    }, z.core.$strip>>, NoteQueryContext<import("@dsh-workbench/runtime").NoteModel<z.ZodObject<{
         title: z.ZodString;
         candidates: z.ZodArray<z.ZodObject<{
             key: z.ZodString;
