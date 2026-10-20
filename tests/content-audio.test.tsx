@@ -5,7 +5,7 @@ const worka=process.env.WORKA_SOURCE_ROOT;
 if(worka){
  const {mount,flush}=await import(join(worka,'tests/web/dom-test-helpers.tsx'));
  const {AudioPreview}=await import('../notes/note-1/audio-preview');
- test('compact/native controls play; autoplay false, Activity hiding and page hiding pause media',async()=>{
+ test('expanded/native controls play; autoplay false, Activity hiding and page hiding pause media',async()=>{
   const play=window.HTMLMediaElement.prototype.play,pause=window.HTMLMediaElement.prototype.pause;
   const hidden=Object.getOwnPropertyDescriptor(document,'hidden');
   let starts=0,stops=0,isHidden=false,setAutoPlay=(value:boolean)=>{},setVisible=(value:boolean)=>{};

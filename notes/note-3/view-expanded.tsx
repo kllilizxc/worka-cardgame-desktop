@@ -8,7 +8,7 @@ import { PreviewReferences } from './pinned-references';
 import { STATUS, TONE, FONT, MONO, GLYPH, Glyph, TransportButton, PreviewLoading, failureMessage, canViewPreview, navigationUrl, featureTitle, previewWantsVersions, type PreviewModel } from './view-model';
 
 export default function ExpandedView({ model }: { model: PreviewModel }) {
-  const { config, runtime, data, actions, workbench, stage, operations, collapsed, setCollapsed, menu, setMenu, showAddress, setShowAddress, showArchive, setShowArchive, setUrls, draft, setDraft, frameReady, setFrameReady, fullscreen, error, setError, setActiveKey, loaded, reload, confirmForget, setConfirmForget, run, archived, rows, current, currentIsCandidate, resolvedUrls, accessKey, currentUrl, accessError, activeDevice, cycleDevice, operate, effectiveStatus, repairButton, frameToken, label, attach, reloadFrame, startAndAttach, openDelegation, draftTodo, attachedHere, layout } = model;
+  const { config, runtime, data, actions, workbench, stage, operations, collapsed, setCollapsed, menu, setMenu, showAddress, setShowAddress, showArchive, setShowArchive, setUrls, draft, setDraft, frameReady, setFrameReady, fullscreen, error, setError, setActiveKey, loaded, reload, confirmForget, setConfirmForget, run, archived, rows, current, currentIsCandidate, resolvedUrls, accessKey, currentUrl, accessError, activeDevice, cycleDevice, mutations, mutationNotices, effectiveStatus, repairButton, frameToken, label, attach, reloadFrame, startAndAttach, openDelegation, draftTodo, attachedHere, layout } = model;
   const compact = model.mode !== 'expanded';
   const openPlayer = (versions = false) => {
     const focus = current || versions ? 'cg:' + encodeURIComponent(JSON.stringify({kind:'preview',id:current?.owner.key ?? '',revision:current?.owner.repos?.game?.commit ?? current?.owner.revision ?? '',...(versions ? {intent:'versions'} : {})})) : undefined;
@@ -20,7 +20,7 @@ export default function ExpandedView({ model }: { model: PreviewModel }) {
   const {mode} = useNote<typeof import('./actions')>();
   const visible = mode === 'expanded';
   useEffect(() => {
-    // Expanded frames stay mounted when closed; the same shortcut must work on reopening.
+    // Reopen the requested versions panel when focus navigation changes.
     if (visible && previewWantsVersions(model.focus)) setVersions(true);
   }, [visible, model.focus, model.focusRequestId]);
   const {useQuery}=useNote<typeof import('./actions')>();
@@ -35,7 +35,7 @@ export default function ExpandedView({ model }: { model: PreviewModel }) {
   const title = current ? formalSelected ? '正式版快照' : featureTitle(current.groupName) : '选择版本';
   const toggle = () => {
     if (!current) return;
-    if (playing || cancellable) void operate(current.owner.key, 'stopping', async () => { const result = await actions.stop({ key: current.owner.key, surface: current.surface }); reloadFrame(current.spec.key); return result; });
+    if(playing||cancellable){void mutations.stop.mutate({key:current.owner.key,surface:current.surface});}
     else if (canViewPreview(current.status)) attach(current.spec.key);
     else startAndAttach(current.spec.key);
   };
@@ -78,7 +78,7 @@ export default function ExpandedView({ model }: { model: PreviewModel }) {
       </div>}
       </>}
     </div>
-    <QueryState query={model.query}>{()=>null}</QueryState>
+    <QueryState query={model.query}>{()=>null}</QueryState>{mutationNotices}
     {current&&<div><Button size="sm" aria-expanded={showReport} onPress={()=>setShowReport(value=>!value)}>查看检查与诊断</Button>{showReport&&<CandidateReport candidate={current.owner} surface={current.surface}/>}</div>}
     {config?.projectId && <footer className="preview-context">{compact ? <><strong>{title}</strong><small style={{color:current ? TONE[current.status] : undefined}}>{current ? STATUS[current.status] ?? current.status : `${rows.length} 个版本`}</small><Button size="sm" variant="secondary" onPress={attachedHere || !current ? () => openPlayer() : () => startAndAttach(current.spec.key)}>{attachedHere ? '进入试玩' : current ? '启动试玩' : '打开试玩'}</Button></> : <PreviewReferences candidate={current?.owner}/>}</footer>}
 
@@ -107,12 +107,12 @@ export default function ExpandedView({ model }: { model: PreviewModel }) {
         <Button variant="tertiary" onPress={cycleDevice}>画面尺寸：{activeDevice.label === 'phone' ? '手机' : activeDevice.label === 'pad' ? '平板' : '桌面'} · 点击切换</Button>
         <Button variant="tertiary" isDisabled={!currentUrl} onPress={() => closeMenu(() => run(() => workbench.openExternal(currentUrl)))}>在新标签页打开预览</Button>
         {current?.surface && <Button variant="tertiary" onPress={() => closeMenu(() => startAndAttach(current.spec.key, true))}>仅启动当前端</Button>}
-        {current?.owner.adapter && <><Button variant="tertiary" onPress={() => closeMenu(() => run(() => actions.verify({ key: current.owner.key, ...(current.surface ? { surface: current.surface } : {}) }))) }>重新检查预览</Button><Button variant="tertiary" onPress={() => closeMenu(() => run(() => actions.check({ key: current.owner.key, ...(current.surface ? { surface: current.surface } : {}) }))) }>检查候选依赖</Button></>}
+        {current?.owner.adapter && <><Button variant="tertiary" onPress={() => closeMenu(() => mutations.verify.mutate({ key: current.owner.key, ...(current.surface ? { surface: current.surface } : {}) })) }>重新检查预览</Button><Button variant="tertiary" onPress={() => closeMenu(() => mutations.check.mutate({ key: current.owner.key, ...(current.surface ? { surface: current.surface } : {}) })) }>检查候选依赖</Button></>}
         <Button variant="tertiary" onPress={() => closeMenu(() => run(() => model.refresh()))}>同步进程状态</Button>
-        {current?.live && <Button variant="tertiary" isDisabled={effectiveStatus === 'stopping'} onPress={() => closeMenu(() => run(() => actions.stop({ key: current.owner.key, surface: current.surface })))}>停止当前端预览</Button>}
-        {currentIsCandidate && <Button variant="tertiary" isDisabled={effectiveStatus === 'stopping'} onPress={() => closeMenu(() => run(() => actions.archive({ key: current!.owner.key })))}>归档当前候选及预览</Button>}
+        {current?.live && <Button variant="tertiary" isDisabled={effectiveStatus === 'stopping'} onPress={() => closeMenu(() => mutations.stop.mutate({ key: current.owner.key, surface: current.surface }))}>停止当前端预览</Button>}
+        {currentIsCandidate && <Button variant="tertiary" isDisabled={effectiveStatus === 'stopping'} onPress={() => closeMenu(() => mutations.archive.mutate({ key: current!.owner.key }))}>归档当前候选及预览</Button>}
         <Button variant="tertiary" aria-expanded={showArchive} onPress={() => setShowArchive(!showArchive)}>已归档（{archived.length}）{showArchive ? '▾' : '▸'}</Button>
-        {showArchive && <div><Button size="sm" isDisabled={!model.archivePage.hasPrevious} onPress={model.previousArchive}>上一页</Button><Button size="sm" isDisabled={!model.archivePage.hasNext} onPress={model.nextArchive}>下一页</Button>{!archived.length && <p>暂无归档候选</p>}{archived.map(spec => <article key={spec.key}><strong>{label(spec)}</strong><div className="preview-dialog-actions"><Button size="sm" variant="secondary" onPress={() => run(() => actions.restore({ key: spec.key }))}>恢复</Button><Button size="sm" variant="tertiary" onPress={() => { if (confirmForget === spec.key) { setConfirmForget(null); run(() => actions.forget({ key: spec.key })); } else setConfirmForget(spec.key); }}>{confirmForget === spec.key ? '确认永久删除' : '删除'}</Button>{confirmForget === spec.key && <Button size="sm" variant="tertiary" onPress={() => setConfirmForget(null)}>取消</Button>}</div></article>)}</div>}
+        {showArchive && <div><Button size="sm" isDisabled={!model.archivePage.hasPrevious} onPress={model.previousArchive}>上一页</Button><Button size="sm" isDisabled={!model.archivePage.hasNext} onPress={model.nextArchive}>下一页</Button>{!archived.length && <p>暂无归档候选</p>}{archived.map(spec => <article key={spec.key}><strong>{label(spec)}</strong><div className="preview-dialog-actions"><Button size="sm" variant="secondary" onPress={() => mutations.restore.mutate({ key: spec.key })}>恢复</Button><Button size="sm" variant="tertiary" onPress={() => { if (confirmForget === spec.key) { setConfirmForget(null); void mutations.forget.mutate({ key: spec.key }); } else setConfirmForget(spec.key); }}>{confirmForget === spec.key ? '确认永久删除' : '删除'}</Button>{confirmForget === spec.key && <Button size="sm" variant="tertiary" onPress={() => setConfirmForget(null)}>取消</Button>}</div></article>)}</div>}
       </ScrollShadow>
     </NoteDialog>
 

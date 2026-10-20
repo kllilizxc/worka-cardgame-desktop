@@ -1,12 +1,13 @@
 {
   "schemaVersion": 1,
-  "codeVersion": "final-1703ff1",
+  "codeVersion": "dfb71ad25fdf84e1dcbc004620dd898fd32af70d1560f7dce56fe80d2119f7bb",
   "status": "ready",
   "files": [
     "SKILL.md",
     "references/api.d.ts",
     "references/types/actions.d.ts",
     "references/types/cardgame-operations.d.ts",
+    "references/types/game-change-model.d.ts",
     "references/types/migration-compat.d.ts",
     "references/types/model.d.ts",
     "references/types/projection.d.ts",

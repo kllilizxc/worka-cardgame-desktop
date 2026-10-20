@@ -35,3 +35,11 @@ test('suggestion inference cannot carry A source intent into matching B after re
  expect(f.operations.filter(operation=>operation.method==='createTodo'&&operation.input.title==='A-specific suggestion')).toHaveLength(0);
  expect((await f.detail()).item.title).toBe('Original requirement');
 });
+
+test('production request does not publish an old Todo intent into a replacement directory',async()=>{
+ const f=await fixture();await f.rebindB();let published=0;
+ const {productionRequest}=await import('../../notes/note-11/actions');
+ const ctx={...f.actionContext(),events:{publish:async()=>{published++;return {id:'synthetic-event'};}}};
+ await expect(productionRequest(ctx,{projectId:f.input.projectId,projectGeneration:f.bindingA.projectGeneration,todoId:'todo-one'})).rejects.toThrow('旧编辑或回执');
+ expect(published).toBe(0);expect((await f.detail()).item.title).toBe('Original requirement');
+});

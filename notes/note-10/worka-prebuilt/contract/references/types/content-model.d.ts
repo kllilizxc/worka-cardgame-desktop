@@ -1,5 +1,5 @@
 import type { NoteState, NoteConfig, z } from '@dsh-workbench/runtime';
-import type { note, viewPatchSchema } from './note-model';
+import type { note, viewPatchSchema } from './model';
 import type { libraryItemSchema, pageSchema, documentItemSchema, documentSchema, documentMetaSchema, directorySchema, backlinkSchema, graphSchema, movePreviewSchema, cardItemSchema, cardSchema, assetSchema, assetVersionSchema, mediaSchema, statusSchema, recentChangeSchema, referenceResourceSchema, contentQueries } from './contract';
 /** The three domain views share one template and differ only by instance config. */
 export type LibraryMode = "knowledge" | "cards" | "assets";

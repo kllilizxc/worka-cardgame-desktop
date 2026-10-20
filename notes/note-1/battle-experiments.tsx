@@ -1,7 +1,8 @@
+import {MutationNotice} from './mutation-notice';
 import {useBattleReports} from './battle-summary';
 import { useState } from 'react';
 import { Button, ScrollShadow } from '@heroui/react';
-import { useNote } from "@dsh-workbench/react";
+import { useNote, useMutation } from "@dsh-workbench/react";
 type CandidateRef=NonNullable<import('zod').input<typeof import('./contract').contentActions.prepareBattleExperiment.input>['candidate']>;
 type Source=NonNullable<NonNullable<import('./contract').ContentQueryOutput<'battleExperiments'>['experiment']>['source']>;
 const sourceLabel = (source?: Source) => !source ? '来源未记录的历史实验' : source.kind === 'registered-project' ? '项目工作区快照' : `候选 ${source.candidateId} · 提交 ${source.commit.slice(0, 8)}`;
@@ -52,28 +53,18 @@ export function BattleExperiments({ selection, onSelect }: {
     const actions = useNote<typeof import("./actions")>().actions;
     const resource = useBattleReports();
     const [before, setBefore] = useState<ReportRef>(), [after, setAfter] = useState<ReportRef>();
-    const [busy, setBusy] = useState(false), [error, setError] = useState('');
+    const prepare=useMutation(actions.prepareBattleExperiment,{query:resource});
+    const stop=useMutation(actions.stopBattleExperiment,{query:resource});
+    const busy=[prepare.status,stop.status].some(status=>status==='pending'||status==='unknown');
+    const [error,setError]=useState('');
     const data = resource.data, running = data?.status === 'running', preparing = busy || data?.status === 'preparing';
-    async function invoke(operation: 'resume' | 'fresh' | 'stop', candidate?: CandidateRef) {
-        setBusy(true);
-        setError('');
-        try {
-            if (operation === 'stop')
-                await actions.stopBattleExperiment({});
-            else
-                await actions.prepareBattleExperiment({ fresh: operation === 'fresh', ...(candidate ? { candidate } : {}) });
-        }
-        catch (cause) {
-            setError(cause instanceof Error ? cause.message : String(cause));
-        }
-        finally {
-            setBusy(false);
-            await resource.refresh().catch(() => undefined);
-        }
+    async function invoke(operation:'resume'|'fresh'|'stop',candidate?:CandidateRef){
+      if(operation==='stop')await stop.mutate({});
+      else await prepare.mutate({fresh:operation==='fresh',...(candidate?{candidate}:{})});
     }
     return <section className="cg-battle-experiments" aria-label="自动对局">
     <style>{`.cg-battle-experiments{display:flex;flex-direction:column;gap:12px;min-width:0}.cg-battle-experiments .controls{display:flex;gap:8px;flex-wrap:wrap;align-items:center}.cg-battle-experiments article{display:flex;flex-direction:column;gap:6px;padding:12px 0;overflow-wrap:anywhere}.cg-battle-experiments a{color:var(--wb-accent);text-decoration:underline}.cg-battle-experiments [role=alert]{color:var(--wb-danger)}`}</style>
-    <strong>自动对局</strong>
+    <strong>自动对局</strong><MutationNotice mutation={prepare}/><MutationNotice mutation={stop}/>
     {selection && <div><p>原生对话引用：基准 {selection.before.reportId.slice(0, 8)} · 对照 {selection.after.reportId.slice(0, 8)}。下次发送消息时重新读取这些报告。</p><Button size="sm" variant="tertiary" onPress={() => { void onSelect?.(null).catch(error => setError(error instanceof Error ? error.message : String(error))); }}>清除对话引用</Button></div>}
     <details><summary>实验范围</summary><p>固定游戏版本、牌组、遭遇、策略和种子后运行。实验结果仅描述所选自动策略，不代表玩家胜率。</p></details>
     {(error || resource.error || data?.experiment?.error) && <p role="alert">{error || resource.error?.message || data?.experiment?.error}</p>}

@@ -2,81 +2,6 @@ import { Modal } from "@heroui/react";
 import React, { useState } from "react";
 import type { TodoImage } from "./actions";
 
-export const MAX_PASTED_IMAGES = 3;
-const MAX_SOURCE_BYTES = 12 * 1024 * 1024;
-const MAX_DATA_URL_LENGTH = 600_000;
-const MAX_TOTAL_LENGTH = 900_000;
-const IMAGE_TYPES = new Set(["image/png", "image/jpeg", "image/webp", "image/gif"]);
-
-export function mergePastedImages(current: TodoImage[], additions: TodoImage[]): TodoImage[] {
-  const next = [...current, ...additions];
-  if (next.length > MAX_PASTED_IMAGES) throw new Error(`最多添加 ${MAX_PASTED_IMAGES} 张图片`);
-  if (next.reduce((size, image) => size + image.dataUrl.length, 0) > MAX_TOTAL_LENGTH)
-    throw new Error("图片附件总大小过大，请减少图片数量或换小图");
-  return next;
-}
-
-function readFileAsDataUrl(file: File): Promise<string> {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onerror = () => reject(new Error("读取图片失败"));
-    reader.onload = () => typeof reader.result === "string" ? resolve(reader.result) : reject(new Error("读取图片失败"));
-    reader.readAsDataURL(file);
-  });
-}
-
-function loadImage(dataUrl: string): Promise<HTMLImageElement> {
-  return new Promise((resolve, reject) => {
-    const image = new Image();
-    image.onload = () => resolve(image);
-    image.onerror = () => reject(new Error("无法解析这张图片"));
-    image.src = dataUrl;
-  });
-}
-
-async function convertClipboardImage(file: File, index: number): Promise<TodoImage> {
-  if (!IMAGE_TYPES.has(file.type)) throw new Error("仅支持 PNG、JPG、WebP 或 GIF 图片");
-  if (file.size > MAX_SOURCE_BYTES) throw new Error("图片文件过大，请先压缩后再粘贴");
-  const sourceUrl = await readFileAsDataUrl(file);
-  const image = await loadImage(sourceUrl);
-  const sourceMax = Math.max(image.naturalWidth || image.width, image.naturalHeight || image.height);
-  const scale = sourceMax > 1600 ? 1600 / sourceMax : 1;
-  const width = Math.max(1, Math.round((image.naturalWidth || image.width) * scale));
-  const height = Math.max(1, Math.round((image.naturalHeight || image.height) * scale));
-  // Preserve a small animated GIF. Other images use bounded canvas output.
-  let dataUrl = file.type === "image/gif" && sourceUrl.length <= MAX_DATA_URL_LENGTH ? sourceUrl : "";
-  if (!dataUrl) {
-    const canvas = document.createElement("canvas");
-    canvas.width = width;
-    canvas.height = height;
-    const context = canvas.getContext("2d");
-    if (!context) throw new Error("当前环境无法处理图片");
-    context.drawImage(image, 0, 0, width, height);
-    dataUrl = canvas.toDataURL("image/webp", 0.88);
-    if (!dataUrl.startsWith("data:image/webp")) dataUrl = canvas.toDataURL("image/jpeg", 0.82);
-    if (dataUrl.length > MAX_DATA_URL_LENGTH) dataUrl = canvas.toDataURL("image/jpeg", 0.68);
-  }
-  if (dataUrl.length > MAX_DATA_URL_LENGTH) throw new Error("图片压缩后仍然过大，请换一张图片");
-  return {
-    id: `image-${Date.now()}-${index}-${Math.random().toString(36).slice(2, 7)}`,
-    dataUrl,
-    name: file.name || "clipboard-image",
-    type: dataUrl.slice(5, dataUrl.indexOf(";")) as TodoImage["type"],
-    width,
-    height,
-  };
-}
-
-export async function pasteClipboardImages(event: React.ClipboardEvent<HTMLElement>): Promise<TodoImage[]> {
-  const files = Array.from(event.clipboardData.items)
-    .filter(item => IMAGE_TYPES.has(item.type))
-    .map(item => item.getAsFile())
-    .filter((file): file is File => file !== null);
-  if (!files.length) return [];
-  event.preventDefault();
-  return Promise.all(files.slice(0, MAX_PASTED_IMAGES).map(convertClipboardImage));
-}
-
 const IMAGE_CSS = `
 .cardgame-image-strip{display:flex;flex-wrap:wrap;gap:6px;min-width:0;margin:6px 0}
 .cardgame-image-thumb{position:relative;width:62px;height:46px;margin:0;overflow:hidden;border:1px solid var(--wb-line);border-radius:5px;background:var(--wb-surface-deep)}
@@ -91,7 +16,7 @@ const IMAGE_CSS = `
 `;
 
 export function ImageAttachments({ images, onRemove, compact = false }: {
-  images?: TodoImage[];
+  images?:readonly TodoImage[];
   onRemove?: (id: string) => void;
   compact?: boolean;
 }) {

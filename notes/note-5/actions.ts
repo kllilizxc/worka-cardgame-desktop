@@ -1,4 +1,4 @@
-import { z, type NoteActionContext } from "@dsh-workbench/runtime";
+import { z, OperationRejectedError, type NoteActionContext } from "@dsh-workbench/runtime";
 import { note, unitsSchema, placeSchema, placeCandidateSchema, weatherConfigSchema, weatherForecastSchema, type Units, type Place, type WeatherConfig } from "./model";
 import { normalize, num } from "./forecast";
 export { note } from "./model";
@@ -17,6 +17,15 @@ const configSnapshotSchema = z.object({
 });
 
 export const queries = {
+overview:note.query({description:'读取天气小卡的当前天气和今日摘要。',visibility:'private',requiresConfig:false,input:z.object({}),output:z.object({summary:z.string(),items:z.array(z.object({id:z.string(),title:z.string(),status:z.string()})).max(4)})},async(ctx)=>{
+ const config=(await ctx.config.read()).value;
+ if(!config.place)return {summary:'展开后选择天气城市',items:[]};
+ const result=await ctx.resources.read<Record<string,unknown>>({name:'extension.weather.forecast',input:{latitude:config.place.latitude,longitude:config.place.longitude,units:config.units??'metric'}});
+ if(result.error)throw Error(result.error);
+ if(!result.data)throw Error('天气预报尚未返回');
+ const value=normalize(result.data),unit=config.units==='imperial'?'°F':'°C';
+ return {summary:`${config.place.name} · ${Math.round(value.current.temperature)}${unit}`,items:[{id:'feels',title:'体感',status:`${Math.round(value.current.apparent)}${unit}`},{id:'humidity',title:'湿度',status:`${value.current.humidity}%`},{id:'rain',title:'今日降水概率',status:`${value.daily[0]?.precipProbMax??0}%`}]};
+}),
   view: note.query({description:"读取当前城市天气预报。",input:z.object({}).nullable(),output:weatherForecastSchema,visibility:'private',requiresConfig:false}, async (ctx, _input) => {
     const config = (await ctx.config.read()).value;
     if (!config.place) return { status: 'empty' as const, current: null, hourly: [], daily: [] };
@@ -59,7 +68,7 @@ export const setUnits = note.action({description:"切换天气显示单位。",i
 /** 使用检索结果里的城市，并立即刷新。 */
 export const usePlace = note.action({description:"保存选中的天气城市。",input:z.object({place:placeSchema}),output:configSnapshotSchema,visibility:'private',requiresConfig:false}, async (ctx, input) => {
   const raw = input.place;
-  if (!raw || typeof raw.latitude !== "number" || typeof raw.longitude !== "number") throw new Error("城市坐标无效");
+  if (!raw || typeof raw.latitude !== "number" || typeof raw.longitude !== "number") throw new OperationRejectedError("城市坐标无效");
   const place: Place = {
     name: String(raw.name ?? "未知地点"),
     admin1: raw.admin1 ? String(raw.admin1) : undefined,
@@ -84,7 +93,7 @@ export const locateByNetwork = note.action({description:"按网络出口位置�
   if (snapshot.error || !snapshot.data) throw new Error(snapshot.error ?? '定位失败');
   const payload = snapshot.data;
   if (payload.success === false || typeof payload.latitude !== "number" || typeof payload.longitude !== "number") {
-    throw new Error("网络定位未返回可用坐标");
+    throw new OperationRejectedError("网络定位未返回可用坐标");
   }
   const timezone = typeof payload.timezone === "object" && payload.timezone !== null
     ? (payload.timezone as Record<string, unknown>).id

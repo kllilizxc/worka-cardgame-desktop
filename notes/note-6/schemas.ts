@@ -37,5 +37,6 @@ export const viewSchema = z.object({
     })),
   })),
 });
-export const gameCandidateInputSchema = z.object({projectId:z.string(),productionId:z.string(),candidateId:z.string(),featureId:z.string(),candidateHash:z.string(),targetBaseRevision:z.string(),validationManifest:z.string()});
+const identity=z.string().trim().min(1),fingerprint=z.string().regex(/^[a-f\d]{64}$/i);
+export const gameCandidateInputSchema = z.object({projectId:identity,productionId:identity,candidateId:identity,featureId:identity,candidateHash:fingerprint,targetBaseRevision:fingerprint,validationManifest:fingerprint});
 export const gameAdoptionSchema = z.object({candidate:gameCandidateSchema,production:z.looseObject({id:z.string(),projectId:z.string(),revision:z.number()}).optional(),adoptionId:z.string().optional(),reused:z.boolean().optional()});

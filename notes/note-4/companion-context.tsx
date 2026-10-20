@@ -1,21 +1,21 @@
 import {isCardBatch,type Production} from './contracts';
 import {useProductionNote} from './surface';
 import { Button } from '@heroui/react';
-import {useState} from 'react';
-import {useAction} from '@dsh-workbench/react';
+import {useMutation} from '@dsh-workbench/react';
+import {MutationNotice} from './mutation-notice';
 export function CompanionContext({ production }: { production: Production }) {
   const { actions, useQuery, host: workbench, metadata } = useProductionNote();
   const context = useQuery('productionContext', { productionId: production.id });
   const choices = useQuery('companionChoices', {}, { enabled: !production.todoId || !(isCardBatch(production.batch) && production.batch.companion) });
-  const [todoId, setTodoId] = useState('');
-  const [unitId, setUnitId] = useState('');
-  const source = useQuery('sourceCard', { id: unitId }, { enabled: Boolean(unitId) });
-  const action=useAction(),busy=action.pending,error=action.error?.message;
-  function bind(){
-    if(!todoId||!source.data)return;
-    const sourceRevision=source.data.revision;
-    return action.run(()=>actions.linkCompanion({productionId:production.id,baseRevision:production.revision,todoId,sourceCardId:unitId,sourceRevision}));
-  }
+  const input=useQuery('companionInput',{productionId:production.id});
+  const action=useMutation(actions.linkCompanion,{draft:input,input:(value,{baseline})=>({productionId:baseline.productionId,projectGeneration:baseline.projectGeneration,baseRevision:baseline.revision,todoId:value.todoId,sourceCardId:value.unitId,sourceRevision:value.sourceRevision})});
+  const draft=action.draft;
+  const {todoId,unitId}=draft.ready?draft.value:{todoId:'',unitId:''};
+  const source=useQuery('sourceCard',{id:unitId},{enabled:!!unitId});
+  const busy=!draft.ready||draft.locked,error=action.error?.message;
+  const setTodoId=(todoId:string)=>draft.set(value=>({...value,todoId}));
+  const setUnitId=(unitId:string)=>draft.set(value=>({...value,unitId,sourceRevision:choices.data?.units.find(item=>item.id===unitId)?.revision??''}));
+  function bind(){return action.mutate();}
   return <details className="cw-context"><summary>来源与关联</summary><div>
     <p>所属功能：{context.data?.feature?.title ?? '读取中…'}</p><p>关联待办：{context.data?.todo?.title ?? '尚未关联'}</p><p>配套单位：{context.data?.source?.name ?? '尚未选择'}</p>
     {(!production.todoId || !(isCardBatch(production.batch) && production.batch.companion)) && <>
@@ -23,6 +23,6 @@ export function CompanionContext({ production }: { production: Production }) {
       <label>配套单位<select aria-label="修复制作单配套单位" value={unitId} onChange={e => setUnitId(e.target.value)} disabled={busy}><option value="">选择已有单位</option>{(choices.data?.units ?? []).map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}</select></label>
       <Button isDisabled={busy || !todoId || !source.data} onPress={() => void bind()}>{busy ? '保存关联…' : '保存来源关联'}</Button>
     </>}
-    {(error || context.error) && <p role="alert">{error || context.error?.message}</p>}
+    <MutationNotice mutation={action}/>{(error || context.error) && <p role="alert">{error || context.error?.message}</p>}
   </div><style>{`.cw-context{margin:8px 0;font-size:13px;line-height:1.6}.cw-context summary{cursor:pointer;padding:8px 0}.cw-context>div{display:flex;flex-direction:column;gap:10px;min-width:0}.cw-context p{margin:0;overflow-wrap:anywhere}.cw-context label{display:flex;flex-direction:column;gap:6px}.cw-context select,.cw-feature select{width:100%;max-width:100%;min-width:0;min-height:44px;background:var(--wb-surface);color:var(--wb-ink);border:1px solid var(--wb-line);border-radius:var(--wb-radius-small);padding:8px}.cw-feature{display:flex;flex-direction:column;gap:6px;width:100%;min-width:0}.cw-fields-single{grid-template-columns:minmax(0,1fr)!important}`}</style></details>;
 }

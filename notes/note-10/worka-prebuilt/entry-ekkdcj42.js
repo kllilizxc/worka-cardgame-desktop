@@ -1,0 +1,2 @@
+import{If as I}from"./entry-n67ezgch.js";import{ag as H}from"./entry-2d6vybcz.js";import{$g as T}from"./entry-6228z9nn.js";var M=T((q,A,K,$)=>{q.attr("class",K);let{width:N,height:f,x:L,y:O}=Q(q,A);I(q,f,N,$);let z=C(L,O,N,f,A);q.attr("viewBox",z),H.debug(`viewBox configured: ${z} with padding: ${A}`)},"setupViewPortForSVG"),Q=T((q,A)=>{let K=q.node()?.getBBox()||{width:0,height:0,x:0,y:0};return{width:K.width+A*2,height:K.height+A*2,x:K.x,y:K.y}},"calculateDimensionsWithPadding"),C=T((q,A,K,$,N)=>{return`${q-N} ${A-N} ${K} ${$}`},"createViewBox");
+export{M as $};

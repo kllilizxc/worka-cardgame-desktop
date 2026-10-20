@@ -8,7 +8,7 @@ import type { NoteActionContext, AgentResult, JsonValue, Snapshot } from "@dsh-w
 import { z, currentTaskOutcome, taskOutcome } from "@dsh-workbench/runtime";
 import { delegationDisplayName } from "./display";
 import {
-  note, normalizeState, taskProgress, taskResult,
+  note, delegationSchema, normalizeState, taskProgress, taskResult,
   activeElapsedMs,
   requirementProgress,
   asRefId,
@@ -1884,6 +1884,12 @@ export const inspectProposal = note.action({
 
 /** A task's file, read on demand by the view, Agents and linked notes that need the full text. */
 export const queries = {
+workspace:note.query({description:'读取展开执行台展示的委托业务记录。',visibility:'private',input:z.object({}),output:z.object({delegations:z.record(z.string(),delegationSchema)})},async(ctx)=>({delegations:normalizeState((await ctx.state.read()).value).delegations})),
+overview:note.query({description:'读取执行台小卡的活动数和最多四项状态。',visibility:'private',input:z.object({}),output:z.object({summary:z.string(),items:z.array(z.object({id:z.string(),title:z.string(),status:z.string()})).max(4)})},async(ctx)=>{
+ const state=normalizeState((await ctx.state.read()).value);
+ const active=Object.values(state.delegations).filter(item=>!item.archived);
+ return {summary:`${active.length} 项活动委托`,items:active.slice(0,4).map(item=>({id:item.id,title:item.goal,status:taskProgress(item,'').status}))};
+}),
   evidence:note.query({description:"读取任务的执行证据。",input:delegationInputSchema,output:z.array(evidenceSchema),visibility:"private"},async(ctx,input)=>{
     const task=(await ctx.state.read()).value.delegations[input.delegationId];
     if(!task)throw new Error("找不到任务 "+input.delegationId);

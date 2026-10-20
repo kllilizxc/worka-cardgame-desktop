@@ -6,6 +6,7 @@ export type TodoStatus = "todo" | "in_progress" | "done" | "blocked";
 export type TodoPriority = "low" | "medium" | "high";
 export type TodoImage = WorkflowTodoImage;
 export type TodoItem = TodoSummary | TodoRequirement;
+export type TodoStats = z.output<typeof workflowReadContracts.workflowStatus.output>;
 export type TodoPage = z.output<typeof workflowReadContracts.todos.output>;
 export type { TodoRequirement, TodoSummary, TodoRead };
 export interface TodoState {
@@ -1304,6 +1305,7 @@ declare const action_bindExecution: import("@dsh-workbench/runtime").NoteOperati
 export { action_bindExecution as bindExecution };
 declare const action_productionRequest: import("@dsh-workbench/runtime").NoteOperation<z.ZodObject<{
     projectId: z.ZodOptional<z.ZodString>;
+    projectGeneration: z.ZodOptional<z.ZodString>;
     todoId: z.ZodString;
     brief: z.ZodOptional<z.ZodString>;
     title: z.ZodOptional<z.ZodString>;
@@ -1402,7 +1404,568 @@ declare const action_productionRequest: import("@dsh-workbench/runtime").NoteOpe
     }>>;
 }, z.core.$loose>, {}>>>;
 export { action_productionRequest as productionRequest };
+export declare const createTask: import("@dsh-workbench/runtime").NoteOperation<z.ZodObject<{
+    projectId: z.ZodString;
+    projectGeneration: z.ZodString;
+    title: z.ZodString;
+    description: z.ZodString;
+    images: z.ZodArray<z.ZodObject<{
+        id: z.ZodString;
+        dataUrl: z.ZodString;
+        type: z.ZodOptional<z.ZodEnum<{
+            "image/gif": "image/gif";
+            "image/jpeg": "image/jpeg";
+            "image/png": "image/png";
+            "image/webp": "image/webp";
+        }>>;
+        name: z.ZodOptional<z.ZodString>;
+        width: z.ZodOptional<z.ZodNumber>;
+        height: z.ZodOptional<z.ZodNumber>;
+    }, z.core.$strip>>;
+    status: z.ZodEnum<{
+        blocked: "blocked";
+        done: "done";
+        in_progress: "in_progress";
+        todo: "todo";
+    }>;
+    priority: z.ZodEnum<{
+        high: "high";
+        low: "low";
+        medium: "medium";
+    }>;
+    category: z.ZodString;
+    dueDate: z.ZodString;
+    context: z.ZodRecord<z.ZodString, z.ZodJSONSchema>;
+}, z.core.$strip>, z.ZodObject<{
+    projectId: z.ZodString;
+    projectGeneration: z.ZodOptional<z.ZodString>;
+    id: z.ZodString;
+    revision: z.ZodNumber;
+    requirementRevision: z.ZodNumber;
+    requirementFingerprint: z.ZodString;
+}, z.core.$strip>, NoteActionContext<import("@dsh-workbench/runtime").NoteModel<z.ZodObject<{
+    items: z.ZodArray<z.ZodObject<{
+        id: z.ZodString;
+        title: z.ZodString;
+        description: z.ZodOptional<z.ZodString>;
+        completed: z.ZodOptional<z.ZodBoolean>;
+        priority: z.ZodOptional<z.ZodEnum<{
+            high: "high";
+            low: "low";
+            medium: "medium";
+        }>>;
+        category: z.ZodOptional<z.ZodString>;
+        dueDate: z.ZodOptional<z.ZodString>;
+        images: z.ZodOptional<z.ZodArray<z.ZodObject<{
+            id: z.ZodString;
+            dataUrl: z.ZodString;
+            name: z.ZodOptional<z.ZodString>;
+            type: z.ZodOptional<z.ZodEnum<{
+                "image/gif": "image/gif";
+                "image/jpeg": "image/jpeg";
+                "image/png": "image/png";
+                "image/webp": "image/webp";
+            }>>;
+            width: z.ZodOptional<z.ZodNumber>;
+            height: z.ZodOptional<z.ZodNumber>;
+        }, z.core.$strip>>>;
+        source: z.ZodOptional<z.ZodObject<{
+            kind: z.ZodString;
+            itemId: z.ZodString;
+            label: z.ZodOptional<z.ZodString>;
+            url: z.ZodOptional<z.ZodString>;
+            title: z.ZodOptional<z.ZodString>;
+            messageIds: z.ZodOptional<z.ZodArray<z.ZodString>>;
+            taskKey: z.ZodOptional<z.ZodString>;
+            importedAt: z.ZodOptional<z.ZodString>;
+        }, z.core.$loose>>;
+        sourceAutoUpdatedAt: z.ZodOptional<z.ZodString>;
+        autoDeliveryPending: z.ZodOptional<z.ZodString>;
+        conclusion: z.ZodOptional<z.ZodString>;
+        taskId: z.ZodOptional<z.ZodString>;
+        delivery: z.ZodOptional<z.ZodString>;
+        next: z.ZodOptional<z.ZodString>;
+        deliveryIntent: z.ZodOptional<z.ZodObject<{
+            requestId: z.ZodString;
+            fingerprint: z.ZodString;
+            payload: z.ZodOptional<z.ZodUnknown>;
+            status: z.ZodOptional<z.ZodString>;
+            requirementVersion: z.ZodOptional<z.ZodNumber>;
+            updateStatus: z.ZodOptional<z.ZodString>;
+        }, z.core.$strip>>;
+        delegation: z.ZodOptional<z.ZodObject<{
+            id: z.ZodString;
+            deskNoteId: z.ZodString;
+            stateRef: z.ZodString;
+        }, z.core.$strip>>;
+        delegatedAt: z.ZodOptional<z.ZodString>;
+        delegatedRunStatus: z.ZodOptional<z.ZodEnum<{
+            accepted: "accepted";
+            completed: "completed";
+            queued: "queued";
+            started: "started";
+        }>>;
+        status: z.ZodOptional<z.ZodUnion<readonly [z.ZodEnum<{
+            blocking: "blocking";
+            done: "done";
+            in_progress: "in_progress";
+            todo: "todo";
+        }>, z.ZodLiteral<"blocked">]>>;
+        createdAt: z.ZodOptional<z.ZodString>;
+    }, z.core.$loose>>;
+    filter: z.ZodOptional<z.ZodEnum<{
+        active: "active";
+        all: "all";
+        completed: "completed";
+    }>>;
+    summary: z.ZodOptional<z.ZodString>;
+    executionDesk: z.ZodOptional<z.ZodObject<{
+        noteId: z.ZodOptional<z.ZodString>;
+        stateRef: z.ZodOptional<z.ZodString>;
+    }, z.core.$strip>>;
+}, z.core.$loose>, z.ZodObject<{
+    projectId: z.ZodOptional<z.ZodString>;
+    notes: z.ZodOptional<z.ZodRecord<z.ZodString, z.ZodString>>;
+    filter: z.ZodOptional<z.ZodEnum<{
+        active: "active";
+        all: "all";
+        completed: "completed";
+    }>>;
+}, z.core.$loose>, {}>>>;
 export declare const queries: {
+    projectBinding: import("@dsh-workbench/runtime").NoteOperation<z.ZodObject<{}, z.core.$strip>, z.ZodObject<{
+        configured: z.ZodBoolean;
+        projectId: z.ZodString;
+        projectGeneration: z.ZodOptional<z.ZodString>;
+    }, z.core.$strip>, NoteQueryContext<import("@dsh-workbench/runtime").NoteModel<z.ZodObject<{
+        items: z.ZodArray<z.ZodObject<{
+            id: z.ZodString;
+            title: z.ZodString;
+            description: z.ZodOptional<z.ZodString>;
+            completed: z.ZodOptional<z.ZodBoolean>;
+            priority: z.ZodOptional<z.ZodEnum<{
+                high: "high";
+                low: "low";
+                medium: "medium";
+            }>>;
+            category: z.ZodOptional<z.ZodString>;
+            dueDate: z.ZodOptional<z.ZodString>;
+            images: z.ZodOptional<z.ZodArray<z.ZodObject<{
+                id: z.ZodString;
+                dataUrl: z.ZodString;
+                name: z.ZodOptional<z.ZodString>;
+                type: z.ZodOptional<z.ZodEnum<{
+                    "image/gif": "image/gif";
+                    "image/jpeg": "image/jpeg";
+                    "image/png": "image/png";
+                    "image/webp": "image/webp";
+                }>>;
+                width: z.ZodOptional<z.ZodNumber>;
+                height: z.ZodOptional<z.ZodNumber>;
+            }, z.core.$strip>>>;
+            source: z.ZodOptional<z.ZodObject<{
+                kind: z.ZodString;
+                itemId: z.ZodString;
+                label: z.ZodOptional<z.ZodString>;
+                url: z.ZodOptional<z.ZodString>;
+                title: z.ZodOptional<z.ZodString>;
+                messageIds: z.ZodOptional<z.ZodArray<z.ZodString>>;
+                taskKey: z.ZodOptional<z.ZodString>;
+                importedAt: z.ZodOptional<z.ZodString>;
+            }, z.core.$loose>>;
+            sourceAutoUpdatedAt: z.ZodOptional<z.ZodString>;
+            autoDeliveryPending: z.ZodOptional<z.ZodString>;
+            conclusion: z.ZodOptional<z.ZodString>;
+            taskId: z.ZodOptional<z.ZodString>;
+            delivery: z.ZodOptional<z.ZodString>;
+            next: z.ZodOptional<z.ZodString>;
+            deliveryIntent: z.ZodOptional<z.ZodObject<{
+                requestId: z.ZodString;
+                fingerprint: z.ZodString;
+                payload: z.ZodOptional<z.ZodUnknown>;
+                status: z.ZodOptional<z.ZodString>;
+                requirementVersion: z.ZodOptional<z.ZodNumber>;
+                updateStatus: z.ZodOptional<z.ZodString>;
+            }, z.core.$strip>>;
+            delegation: z.ZodOptional<z.ZodObject<{
+                id: z.ZodString;
+                deskNoteId: z.ZodString;
+                stateRef: z.ZodString;
+            }, z.core.$strip>>;
+            delegatedAt: z.ZodOptional<z.ZodString>;
+            delegatedRunStatus: z.ZodOptional<z.ZodEnum<{
+                accepted: "accepted";
+                completed: "completed";
+                queued: "queued";
+                started: "started";
+            }>>;
+            status: z.ZodOptional<z.ZodUnion<readonly [z.ZodEnum<{
+                blocking: "blocking";
+                done: "done";
+                in_progress: "in_progress";
+                todo: "todo";
+            }>, z.ZodLiteral<"blocked">]>>;
+            createdAt: z.ZodOptional<z.ZodString>;
+        }, z.core.$loose>>;
+        filter: z.ZodOptional<z.ZodEnum<{
+            active: "active";
+            all: "all";
+            completed: "completed";
+        }>>;
+        summary: z.ZodOptional<z.ZodString>;
+        executionDesk: z.ZodOptional<z.ZodObject<{
+            noteId: z.ZodOptional<z.ZodString>;
+            stateRef: z.ZodOptional<z.ZodString>;
+        }, z.core.$strip>>;
+    }, z.core.$loose>, z.ZodObject<{
+        projectId: z.ZodOptional<z.ZodString>;
+        notes: z.ZodOptional<z.ZodRecord<z.ZodString, z.ZodString>>;
+        filter: z.ZodOptional<z.ZodEnum<{
+            active: "active";
+            all: "all";
+            completed: "completed";
+        }>>;
+    }, z.core.$loose>, {}>>>;
+    createInput: import("@dsh-workbench/runtime").NoteOperation<z.ZodObject<{
+        projectId: z.ZodString;
+        projectGeneration: z.ZodString;
+        status: z.ZodEnum<{
+            blocked: "blocked";
+            done: "done";
+            in_progress: "in_progress";
+            todo: "todo";
+        }>;
+        context: z.ZodRecord<z.ZodString, z.ZodJSONSchema>;
+    }, z.core.$strip>, z.ZodObject<{
+        projectId: z.ZodString;
+        projectGeneration: z.ZodString;
+        title: z.ZodString;
+        description: z.ZodString;
+        images: z.ZodArray<z.ZodObject<{
+            id: z.ZodString;
+            dataUrl: z.ZodString;
+            type: z.ZodOptional<z.ZodEnum<{
+                "image/gif": "image/gif";
+                "image/jpeg": "image/jpeg";
+                "image/png": "image/png";
+                "image/webp": "image/webp";
+            }>>;
+            name: z.ZodOptional<z.ZodString>;
+            width: z.ZodOptional<z.ZodNumber>;
+            height: z.ZodOptional<z.ZodNumber>;
+        }, z.core.$strip>>;
+        status: z.ZodEnum<{
+            blocked: "blocked";
+            done: "done";
+            in_progress: "in_progress";
+            todo: "todo";
+        }>;
+        priority: z.ZodEnum<{
+            high: "high";
+            low: "low";
+            medium: "medium";
+        }>;
+        category: z.ZodString;
+        dueDate: z.ZodString;
+        context: z.ZodRecord<z.ZodString, z.ZodJSONSchema>;
+    }, z.core.$strip>, NoteQueryContext<import("@dsh-workbench/runtime").NoteModel<z.ZodObject<{
+        items: z.ZodArray<z.ZodObject<{
+            id: z.ZodString;
+            title: z.ZodString;
+            description: z.ZodOptional<z.ZodString>;
+            completed: z.ZodOptional<z.ZodBoolean>;
+            priority: z.ZodOptional<z.ZodEnum<{
+                high: "high";
+                low: "low";
+                medium: "medium";
+            }>>;
+            category: z.ZodOptional<z.ZodString>;
+            dueDate: z.ZodOptional<z.ZodString>;
+            images: z.ZodOptional<z.ZodArray<z.ZodObject<{
+                id: z.ZodString;
+                dataUrl: z.ZodString;
+                name: z.ZodOptional<z.ZodString>;
+                type: z.ZodOptional<z.ZodEnum<{
+                    "image/gif": "image/gif";
+                    "image/jpeg": "image/jpeg";
+                    "image/png": "image/png";
+                    "image/webp": "image/webp";
+                }>>;
+                width: z.ZodOptional<z.ZodNumber>;
+                height: z.ZodOptional<z.ZodNumber>;
+            }, z.core.$strip>>>;
+            source: z.ZodOptional<z.ZodObject<{
+                kind: z.ZodString;
+                itemId: z.ZodString;
+                label: z.ZodOptional<z.ZodString>;
+                url: z.ZodOptional<z.ZodString>;
+                title: z.ZodOptional<z.ZodString>;
+                messageIds: z.ZodOptional<z.ZodArray<z.ZodString>>;
+                taskKey: z.ZodOptional<z.ZodString>;
+                importedAt: z.ZodOptional<z.ZodString>;
+            }, z.core.$loose>>;
+            sourceAutoUpdatedAt: z.ZodOptional<z.ZodString>;
+            autoDeliveryPending: z.ZodOptional<z.ZodString>;
+            conclusion: z.ZodOptional<z.ZodString>;
+            taskId: z.ZodOptional<z.ZodString>;
+            delivery: z.ZodOptional<z.ZodString>;
+            next: z.ZodOptional<z.ZodString>;
+            deliveryIntent: z.ZodOptional<z.ZodObject<{
+                requestId: z.ZodString;
+                fingerprint: z.ZodString;
+                payload: z.ZodOptional<z.ZodUnknown>;
+                status: z.ZodOptional<z.ZodString>;
+                requirementVersion: z.ZodOptional<z.ZodNumber>;
+                updateStatus: z.ZodOptional<z.ZodString>;
+            }, z.core.$strip>>;
+            delegation: z.ZodOptional<z.ZodObject<{
+                id: z.ZodString;
+                deskNoteId: z.ZodString;
+                stateRef: z.ZodString;
+            }, z.core.$strip>>;
+            delegatedAt: z.ZodOptional<z.ZodString>;
+            delegatedRunStatus: z.ZodOptional<z.ZodEnum<{
+                accepted: "accepted";
+                completed: "completed";
+                queued: "queued";
+                started: "started";
+            }>>;
+            status: z.ZodOptional<z.ZodUnion<readonly [z.ZodEnum<{
+                blocking: "blocking";
+                done: "done";
+                in_progress: "in_progress";
+                todo: "todo";
+            }>, z.ZodLiteral<"blocked">]>>;
+            createdAt: z.ZodOptional<z.ZodString>;
+        }, z.core.$loose>>;
+        filter: z.ZodOptional<z.ZodEnum<{
+            active: "active";
+            all: "all";
+            completed: "completed";
+        }>>;
+        summary: z.ZodOptional<z.ZodString>;
+        executionDesk: z.ZodOptional<z.ZodObject<{
+            noteId: z.ZodOptional<z.ZodString>;
+            stateRef: z.ZodOptional<z.ZodString>;
+        }, z.core.$strip>>;
+    }, z.core.$loose>, z.ZodObject<{
+        projectId: z.ZodOptional<z.ZodString>;
+        notes: z.ZodOptional<z.ZodRecord<z.ZodString, z.ZodString>>;
+        filter: z.ZodOptional<z.ZodEnum<{
+            active: "active";
+            all: "all";
+            completed: "completed";
+        }>>;
+    }, z.core.$loose>, {}>>>;
+    overview: import("@dsh-workbench/runtime").NoteOperation<z.ZodObject<{}, z.core.$strip>, z.ZodObject<{
+        summary: z.ZodString;
+        items: z.ZodArray<z.ZodObject<{
+            id: z.ZodString;
+            title: z.ZodString;
+            status: z.ZodString;
+        }, z.core.$strip>>;
+    }, z.core.$strip>, NoteQueryContext<import("@dsh-workbench/runtime").NoteModel<z.ZodObject<{
+        items: z.ZodArray<z.ZodObject<{
+            id: z.ZodString;
+            title: z.ZodString;
+            description: z.ZodOptional<z.ZodString>;
+            completed: z.ZodOptional<z.ZodBoolean>;
+            priority: z.ZodOptional<z.ZodEnum<{
+                high: "high";
+                low: "low";
+                medium: "medium";
+            }>>;
+            category: z.ZodOptional<z.ZodString>;
+            dueDate: z.ZodOptional<z.ZodString>;
+            images: z.ZodOptional<z.ZodArray<z.ZodObject<{
+                id: z.ZodString;
+                dataUrl: z.ZodString;
+                name: z.ZodOptional<z.ZodString>;
+                type: z.ZodOptional<z.ZodEnum<{
+                    "image/gif": "image/gif";
+                    "image/jpeg": "image/jpeg";
+                    "image/png": "image/png";
+                    "image/webp": "image/webp";
+                }>>;
+                width: z.ZodOptional<z.ZodNumber>;
+                height: z.ZodOptional<z.ZodNumber>;
+            }, z.core.$strip>>>;
+            source: z.ZodOptional<z.ZodObject<{
+                kind: z.ZodString;
+                itemId: z.ZodString;
+                label: z.ZodOptional<z.ZodString>;
+                url: z.ZodOptional<z.ZodString>;
+                title: z.ZodOptional<z.ZodString>;
+                messageIds: z.ZodOptional<z.ZodArray<z.ZodString>>;
+                taskKey: z.ZodOptional<z.ZodString>;
+                importedAt: z.ZodOptional<z.ZodString>;
+            }, z.core.$loose>>;
+            sourceAutoUpdatedAt: z.ZodOptional<z.ZodString>;
+            autoDeliveryPending: z.ZodOptional<z.ZodString>;
+            conclusion: z.ZodOptional<z.ZodString>;
+            taskId: z.ZodOptional<z.ZodString>;
+            delivery: z.ZodOptional<z.ZodString>;
+            next: z.ZodOptional<z.ZodString>;
+            deliveryIntent: z.ZodOptional<z.ZodObject<{
+                requestId: z.ZodString;
+                fingerprint: z.ZodString;
+                payload: z.ZodOptional<z.ZodUnknown>;
+                status: z.ZodOptional<z.ZodString>;
+                requirementVersion: z.ZodOptional<z.ZodNumber>;
+                updateStatus: z.ZodOptional<z.ZodString>;
+            }, z.core.$strip>>;
+            delegation: z.ZodOptional<z.ZodObject<{
+                id: z.ZodString;
+                deskNoteId: z.ZodString;
+                stateRef: z.ZodString;
+            }, z.core.$strip>>;
+            delegatedAt: z.ZodOptional<z.ZodString>;
+            delegatedRunStatus: z.ZodOptional<z.ZodEnum<{
+                accepted: "accepted";
+                completed: "completed";
+                queued: "queued";
+                started: "started";
+            }>>;
+            status: z.ZodOptional<z.ZodUnion<readonly [z.ZodEnum<{
+                blocking: "blocking";
+                done: "done";
+                in_progress: "in_progress";
+                todo: "todo";
+            }>, z.ZodLiteral<"blocked">]>>;
+            createdAt: z.ZodOptional<z.ZodString>;
+        }, z.core.$loose>>;
+        filter: z.ZodOptional<z.ZodEnum<{
+            active: "active";
+            all: "all";
+            completed: "completed";
+        }>>;
+        summary: z.ZodOptional<z.ZodString>;
+        executionDesk: z.ZodOptional<z.ZodObject<{
+            noteId: z.ZodOptional<z.ZodString>;
+            stateRef: z.ZodOptional<z.ZodString>;
+        }, z.core.$strip>>;
+    }, z.core.$loose>, z.ZodObject<{
+        projectId: z.ZodOptional<z.ZodString>;
+        notes: z.ZodOptional<z.ZodRecord<z.ZodString, z.ZodString>>;
+        filter: z.ZodOptional<z.ZodEnum<{
+            active: "active";
+            all: "all";
+            completed: "completed";
+        }>>;
+    }, z.core.$loose>, {}>>>;
+    editInput: import("@dsh-workbench/runtime").NoteOperation<z.ZodObject<{
+        projectId: z.ZodString;
+        projectGeneration: z.ZodOptional<z.ZodString>;
+        itemId: z.ZodString;
+    }, z.core.$strip>, z.ZodObject<{
+        title: z.ZodString;
+        description: z.ZodString;
+        images: z.ZodArray<z.ZodObject<{
+            id: z.ZodString;
+            dataUrl: z.ZodString;
+            type: z.ZodOptional<z.ZodEnum<{
+                "image/gif": "image/gif";
+                "image/jpeg": "image/jpeg";
+                "image/png": "image/png";
+                "image/webp": "image/webp";
+            }>>;
+            name: z.ZodOptional<z.ZodString>;
+            width: z.ZodOptional<z.ZodNumber>;
+            height: z.ZodOptional<z.ZodNumber>;
+        }, z.core.$strip>>;
+        baseFingerprint: z.ZodString;
+        projectId: z.ZodString;
+        projectGeneration: z.ZodOptional<z.ZodString>;
+        itemId: z.ZodString;
+    }, z.core.$strip>, NoteQueryContext<import("@dsh-workbench/runtime").NoteModel<z.ZodObject<{
+        items: z.ZodArray<z.ZodObject<{
+            id: z.ZodString;
+            title: z.ZodString;
+            description: z.ZodOptional<z.ZodString>;
+            completed: z.ZodOptional<z.ZodBoolean>;
+            priority: z.ZodOptional<z.ZodEnum<{
+                high: "high";
+                low: "low";
+                medium: "medium";
+            }>>;
+            category: z.ZodOptional<z.ZodString>;
+            dueDate: z.ZodOptional<z.ZodString>;
+            images: z.ZodOptional<z.ZodArray<z.ZodObject<{
+                id: z.ZodString;
+                dataUrl: z.ZodString;
+                name: z.ZodOptional<z.ZodString>;
+                type: z.ZodOptional<z.ZodEnum<{
+                    "image/gif": "image/gif";
+                    "image/jpeg": "image/jpeg";
+                    "image/png": "image/png";
+                    "image/webp": "image/webp";
+                }>>;
+                width: z.ZodOptional<z.ZodNumber>;
+                height: z.ZodOptional<z.ZodNumber>;
+            }, z.core.$strip>>>;
+            source: z.ZodOptional<z.ZodObject<{
+                kind: z.ZodString;
+                itemId: z.ZodString;
+                label: z.ZodOptional<z.ZodString>;
+                url: z.ZodOptional<z.ZodString>;
+                title: z.ZodOptional<z.ZodString>;
+                messageIds: z.ZodOptional<z.ZodArray<z.ZodString>>;
+                taskKey: z.ZodOptional<z.ZodString>;
+                importedAt: z.ZodOptional<z.ZodString>;
+            }, z.core.$loose>>;
+            sourceAutoUpdatedAt: z.ZodOptional<z.ZodString>;
+            autoDeliveryPending: z.ZodOptional<z.ZodString>;
+            conclusion: z.ZodOptional<z.ZodString>;
+            taskId: z.ZodOptional<z.ZodString>;
+            delivery: z.ZodOptional<z.ZodString>;
+            next: z.ZodOptional<z.ZodString>;
+            deliveryIntent: z.ZodOptional<z.ZodObject<{
+                requestId: z.ZodString;
+                fingerprint: z.ZodString;
+                payload: z.ZodOptional<z.ZodUnknown>;
+                status: z.ZodOptional<z.ZodString>;
+                requirementVersion: z.ZodOptional<z.ZodNumber>;
+                updateStatus: z.ZodOptional<z.ZodString>;
+            }, z.core.$strip>>;
+            delegation: z.ZodOptional<z.ZodObject<{
+                id: z.ZodString;
+                deskNoteId: z.ZodString;
+                stateRef: z.ZodString;
+            }, z.core.$strip>>;
+            delegatedAt: z.ZodOptional<z.ZodString>;
+            delegatedRunStatus: z.ZodOptional<z.ZodEnum<{
+                accepted: "accepted";
+                completed: "completed";
+                queued: "queued";
+                started: "started";
+            }>>;
+            status: z.ZodOptional<z.ZodUnion<readonly [z.ZodEnum<{
+                blocking: "blocking";
+                done: "done";
+                in_progress: "in_progress";
+                todo: "todo";
+            }>, z.ZodLiteral<"blocked">]>>;
+            createdAt: z.ZodOptional<z.ZodString>;
+        }, z.core.$loose>>;
+        filter: z.ZodOptional<z.ZodEnum<{
+            active: "active";
+            all: "all";
+            completed: "completed";
+        }>>;
+        summary: z.ZodOptional<z.ZodString>;
+        executionDesk: z.ZodOptional<z.ZodObject<{
+            noteId: z.ZodOptional<z.ZodString>;
+            stateRef: z.ZodOptional<z.ZodString>;
+        }, z.core.$strip>>;
+    }, z.core.$loose>, z.ZodObject<{
+        projectId: z.ZodOptional<z.ZodString>;
+        notes: z.ZodOptional<z.ZodRecord<z.ZodString, z.ZodString>>;
+        filter: z.ZodOptional<z.ZodEnum<{
+            active: "active";
+            all: "all";
+            completed: "completed";
+        }>>;
+    }, z.core.$loose>, {}>>>;
     todos: import("@dsh-workbench/runtime").NoteOperation<z.ZodUnion<readonly [z.ZodOptional<z.ZodNullable<z.ZodObject<{
         projectId: z.ZodOptional<z.ZodString>;
         cursor: z.ZodOptional<z.ZodString>;
@@ -1415,6 +1978,7 @@ export declare const queries: {
             in_progress: "in_progress";
             todo: "todo";
         }>>;
+        projectGeneration: z.ZodOptional<z.ZodString>;
     }, z.core.$strict>>>, z.ZodOptional<z.ZodNullable<z.ZodObject<{
         projectId: z.ZodOptional<z.ZodString>;
         view: z.ZodLiteral<"text">;
@@ -1428,6 +1992,7 @@ export declare const queries: {
             in_progress: "in_progress";
             todo: "todo";
         }>>;
+        projectGeneration: z.ZodOptional<z.ZodString>;
     }, z.core.$strict>>>]>, z.ZodUnion<readonly [z.ZodIntersection<z.ZodObject<{
         items: z.ZodArray<z.ZodObject<{
             projectId: z.ZodString;
@@ -1757,6 +2322,7 @@ export declare const queries: {
         projectId: z.ZodOptional<z.ZodString>;
         cursor: z.ZodOptional<z.ZodString>;
         limit: z.ZodOptional<z.ZodNumber>;
+        projectGeneration: z.ZodOptional<z.ZodString>;
     }, z.core.$strict>>>, z.ZodIntersection<z.ZodObject<{
         items: z.ZodArray<z.ZodObject<{
             category: z.ZodString;

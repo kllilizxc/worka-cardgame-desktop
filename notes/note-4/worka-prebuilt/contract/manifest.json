@@ -1,19 +1,19 @@
 {
   "schemaVersion": 1,
-  "codeVersion": "final-1703ff1",
-  "status": "partial",
+  "codeVersion": "058b4848f64d8a04fa1cb3c18ebfeca6cedcde847c0563a12040aae15818532e",
+  "status": "ready",
   "files": [
     "SKILL.md",
     "references/api.d.ts",
     "references/types/actions.d.ts",
+    "references/types/card-draft.d.ts",
     "references/types/card-face.d.ts",
     "references/types/card-operations.d.ts",
     "references/types/contracts.d.ts",
-    "references/types/note-model.d.ts"
+    "references/types/model.d.ts",
+    "references/types/requirement-draft.d.ts"
   ],
-  "diagnostics": [
-    "No model.ts executable data model"
-  ],
+  "diagnostics": [],
   "skill": {
     "name": "cardgame-production",
     "description": "管理 CardGame AI 资源制作请求、轮次、候选与卡牌试玩交付。"

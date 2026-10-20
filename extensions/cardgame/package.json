@@ -18,6 +18,7 @@
     "music-metadata": "11.15.0"
   },
   "scripts": {
-    "build": "bun scripts/build.ts"
+    "build": "bun scripts/build.ts",
+    "build:notes": "bun scripts/build-notes.ts"
   }
 }

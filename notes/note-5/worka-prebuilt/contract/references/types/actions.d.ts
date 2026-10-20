@@ -1,6 +1,32 @@
 import { z, type NoteActionContext } from "@dsh-workbench/runtime";
 export { note } from "./model";
 export declare const queries: {
+    overview: import("@dsh-workbench/runtime").NoteOperation<z.ZodObject<{}, z.core.$strip>, z.ZodObject<{
+        summary: z.ZodString;
+        items: z.ZodArray<z.ZodObject<{
+            id: z.ZodString;
+            title: z.ZodString;
+            status: z.ZodString;
+        }, z.core.$strip>>;
+    }, z.core.$strip>, import("@dsh-workbench/runtime").NoteQueryContext<import("@dsh-workbench/runtime").NoteModel<undefined, z.ZodObject<{
+        place: z.ZodObject<{
+            name: z.ZodString;
+            admin1: z.ZodOptional<z.ZodString>;
+            country: z.ZodOptional<z.ZodString>;
+            latitude: z.ZodNumber;
+            longitude: z.ZodNumber;
+            timezone: z.ZodOptional<z.ZodString>;
+            source: z.ZodOptional<z.ZodEnum<{
+                default: "default";
+                network: "network";
+                search: "search";
+            }>>;
+        }, z.core.$strip>;
+        units: z.ZodEnum<{
+            imperial: "imperial";
+            metric: "metric";
+        }>;
+    }, z.core.$strip>, {}>>>;
     view: import("@dsh-workbench/runtime").NoteOperation<z.ZodNullable<z.ZodObject<{}, z.core.$strip>>, z.ZodObject<{
         timezone: z.ZodOptional<z.ZodOptional<z.ZodString>>;
         utcOffsetSeconds: z.ZodOptional<z.ZodOptional<z.ZodNumber>>;

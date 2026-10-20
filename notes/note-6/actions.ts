@@ -15,6 +15,12 @@ export const events = {
 };
 
 export const queries = {
+overview:note.query({description:'读取功能进展小卡的活动数与状态。',visibility:'private',input:z.object({}),output:z.object({summary:z.string(),items:z.array(z.object({id:z.string(),title:z.string(),status:z.string()})).max(4)})},async(ctx)=>{
+ const snapshot=await ctx.resources.read({name:'extension.official-feature-tracker.summary',input:{}});
+ if(snapshot.error)throw Error(snapshot.error);
+ const value=summarySchema.parse(snapshot.data);
+ return {summary:`${value.activeCount} 项活动功能`,items:value.features.filter(item=>!item.archived).slice(0,4).map(item=>({id:item.id,title:item.title,status:`${item.mergedPrs}/${item.totalPrs} 已合并`}))};
+}),
  ...cardgameQueries,
  resolveExecutionTarget:note.query({description:'按实际关联的 feature ID 定位执行任务。',visibility:'private',input:z.object({featureId:z.string(),repository:z.string().optional()}),output:z.json()},async(ctx,input)=>resolveExecutionTarget(input,ctx)),
   projectChoices: note.query({"description":"读取当前实例中可关联的项目。","visibility":"private",input:z.object({}).nullable(),output:z.object({items:z.array(z.object({id:z.string(),name:z.string()}))})}, async (ctx, _input) => {
@@ -89,6 +95,11 @@ export const setArchiveStatus = note.action({"description":"更新功能的归�
 /** Update the authoritative feature using its current baseRevision. */
 export const recordFeature = note.action({"description":"按当前版本保存功能记录。","visibility":"private",input:z.object({id:z.string(),baseRevision:z.string().nullable(),patch:z.strictObject({title:z.string().optional(),summary:z.string().optional(),next:z.string().optional(),body:z.string().optional(),links:z.array(z.strictObject({repo:z.string(),branches:z.array(z.string())})).optional()})}),output:featureReceiptSchema}, async (ctx, input) => {
   return ctx.host.extensions.request('official-feature-tracker', 'feature.save', input);
+});
+
+export const createFeature=note.action({description:'按已选择项目保存新功能需求。',visibility:'private',input:z.object({title:z.string().trim().min(1),summary:z.string().trim().min(1),projectId:z.string().min(1)}),output:featureReceiptSchema},async(ctx,input)=>{
+ const id=ctx.idempotencyKey;
+ return ctx.host.extensions.request('official-feature-tracker','feature.save',{id,baseRevision:null,patch:{title:input.title,summary:input.summary,next:'完成规则核对、制作与试玩验收',body:input.summary,links:[{repo:input.projectId,branches:[]}]}});
 });
 
 export const confirmGameCandidate = note.action({"description":"核对候选身份后采用游戏改动。","visibility":"private",input:gameCandidateInputSchema,output:gameAdoptionSchema}, async (ctx, input) => {
