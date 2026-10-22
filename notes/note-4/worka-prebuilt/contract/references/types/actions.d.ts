@@ -1,6 +1,6 @@
 import { z, type NoteActionContext, type NoteQueryContext } from '@dsh-workbench/runtime';
-import { stateSchema } from './note-model';
-export { note } from './note-model';
+import { stateSchema } from './model';
+export { note } from './model';
 export type ProductionState = z.infer<typeof stateSchema>;
 export declare const cardWorkflow: import("@dsh-workbench/runtime").NoteOperation<z.ZodObject<{
     projectId: z.ZodOptional<z.ZodString>;
@@ -1293,7 +1293,780 @@ export declare const linkCompanion: import("@dsh-workbench/runtime").NoteOperati
     cardgameRole: z.ZodOptional<z.ZodString>;
     notes: z.ZodOptional<z.ZodRecord<z.ZodString, z.ZodString>>;
 }, z.core.$loose>, {}>>>;
+export declare const createCardRequest: import("@dsh-workbench/runtime").NoteOperation<z.ZodObject<{
+    projectId: z.ZodString;
+    projectGeneration: z.ZodString;
+    brief: z.ZodString;
+    featureId: z.ZodString;
+}, z.core.$strip>, z.ZodObject<{
+    production: z.ZodObject<{
+        id: z.ZodString;
+        projectId: z.ZodString;
+        brief: z.ZodString;
+        status: z.ZodString;
+        revision: z.ZodNumber;
+        requirementRevision: z.ZodOptional<z.ZodNumber>;
+        targetAsset: z.ZodOptional<z.ZodRecord<z.ZodString, z.ZodJSONSchema>>;
+        pinnedRefs: z.ZodOptional<z.ZodArray<z.ZodUnion<readonly [z.ZodRecord<z.ZodString, z.ZodJSONSchema>, z.ZodString]>>>;
+        batch: z.ZodOptional<z.ZodJSONSchema>;
+        todoId: z.ZodOptional<z.ZodString>;
+        featureId: z.ZodOptional<z.ZodString>;
+        roundCount: z.ZodOptional<z.ZodNumber>;
+        currentRound: z.ZodOptional<z.ZodNumber>;
+        candidateCount: z.ZodOptional<z.ZodNumber>;
+        gameCandidateCount: z.ZodOptional<z.ZodNumber>;
+        rounds: z.ZodOptional<z.ZodArray<z.ZodObject<{
+            round: z.ZodNumber;
+            requestId: z.ZodString;
+            requirementRevision: z.ZodNumber;
+            dispatchRevision: z.ZodNumber;
+            status: z.ZodString;
+            updatedAt: z.ZodString;
+            result: z.ZodOptional<z.ZodObject<{
+                status: z.ZodString;
+                conclusion: z.ZodOptional<z.ZodString>;
+                error: z.ZodOptional<z.ZodString>;
+                candidateRefs: z.ZodOptional<z.ZodArray<z.ZodObject<{
+                    id: z.ZodOptional<z.ZodString>;
+                    key: z.ZodOptional<z.ZodString>;
+                    assetId: z.ZodOptional<z.ZodString>;
+                    version: z.ZodOptional<z.ZodString>;
+                    versionId: z.ZodOptional<z.ZodString>;
+                    sourcePath: z.ZodOptional<z.ZodString>;
+                    path: z.ZodOptional<z.ZodString>;
+                    mimeType: z.ZodOptional<z.ZodString>;
+                    width: z.ZodOptional<z.ZodNumber>;
+                    height: z.ZodOptional<z.ZodNumber>;
+                    durationMs: z.ZodOptional<z.ZodNumber>;
+                    revision: z.ZodOptional<z.ZodUnion<readonly [z.ZodString, z.ZodNumber]>>;
+                    rejectedAt: z.ZodOptional<z.ZodString>;
+                    rejectReason: z.ZodOptional<z.ZodString>;
+                }, z.core.$loose>>>;
+            }, z.core.$loose>>;
+        }, z.core.$loose>>>;
+        candidateRefs: z.ZodOptional<z.ZodArray<z.ZodObject<{
+            id: z.ZodOptional<z.ZodString>;
+            key: z.ZodOptional<z.ZodString>;
+            assetId: z.ZodOptional<z.ZodString>;
+            version: z.ZodOptional<z.ZodString>;
+            versionId: z.ZodOptional<z.ZodString>;
+            sourcePath: z.ZodOptional<z.ZodString>;
+            path: z.ZodOptional<z.ZodString>;
+            mimeType: z.ZodOptional<z.ZodString>;
+            width: z.ZodOptional<z.ZodNumber>;
+            height: z.ZodOptional<z.ZodNumber>;
+            durationMs: z.ZodOptional<z.ZodNumber>;
+            revision: z.ZodOptional<z.ZodUnion<readonly [z.ZodString, z.ZodNumber]>>;
+            rejectedAt: z.ZodOptional<z.ZodString>;
+            rejectReason: z.ZodOptional<z.ZodString>;
+        }, z.core.$loose>>>;
+        gameCandidates: z.ZodOptional<z.ZodArray<z.ZodObject<{
+            id: z.ZodString;
+            cardId: z.ZodString;
+            fingerprint: z.ZodString;
+            status: z.ZodEnum<{
+                adopted: "adopted";
+                candidate: "candidate";
+                undone: "undone";
+            }>;
+            deckArtFingerprints: z.ZodOptional<z.ZodRecord<z.ZodString, z.ZodString>>;
+        }, z.core.$loose>>>;
+        adoption: z.ZodOptional<z.ZodObject<{
+            status: z.ZodString;
+            candidateId: z.ZodString;
+        }, z.core.$loose>>;
+        candidateRegistration: z.ZodOptional<z.ZodObject<{
+            status: z.ZodString;
+        }, z.core.$loose>>;
+        workflowKind: z.ZodOptional<z.ZodString>;
+        cardProgress: z.ZodOptional<z.ZodObject<{
+            total: z.ZodNumber;
+            done: z.ZodNumber;
+        }, z.core.$strip>>;
+        deckProgress: z.ZodOptional<z.ZodObject<{
+            distinctCards: z.ZodNumber;
+            totalCopies: z.ZodNumber;
+            targetSize: z.ZodNumber;
+            title: z.ZodString;
+        }, z.core.$strip>>;
+    }, z.core.$loose>;
+    revision: z.ZodOptional<z.ZodNumber>;
+    stale: z.ZodOptional<z.ZodBoolean>;
+    request: z.ZodOptional<z.ZodObject<{
+        id: z.ZodString;
+        fingerprint: z.ZodString;
+        prompt: z.ZodString;
+    }, z.core.$strip>>;
+    reusedArt: z.ZodOptional<z.ZodBoolean>;
+    automaticGeneration: z.ZodOptional<z.ZodBoolean>;
+    handoff: z.ZodOptional<z.ZodString>;
+}, z.core.$loose>, NoteActionContext<import("@dsh-workbench/runtime").NoteModel<z.ZodObject<{
+    query: z.ZodOptional<z.ZodString>;
+    selectedId: z.ZodOptional<z.ZodString>;
+}, z.core.$strip>, z.ZodObject<{
+    cardgameRole: z.ZodOptional<z.ZodString>;
+    notes: z.ZodOptional<z.ZodRecord<z.ZodString, z.ZodString>>;
+}, z.core.$loose>, {}>>>;
+export declare const saveCardEdits: import("@dsh-workbench/runtime").NoteOperation<z.ZodObject<{
+    productionId: z.ZodString;
+    cardId: z.ZodString;
+    projectGeneration: z.ZodString;
+    baseRevision: z.ZodNumber;
+    fields: z.ZodObject<{
+        name: z.ZodString;
+        description: z.ZodString;
+        attack: z.ZodString;
+        health: z.ZodString;
+        artBrief: z.ZodString;
+        boost: z.ZodString;
+    }, z.core.$strip>;
+}, z.core.$strip>, z.ZodObject<{
+    production: z.ZodObject<{
+        id: z.ZodString;
+        projectId: z.ZodString;
+        brief: z.ZodString;
+        status: z.ZodString;
+        revision: z.ZodNumber;
+        requirementRevision: z.ZodOptional<z.ZodNumber>;
+        targetAsset: z.ZodOptional<z.ZodRecord<z.ZodString, z.ZodJSONSchema>>;
+        pinnedRefs: z.ZodOptional<z.ZodArray<z.ZodUnion<readonly [z.ZodRecord<z.ZodString, z.ZodJSONSchema>, z.ZodString]>>>;
+        batch: z.ZodOptional<z.ZodJSONSchema>;
+        todoId: z.ZodOptional<z.ZodString>;
+        featureId: z.ZodOptional<z.ZodString>;
+        roundCount: z.ZodOptional<z.ZodNumber>;
+        currentRound: z.ZodOptional<z.ZodNumber>;
+        candidateCount: z.ZodOptional<z.ZodNumber>;
+        gameCandidateCount: z.ZodOptional<z.ZodNumber>;
+        rounds: z.ZodOptional<z.ZodArray<z.ZodObject<{
+            round: z.ZodNumber;
+            requestId: z.ZodString;
+            requirementRevision: z.ZodNumber;
+            dispatchRevision: z.ZodNumber;
+            status: z.ZodString;
+            updatedAt: z.ZodString;
+            result: z.ZodOptional<z.ZodObject<{
+                status: z.ZodString;
+                conclusion: z.ZodOptional<z.ZodString>;
+                error: z.ZodOptional<z.ZodString>;
+                candidateRefs: z.ZodOptional<z.ZodArray<z.ZodObject<{
+                    id: z.ZodOptional<z.ZodString>;
+                    key: z.ZodOptional<z.ZodString>;
+                    assetId: z.ZodOptional<z.ZodString>;
+                    version: z.ZodOptional<z.ZodString>;
+                    versionId: z.ZodOptional<z.ZodString>;
+                    sourcePath: z.ZodOptional<z.ZodString>;
+                    path: z.ZodOptional<z.ZodString>;
+                    mimeType: z.ZodOptional<z.ZodString>;
+                    width: z.ZodOptional<z.ZodNumber>;
+                    height: z.ZodOptional<z.ZodNumber>;
+                    durationMs: z.ZodOptional<z.ZodNumber>;
+                    revision: z.ZodOptional<z.ZodUnion<readonly [z.ZodString, z.ZodNumber]>>;
+                    rejectedAt: z.ZodOptional<z.ZodString>;
+                    rejectReason: z.ZodOptional<z.ZodString>;
+                }, z.core.$loose>>>;
+            }, z.core.$loose>>;
+        }, z.core.$loose>>>;
+        candidateRefs: z.ZodOptional<z.ZodArray<z.ZodObject<{
+            id: z.ZodOptional<z.ZodString>;
+            key: z.ZodOptional<z.ZodString>;
+            assetId: z.ZodOptional<z.ZodString>;
+            version: z.ZodOptional<z.ZodString>;
+            versionId: z.ZodOptional<z.ZodString>;
+            sourcePath: z.ZodOptional<z.ZodString>;
+            path: z.ZodOptional<z.ZodString>;
+            mimeType: z.ZodOptional<z.ZodString>;
+            width: z.ZodOptional<z.ZodNumber>;
+            height: z.ZodOptional<z.ZodNumber>;
+            durationMs: z.ZodOptional<z.ZodNumber>;
+            revision: z.ZodOptional<z.ZodUnion<readonly [z.ZodString, z.ZodNumber]>>;
+            rejectedAt: z.ZodOptional<z.ZodString>;
+            rejectReason: z.ZodOptional<z.ZodString>;
+        }, z.core.$loose>>>;
+        gameCandidates: z.ZodOptional<z.ZodArray<z.ZodObject<{
+            id: z.ZodString;
+            cardId: z.ZodString;
+            fingerprint: z.ZodString;
+            status: z.ZodEnum<{
+                adopted: "adopted";
+                candidate: "candidate";
+                undone: "undone";
+            }>;
+            deckArtFingerprints: z.ZodOptional<z.ZodRecord<z.ZodString, z.ZodString>>;
+        }, z.core.$loose>>>;
+        adoption: z.ZodOptional<z.ZodObject<{
+            status: z.ZodString;
+            candidateId: z.ZodString;
+        }, z.core.$loose>>;
+        candidateRegistration: z.ZodOptional<z.ZodObject<{
+            status: z.ZodString;
+        }, z.core.$loose>>;
+        workflowKind: z.ZodOptional<z.ZodString>;
+        cardProgress: z.ZodOptional<z.ZodObject<{
+            total: z.ZodNumber;
+            done: z.ZodNumber;
+        }, z.core.$strip>>;
+        deckProgress: z.ZodOptional<z.ZodObject<{
+            distinctCards: z.ZodNumber;
+            totalCopies: z.ZodNumber;
+            targetSize: z.ZodNumber;
+            title: z.ZodString;
+        }, z.core.$strip>>;
+    }, z.core.$loose>;
+    revision: z.ZodOptional<z.ZodNumber>;
+    stale: z.ZodOptional<z.ZodBoolean>;
+    request: z.ZodOptional<z.ZodObject<{
+        id: z.ZodString;
+        fingerprint: z.ZodString;
+        prompt: z.ZodString;
+    }, z.core.$strip>>;
+    reusedArt: z.ZodOptional<z.ZodBoolean>;
+    automaticGeneration: z.ZodOptional<z.ZodBoolean>;
+    handoff: z.ZodOptional<z.ZodString>;
+}, z.core.$loose>, NoteActionContext<import("@dsh-workbench/runtime").NoteModel<z.ZodObject<{
+    query: z.ZodOptional<z.ZodString>;
+    selectedId: z.ZodOptional<z.ZodString>;
+}, z.core.$strip>, z.ZodObject<{
+    cardgameRole: z.ZodOptional<z.ZodString>;
+    notes: z.ZodOptional<z.ZodRecord<z.ZodString, z.ZodString>>;
+}, z.core.$loose>, {}>>>;
+export declare const createCompanion: import("@dsh-workbench/runtime").NoteOperation<z.ZodObject<{
+    projectId: z.ZodString;
+    projectGeneration: z.ZodString;
+    unitId: z.ZodString;
+    sourceRevision: z.ZodString;
+    featureId: z.ZodString;
+    todoId: z.ZodString;
+    name: z.ZodString;
+    targetLabel: z.ZodString;
+    bonus: z.ZodString;
+    brief: z.ZodString;
+}, z.core.$strip>, z.ZodObject<{
+    production: z.ZodObject<{
+        id: z.ZodString;
+        projectId: z.ZodString;
+        brief: z.ZodString;
+        status: z.ZodString;
+        revision: z.ZodNumber;
+        requirementRevision: z.ZodOptional<z.ZodNumber>;
+        targetAsset: z.ZodOptional<z.ZodRecord<z.ZodString, z.ZodJSONSchema>>;
+        pinnedRefs: z.ZodOptional<z.ZodArray<z.ZodUnion<readonly [z.ZodRecord<z.ZodString, z.ZodJSONSchema>, z.ZodString]>>>;
+        batch: z.ZodOptional<z.ZodJSONSchema>;
+        todoId: z.ZodOptional<z.ZodString>;
+        featureId: z.ZodOptional<z.ZodString>;
+        roundCount: z.ZodOptional<z.ZodNumber>;
+        currentRound: z.ZodOptional<z.ZodNumber>;
+        candidateCount: z.ZodOptional<z.ZodNumber>;
+        gameCandidateCount: z.ZodOptional<z.ZodNumber>;
+        rounds: z.ZodOptional<z.ZodArray<z.ZodObject<{
+            round: z.ZodNumber;
+            requestId: z.ZodString;
+            requirementRevision: z.ZodNumber;
+            dispatchRevision: z.ZodNumber;
+            status: z.ZodString;
+            updatedAt: z.ZodString;
+            result: z.ZodOptional<z.ZodObject<{
+                status: z.ZodString;
+                conclusion: z.ZodOptional<z.ZodString>;
+                error: z.ZodOptional<z.ZodString>;
+                candidateRefs: z.ZodOptional<z.ZodArray<z.ZodObject<{
+                    id: z.ZodOptional<z.ZodString>;
+                    key: z.ZodOptional<z.ZodString>;
+                    assetId: z.ZodOptional<z.ZodString>;
+                    version: z.ZodOptional<z.ZodString>;
+                    versionId: z.ZodOptional<z.ZodString>;
+                    sourcePath: z.ZodOptional<z.ZodString>;
+                    path: z.ZodOptional<z.ZodString>;
+                    mimeType: z.ZodOptional<z.ZodString>;
+                    width: z.ZodOptional<z.ZodNumber>;
+                    height: z.ZodOptional<z.ZodNumber>;
+                    durationMs: z.ZodOptional<z.ZodNumber>;
+                    revision: z.ZodOptional<z.ZodUnion<readonly [z.ZodString, z.ZodNumber]>>;
+                    rejectedAt: z.ZodOptional<z.ZodString>;
+                    rejectReason: z.ZodOptional<z.ZodString>;
+                }, z.core.$loose>>>;
+            }, z.core.$loose>>;
+        }, z.core.$loose>>>;
+        candidateRefs: z.ZodOptional<z.ZodArray<z.ZodObject<{
+            id: z.ZodOptional<z.ZodString>;
+            key: z.ZodOptional<z.ZodString>;
+            assetId: z.ZodOptional<z.ZodString>;
+            version: z.ZodOptional<z.ZodString>;
+            versionId: z.ZodOptional<z.ZodString>;
+            sourcePath: z.ZodOptional<z.ZodString>;
+            path: z.ZodOptional<z.ZodString>;
+            mimeType: z.ZodOptional<z.ZodString>;
+            width: z.ZodOptional<z.ZodNumber>;
+            height: z.ZodOptional<z.ZodNumber>;
+            durationMs: z.ZodOptional<z.ZodNumber>;
+            revision: z.ZodOptional<z.ZodUnion<readonly [z.ZodString, z.ZodNumber]>>;
+            rejectedAt: z.ZodOptional<z.ZodString>;
+            rejectReason: z.ZodOptional<z.ZodString>;
+        }, z.core.$loose>>>;
+        gameCandidates: z.ZodOptional<z.ZodArray<z.ZodObject<{
+            id: z.ZodString;
+            cardId: z.ZodString;
+            fingerprint: z.ZodString;
+            status: z.ZodEnum<{
+                adopted: "adopted";
+                candidate: "candidate";
+                undone: "undone";
+            }>;
+            deckArtFingerprints: z.ZodOptional<z.ZodRecord<z.ZodString, z.ZodString>>;
+        }, z.core.$loose>>>;
+        adoption: z.ZodOptional<z.ZodObject<{
+            status: z.ZodString;
+            candidateId: z.ZodString;
+        }, z.core.$loose>>;
+        candidateRegistration: z.ZodOptional<z.ZodObject<{
+            status: z.ZodString;
+        }, z.core.$loose>>;
+        workflowKind: z.ZodOptional<z.ZodString>;
+        cardProgress: z.ZodOptional<z.ZodObject<{
+            total: z.ZodNumber;
+            done: z.ZodNumber;
+        }, z.core.$strip>>;
+        deckProgress: z.ZodOptional<z.ZodObject<{
+            distinctCards: z.ZodNumber;
+            totalCopies: z.ZodNumber;
+            targetSize: z.ZodNumber;
+            title: z.ZodString;
+        }, z.core.$strip>>;
+    }, z.core.$loose>;
+    revision: z.ZodOptional<z.ZodNumber>;
+    stale: z.ZodOptional<z.ZodBoolean>;
+    request: z.ZodOptional<z.ZodObject<{
+        id: z.ZodString;
+        fingerprint: z.ZodString;
+        prompt: z.ZodString;
+    }, z.core.$strip>>;
+    reusedArt: z.ZodOptional<z.ZodBoolean>;
+    automaticGeneration: z.ZodOptional<z.ZodBoolean>;
+    handoff: z.ZodOptional<z.ZodString>;
+}, z.core.$loose>, NoteActionContext<import("@dsh-workbench/runtime").NoteModel<z.ZodObject<{
+    query: z.ZodOptional<z.ZodString>;
+    selectedId: z.ZodOptional<z.ZodString>;
+}, z.core.$strip>, z.ZodObject<{
+    cardgameRole: z.ZodOptional<z.ZodString>;
+    notes: z.ZodOptional<z.ZodRecord<z.ZodString, z.ZodString>>;
+}, z.core.$loose>, {}>>>;
+export declare const confirmDeckAndStage: import("@dsh-workbench/runtime").NoteOperation<z.ZodObject<{
+    productionId: z.ZodString;
+    projectGeneration: z.ZodString;
+    baseRevision: z.ZodNumber;
+}, z.core.$strip>, z.ZodObject<{
+    production: z.ZodObject<{
+        id: z.ZodString;
+        projectId: z.ZodString;
+        brief: z.ZodString;
+        status: z.ZodString;
+        revision: z.ZodNumber;
+        requirementRevision: z.ZodOptional<z.ZodNumber>;
+        targetAsset: z.ZodOptional<z.ZodRecord<z.ZodString, z.ZodJSONSchema>>;
+        pinnedRefs: z.ZodOptional<z.ZodArray<z.ZodUnion<readonly [z.ZodRecord<z.ZodString, z.ZodJSONSchema>, z.ZodString]>>>;
+        batch: z.ZodOptional<z.ZodJSONSchema>;
+        todoId: z.ZodOptional<z.ZodString>;
+        featureId: z.ZodOptional<z.ZodString>;
+        roundCount: z.ZodOptional<z.ZodNumber>;
+        currentRound: z.ZodOptional<z.ZodNumber>;
+        candidateCount: z.ZodOptional<z.ZodNumber>;
+        gameCandidateCount: z.ZodOptional<z.ZodNumber>;
+        rounds: z.ZodOptional<z.ZodArray<z.ZodObject<{
+            round: z.ZodNumber;
+            requestId: z.ZodString;
+            requirementRevision: z.ZodNumber;
+            dispatchRevision: z.ZodNumber;
+            status: z.ZodString;
+            updatedAt: z.ZodString;
+            result: z.ZodOptional<z.ZodObject<{
+                status: z.ZodString;
+                conclusion: z.ZodOptional<z.ZodString>;
+                error: z.ZodOptional<z.ZodString>;
+                candidateRefs: z.ZodOptional<z.ZodArray<z.ZodObject<{
+                    id: z.ZodOptional<z.ZodString>;
+                    key: z.ZodOptional<z.ZodString>;
+                    assetId: z.ZodOptional<z.ZodString>;
+                    version: z.ZodOptional<z.ZodString>;
+                    versionId: z.ZodOptional<z.ZodString>;
+                    sourcePath: z.ZodOptional<z.ZodString>;
+                    path: z.ZodOptional<z.ZodString>;
+                    mimeType: z.ZodOptional<z.ZodString>;
+                    width: z.ZodOptional<z.ZodNumber>;
+                    height: z.ZodOptional<z.ZodNumber>;
+                    durationMs: z.ZodOptional<z.ZodNumber>;
+                    revision: z.ZodOptional<z.ZodUnion<readonly [z.ZodString, z.ZodNumber]>>;
+                    rejectedAt: z.ZodOptional<z.ZodString>;
+                    rejectReason: z.ZodOptional<z.ZodString>;
+                }, z.core.$loose>>>;
+            }, z.core.$loose>>;
+        }, z.core.$loose>>>;
+        candidateRefs: z.ZodOptional<z.ZodArray<z.ZodObject<{
+            id: z.ZodOptional<z.ZodString>;
+            key: z.ZodOptional<z.ZodString>;
+            assetId: z.ZodOptional<z.ZodString>;
+            version: z.ZodOptional<z.ZodString>;
+            versionId: z.ZodOptional<z.ZodString>;
+            sourcePath: z.ZodOptional<z.ZodString>;
+            path: z.ZodOptional<z.ZodString>;
+            mimeType: z.ZodOptional<z.ZodString>;
+            width: z.ZodOptional<z.ZodNumber>;
+            height: z.ZodOptional<z.ZodNumber>;
+            durationMs: z.ZodOptional<z.ZodNumber>;
+            revision: z.ZodOptional<z.ZodUnion<readonly [z.ZodString, z.ZodNumber]>>;
+            rejectedAt: z.ZodOptional<z.ZodString>;
+            rejectReason: z.ZodOptional<z.ZodString>;
+        }, z.core.$loose>>>;
+        gameCandidates: z.ZodOptional<z.ZodArray<z.ZodObject<{
+            id: z.ZodString;
+            cardId: z.ZodString;
+            fingerprint: z.ZodString;
+            status: z.ZodEnum<{
+                adopted: "adopted";
+                candidate: "candidate";
+                undone: "undone";
+            }>;
+            deckArtFingerprints: z.ZodOptional<z.ZodRecord<z.ZodString, z.ZodString>>;
+        }, z.core.$loose>>>;
+        adoption: z.ZodOptional<z.ZodObject<{
+            status: z.ZodString;
+            candidateId: z.ZodString;
+        }, z.core.$loose>>;
+        candidateRegistration: z.ZodOptional<z.ZodObject<{
+            status: z.ZodString;
+        }, z.core.$loose>>;
+        workflowKind: z.ZodOptional<z.ZodString>;
+        cardProgress: z.ZodOptional<z.ZodObject<{
+            total: z.ZodNumber;
+            done: z.ZodNumber;
+        }, z.core.$strip>>;
+        deckProgress: z.ZodOptional<z.ZodObject<{
+            distinctCards: z.ZodNumber;
+            totalCopies: z.ZodNumber;
+            targetSize: z.ZodNumber;
+            title: z.ZodString;
+        }, z.core.$strip>>;
+    }, z.core.$loose>;
+    revision: z.ZodOptional<z.ZodNumber>;
+    stale: z.ZodOptional<z.ZodBoolean>;
+    request: z.ZodOptional<z.ZodObject<{
+        id: z.ZodString;
+        fingerprint: z.ZodString;
+        prompt: z.ZodString;
+    }, z.core.$strip>>;
+    reusedArt: z.ZodOptional<z.ZodBoolean>;
+    automaticGeneration: z.ZodOptional<z.ZodBoolean>;
+    handoff: z.ZodOptional<z.ZodString>;
+}, z.core.$loose>, NoteActionContext<import("@dsh-workbench/runtime").NoteModel<z.ZodObject<{
+    query: z.ZodOptional<z.ZodString>;
+    selectedId: z.ZodOptional<z.ZodString>;
+}, z.core.$strip>, z.ZodObject<{
+    cardgameRole: z.ZodOptional<z.ZodString>;
+    notes: z.ZodOptional<z.ZodRecord<z.ZodString, z.ZodString>>;
+}, z.core.$loose>, {}>>>;
+export declare const attachCardArtwork: import("@dsh-workbench/runtime").NoteOperation<z.ZodObject<{
+    productionId: z.ZodString;
+    cardId: z.ZodString;
+    projectGeneration: z.ZodString;
+    baseRevision: z.ZodNumber;
+    artRequestId: z.ZodString;
+    files: z.ZodArray<z.ZodObject<{
+        id: z.ZodString;
+        name: z.ZodString;
+        mime: z.ZodString;
+        size: z.ZodNumber;
+        sha256: z.ZodString;
+    }, z.core.$strip>>;
+}, z.core.$strip>, z.ZodObject<{
+    production: z.ZodObject<{
+        id: z.ZodString;
+        projectId: z.ZodString;
+        brief: z.ZodString;
+        status: z.ZodString;
+        revision: z.ZodNumber;
+        requirementRevision: z.ZodOptional<z.ZodNumber>;
+        targetAsset: z.ZodOptional<z.ZodRecord<z.ZodString, z.ZodJSONSchema>>;
+        pinnedRefs: z.ZodOptional<z.ZodArray<z.ZodUnion<readonly [z.ZodRecord<z.ZodString, z.ZodJSONSchema>, z.ZodString]>>>;
+        batch: z.ZodOptional<z.ZodJSONSchema>;
+        todoId: z.ZodOptional<z.ZodString>;
+        featureId: z.ZodOptional<z.ZodString>;
+        roundCount: z.ZodOptional<z.ZodNumber>;
+        currentRound: z.ZodOptional<z.ZodNumber>;
+        candidateCount: z.ZodOptional<z.ZodNumber>;
+        gameCandidateCount: z.ZodOptional<z.ZodNumber>;
+        rounds: z.ZodOptional<z.ZodArray<z.ZodObject<{
+            round: z.ZodNumber;
+            requestId: z.ZodString;
+            requirementRevision: z.ZodNumber;
+            dispatchRevision: z.ZodNumber;
+            status: z.ZodString;
+            updatedAt: z.ZodString;
+            result: z.ZodOptional<z.ZodObject<{
+                status: z.ZodString;
+                conclusion: z.ZodOptional<z.ZodString>;
+                error: z.ZodOptional<z.ZodString>;
+                candidateRefs: z.ZodOptional<z.ZodArray<z.ZodObject<{
+                    id: z.ZodOptional<z.ZodString>;
+                    key: z.ZodOptional<z.ZodString>;
+                    assetId: z.ZodOptional<z.ZodString>;
+                    version: z.ZodOptional<z.ZodString>;
+                    versionId: z.ZodOptional<z.ZodString>;
+                    sourcePath: z.ZodOptional<z.ZodString>;
+                    path: z.ZodOptional<z.ZodString>;
+                    mimeType: z.ZodOptional<z.ZodString>;
+                    width: z.ZodOptional<z.ZodNumber>;
+                    height: z.ZodOptional<z.ZodNumber>;
+                    durationMs: z.ZodOptional<z.ZodNumber>;
+                    revision: z.ZodOptional<z.ZodUnion<readonly [z.ZodString, z.ZodNumber]>>;
+                    rejectedAt: z.ZodOptional<z.ZodString>;
+                    rejectReason: z.ZodOptional<z.ZodString>;
+                }, z.core.$loose>>>;
+            }, z.core.$loose>>;
+        }, z.core.$loose>>>;
+        candidateRefs: z.ZodOptional<z.ZodArray<z.ZodObject<{
+            id: z.ZodOptional<z.ZodString>;
+            key: z.ZodOptional<z.ZodString>;
+            assetId: z.ZodOptional<z.ZodString>;
+            version: z.ZodOptional<z.ZodString>;
+            versionId: z.ZodOptional<z.ZodString>;
+            sourcePath: z.ZodOptional<z.ZodString>;
+            path: z.ZodOptional<z.ZodString>;
+            mimeType: z.ZodOptional<z.ZodString>;
+            width: z.ZodOptional<z.ZodNumber>;
+            height: z.ZodOptional<z.ZodNumber>;
+            durationMs: z.ZodOptional<z.ZodNumber>;
+            revision: z.ZodOptional<z.ZodUnion<readonly [z.ZodString, z.ZodNumber]>>;
+            rejectedAt: z.ZodOptional<z.ZodString>;
+            rejectReason: z.ZodOptional<z.ZodString>;
+        }, z.core.$loose>>>;
+        gameCandidates: z.ZodOptional<z.ZodArray<z.ZodObject<{
+            id: z.ZodString;
+            cardId: z.ZodString;
+            fingerprint: z.ZodString;
+            status: z.ZodEnum<{
+                adopted: "adopted";
+                candidate: "candidate";
+                undone: "undone";
+            }>;
+            deckArtFingerprints: z.ZodOptional<z.ZodRecord<z.ZodString, z.ZodString>>;
+        }, z.core.$loose>>>;
+        adoption: z.ZodOptional<z.ZodObject<{
+            status: z.ZodString;
+            candidateId: z.ZodString;
+        }, z.core.$loose>>;
+        candidateRegistration: z.ZodOptional<z.ZodObject<{
+            status: z.ZodString;
+        }, z.core.$loose>>;
+        workflowKind: z.ZodOptional<z.ZodString>;
+        cardProgress: z.ZodOptional<z.ZodObject<{
+            total: z.ZodNumber;
+            done: z.ZodNumber;
+        }, z.core.$strip>>;
+        deckProgress: z.ZodOptional<z.ZodObject<{
+            distinctCards: z.ZodNumber;
+            totalCopies: z.ZodNumber;
+            targetSize: z.ZodNumber;
+            title: z.ZodString;
+        }, z.core.$strip>>;
+    }, z.core.$loose>;
+    revision: z.ZodOptional<z.ZodNumber>;
+    stale: z.ZodOptional<z.ZodBoolean>;
+    request: z.ZodOptional<z.ZodObject<{
+        id: z.ZodString;
+        fingerprint: z.ZodString;
+        prompt: z.ZodString;
+    }, z.core.$strip>>;
+    reusedArt: z.ZodOptional<z.ZodBoolean>;
+    automaticGeneration: z.ZodOptional<z.ZodBoolean>;
+    handoff: z.ZodOptional<z.ZodString>;
+}, z.core.$loose>, NoteActionContext<import("@dsh-workbench/runtime").NoteModel<z.ZodObject<{
+    query: z.ZodOptional<z.ZodString>;
+    selectedId: z.ZodOptional<z.ZodString>;
+}, z.core.$strip>, z.ZodObject<{
+    cardgameRole: z.ZodOptional<z.ZodString>;
+    notes: z.ZodOptional<z.ZodRecord<z.ZodString, z.ZodString>>;
+}, z.core.$loose>, {}>>>;
 export declare const queries: {
+    preferences: import("@dsh-workbench/runtime").NoteOperation<z.ZodObject<{}, z.core.$strip>, z.ZodObject<{
+        query: z.ZodOptional<z.ZodString>;
+        selectedId: z.ZodOptional<z.ZodString>;
+    }, z.core.$strip>, NoteQueryContext<import("@dsh-workbench/runtime").NoteModel<z.ZodObject<{
+        query: z.ZodOptional<z.ZodString>;
+        selectedId: z.ZodOptional<z.ZodString>;
+    }, z.core.$strip>, z.ZodObject<{
+        cardgameRole: z.ZodOptional<z.ZodString>;
+        notes: z.ZodOptional<z.ZodRecord<z.ZodString, z.ZodString>>;
+    }, z.core.$loose>, {}>>>;
+    cardRequestInput: import("@dsh-workbench/runtime").NoteOperation<z.ZodObject<{
+        projectGeneration: z.ZodString;
+    }, z.core.$strip>, z.ZodObject<{
+        projectId: z.ZodString;
+        projectGeneration: z.ZodString;
+        brief: z.ZodString;
+        featureId: z.ZodString;
+    }, z.core.$strip>, NoteQueryContext<import("@dsh-workbench/runtime").NoteModel<z.ZodObject<{
+        query: z.ZodOptional<z.ZodString>;
+        selectedId: z.ZodOptional<z.ZodString>;
+    }, z.core.$strip>, z.ZodObject<{
+        cardgameRole: z.ZodOptional<z.ZodString>;
+        notes: z.ZodOptional<z.ZodRecord<z.ZodString, z.ZodString>>;
+    }, z.core.$loose>, {}>>>;
+    companionCreateInput: import("@dsh-workbench/runtime").NoteOperation<z.ZodObject<{
+        projectGeneration: z.ZodString;
+    }, z.core.$strip>, z.ZodObject<{
+        projectId: z.ZodString;
+        projectGeneration: z.ZodString;
+        unitId: z.ZodString;
+        sourceRevision: z.ZodString;
+        featureId: z.ZodString;
+        todoId: z.ZodString;
+        name: z.ZodString;
+        targetLabel: z.ZodString;
+        bonus: z.ZodString;
+        brief: z.ZodString;
+    }, z.core.$strip>, NoteQueryContext<import("@dsh-workbench/runtime").NoteModel<z.ZodObject<{
+        query: z.ZodOptional<z.ZodString>;
+        selectedId: z.ZodOptional<z.ZodString>;
+    }, z.core.$strip>, z.ZodObject<{
+        cardgameRole: z.ZodOptional<z.ZodString>;
+        notes: z.ZodOptional<z.ZodRecord<z.ZodString, z.ZodString>>;
+    }, z.core.$loose>, {}>>>;
+    productionCreateInput: import("@dsh-workbench/runtime").NoteOperation<z.ZodObject<{
+        projectGeneration: z.ZodString;
+    }, z.core.$strip>, z.ZodObject<{
+        brief: z.ZodString;
+        targetAsset: z.ZodString;
+        pinnedRefs: z.ZodString;
+        batch: z.ZodString;
+        projectId: z.ZodString;
+        projectGeneration: z.ZodString;
+    }, z.core.$strip>, NoteQueryContext<import("@dsh-workbench/runtime").NoteModel<z.ZodObject<{
+        query: z.ZodOptional<z.ZodString>;
+        selectedId: z.ZodOptional<z.ZodString>;
+    }, z.core.$strip>, z.ZodObject<{
+        cardgameRole: z.ZodOptional<z.ZodString>;
+        notes: z.ZodOptional<z.ZodRecord<z.ZodString, z.ZodString>>;
+    }, z.core.$loose>, {}>>>;
+    companionInput: import("@dsh-workbench/runtime").NoteOperation<z.ZodObject<{
+        projectId: z.ZodOptional<z.ZodString>;
+        projectGeneration: z.ZodOptional<z.ZodString>;
+        productionId: z.ZodString;
+        historyCursor: z.ZodOptional<z.ZodString>;
+        historyLimit: z.ZodOptional<z.ZodNumber>;
+    }, z.core.$loose>, z.ZodObject<{
+        productionId: z.ZodString;
+        projectGeneration: z.ZodString;
+        revision: z.ZodNumber;
+        todoId: z.ZodString;
+        unitId: z.ZodString;
+        sourceRevision: z.ZodString;
+    }, z.core.$strip>, NoteQueryContext<import("@dsh-workbench/runtime").NoteModel<z.ZodObject<{
+        query: z.ZodOptional<z.ZodString>;
+        selectedId: z.ZodOptional<z.ZodString>;
+    }, z.core.$strip>, z.ZodObject<{
+        cardgameRole: z.ZodOptional<z.ZodString>;
+        notes: z.ZodOptional<z.ZodRecord<z.ZodString, z.ZodString>>;
+    }, z.core.$loose>, {}>>>;
+    cardEditInput: import("@dsh-workbench/runtime").NoteOperation<z.ZodObject<{
+        productionId: z.ZodString;
+        cardId: z.ZodString;
+        projectGeneration: z.ZodString;
+    }, z.core.$strip>, z.ZodObject<{
+        name: z.ZodString;
+        description: z.ZodString;
+        attack: z.ZodString;
+        health: z.ZodString;
+        artBrief: z.ZodString;
+        boost: z.ZodString;
+        productionId: z.ZodString;
+        cardId: z.ZodString;
+        projectGeneration: z.ZodString;
+        revision: z.ZodNumber;
+    }, z.core.$strip>, NoteQueryContext<import("@dsh-workbench/runtime").NoteModel<z.ZodObject<{
+        query: z.ZodOptional<z.ZodString>;
+        selectedId: z.ZodOptional<z.ZodString>;
+    }, z.core.$strip>, z.ZodObject<{
+        cardgameRole: z.ZodOptional<z.ZodString>;
+        notes: z.ZodOptional<z.ZodRecord<z.ZodString, z.ZodString>>;
+    }, z.core.$loose>, {}>>>;
+    artworkInput: import("@dsh-workbench/runtime").NoteOperation<z.ZodObject<{
+        productionId: z.ZodString;
+        cardId: z.ZodString;
+        projectGeneration: z.ZodString;
+    }, z.core.$strip>, z.ZodObject<{
+        productionId: z.ZodString;
+        cardId: z.ZodString;
+        projectGeneration: z.ZodString;
+        revision: z.ZodNumber;
+        artRequestId: z.ZodString;
+        files: z.ZodArray<z.ZodObject<{
+            id: z.ZodString;
+            name: z.ZodString;
+            mime: z.ZodString;
+            size: z.ZodNumber;
+            sha256: z.ZodString;
+        }, z.core.$strip>>;
+    }, z.core.$strip>, NoteQueryContext<import("@dsh-workbench/runtime").NoteModel<z.ZodObject<{
+        query: z.ZodOptional<z.ZodString>;
+        selectedId: z.ZodOptional<z.ZodString>;
+    }, z.core.$strip>, z.ZodObject<{
+        cardgameRole: z.ZodOptional<z.ZodString>;
+        notes: z.ZodOptional<z.ZodRecord<z.ZodString, z.ZodString>>;
+    }, z.core.$loose>, {}>>>;
+    productionEditInput: import("@dsh-workbench/runtime").NoteOperation<z.ZodObject<{
+        projectId: z.ZodOptional<z.ZodString>;
+        projectGeneration: z.ZodOptional<z.ZodString>;
+        productionId: z.ZodString;
+        historyCursor: z.ZodOptional<z.ZodString>;
+        historyLimit: z.ZodOptional<z.ZodNumber>;
+    }, z.core.$loose>, z.ZodObject<{
+        brief: z.ZodString;
+        targetAsset: z.ZodString;
+        pinnedRefs: z.ZodString;
+        batch: z.ZodString;
+        productionId: z.ZodString;
+        revision: z.ZodNumber;
+        projectId: z.ZodString;
+        projectGeneration: z.ZodString;
+    }, z.core.$strip>, NoteQueryContext<import("@dsh-workbench/runtime").NoteModel<z.ZodObject<{
+        query: z.ZodOptional<z.ZodString>;
+        selectedId: z.ZodOptional<z.ZodString>;
+    }, z.core.$strip>, z.ZodObject<{
+        cardgameRole: z.ZodOptional<z.ZodString>;
+        notes: z.ZodOptional<z.ZodRecord<z.ZodString, z.ZodString>>;
+    }, z.core.$loose>, {}>>>;
+    candidateRejectInput: import("@dsh-workbench/runtime").NoteOperation<z.ZodObject<{
+        projectId: z.ZodOptional<z.ZodString>;
+        projectGeneration: z.ZodOptional<z.ZodString>;
+        productionId: z.ZodString;
+        historyCursor: z.ZodOptional<z.ZodString>;
+        historyLimit: z.ZodOptional<z.ZodNumber>;
+        candidateId: z.ZodString;
+    }, z.core.$loose>, z.ZodObject<{
+        productionId: z.ZodString;
+        candidateId: z.ZodString;
+        reason: z.ZodString;
+        revision: z.ZodNumber;
+        projectGeneration: z.ZodString;
+    }, z.core.$strip>, NoteQueryContext<import("@dsh-workbench/runtime").NoteModel<z.ZodObject<{
+        query: z.ZodOptional<z.ZodString>;
+        selectedId: z.ZodOptional<z.ZodString>;
+    }, z.core.$strip>, z.ZodObject<{
+        cardgameRole: z.ZodOptional<z.ZodString>;
+        notes: z.ZodOptional<z.ZodRecord<z.ZodString, z.ZodString>>;
+    }, z.core.$loose>, {}>>>;
+    overview: import("@dsh-workbench/runtime").NoteOperation<z.ZodObject<{}, z.core.$strip>, z.ZodObject<{
+        summary: z.ZodString;
+        items: z.ZodArray<z.ZodObject<{
+            id: z.ZodString;
+            title: z.ZodString;
+            status: z.ZodString;
+        }, z.core.$strip>>;
+    }, z.core.$strip>, NoteQueryContext<import("@dsh-workbench/runtime").NoteModel<z.ZodObject<{
+        query: z.ZodOptional<z.ZodString>;
+        selectedId: z.ZodOptional<z.ZodString>;
+    }, z.core.$strip>, z.ZodObject<{
+        cardgameRole: z.ZodOptional<z.ZodString>;
+        notes: z.ZodOptional<z.ZodRecord<z.ZodString, z.ZodString>>;
+    }, z.core.$loose>, {}>>>;
     productionDispatch: import("@dsh-workbench/runtime").NoteOperation<z.ZodObject<{
         projectId: z.ZodOptional<z.ZodString>;
         projectGeneration: z.ZodOptional<z.ZodString>;

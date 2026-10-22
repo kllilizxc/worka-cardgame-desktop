@@ -14,7 +14,51 @@ export declare const queries: {
         query: z.ZodOptional<z.ZodString>;
         limit: z.ZodOptional<z.ZodNumber>;
         filter: z.ZodOptional<z.ZodString>;
-    }, z.core.$strip>>, z.ZodJSONSchema, import("@dsh-workbench/runtime").NoteQueryContext<import("@dsh-workbench/runtime").NoteModel<z.ZodObject<{
+    }, z.core.$strip>>, z.ZodObject<{
+        items: z.ZodArray<z.ZodObject<{
+            id: z.ZodString;
+            projectId: z.ZodString;
+            productionId: z.ZodString;
+            featureId: z.ZodOptional<z.ZodString>;
+            todoId: z.ZodOptional<z.ZodString>;
+            title: z.ZodString;
+            revision: z.ZodNumber;
+            requirementRevision: z.ZodNumber;
+            round: z.ZodNumber;
+            updatedAt: z.ZodString;
+            detail: z.ZodOptional<z.ZodString>;
+            stage: z.ZodEnum<{
+                adopted: "adopted";
+                cancelled: "cancelled";
+                checking: "checking";
+                draft: "draft";
+                failed: "failed";
+                generated: "generated";
+                interrupted: "interrupted";
+                "needs-input": "needs-input";
+                paused: "paused";
+                review: "review";
+                running: "running";
+                stale: "stale";
+                undone: "undone";
+            }>;
+            candidates: z.ZodArray<z.ZodObject<{
+                id: z.ZodString;
+                kind: z.ZodString;
+                targetId: z.ZodString;
+                commit: z.ZodString;
+                status: z.ZodEnum<{
+                    adopted: "adopted";
+                    candidate: "candidate";
+                    undone: "undone";
+                }>;
+                current: z.ZodBoolean;
+                previewVerified: z.ZodBoolean;
+            }, z.core.$strip>>;
+        }, z.core.$strip>>;
+        total: z.ZodNumber;
+        nextCursor: z.ZodOptional<z.ZodString>;
+    }, z.core.$strip>, import("@dsh-workbench/runtime").NoteQueryContext<import("@dsh-workbench/runtime").NoteModel<z.ZodObject<{
         title: z.ZodOptional<z.ZodString>;
         summary: z.ZodOptional<z.ZodString>;
         changeSelection: z.ZodOptional<z.ZodNullable<z.ZodString>>;
@@ -26,7 +70,22 @@ export declare const queries: {
     candidateDiff: import("@dsh-workbench/runtime").NoteOperation<z.ZodObject<{
         productionId: z.ZodString;
         candidateId: z.ZodString;
-    }, z.core.$strip>, z.ZodJSONSchema, import("@dsh-workbench/runtime").NoteQueryContext<import("@dsh-workbench/runtime").NoteModel<z.ZodObject<{
+    }, z.core.$strip>, z.ZodObject<{
+        candidateId: z.ZodString;
+        commit: z.ZodString;
+        baseCurrent: z.ZodBoolean;
+        comparison: z.ZodString;
+        files: z.ZodArray<z.ZodObject<{
+            path: z.ZodString;
+            changed: z.ZodBoolean;
+            binary: z.ZodBoolean;
+            truncated: z.ZodBoolean;
+            beforeBytes: z.ZodNumber;
+            afterBytes: z.ZodNumber;
+            before: z.ZodOptional<z.ZodNullable<z.ZodString>>;
+            after: z.ZodOptional<z.ZodNullable<z.ZodString>>;
+        }, z.core.$strip>>;
+    }, z.core.$strip>, import("@dsh-workbench/runtime").NoteQueryContext<import("@dsh-workbench/runtime").NoteModel<z.ZodObject<{
         title: z.ZodOptional<z.ZodString>;
         summary: z.ZodOptional<z.ZodString>;
         changeSelection: z.ZodOptional<z.ZodNullable<z.ZodString>>;
@@ -35,7 +94,33 @@ export declare const queries: {
         presentation: z.ZodOptional<z.ZodString>;
         notes: z.ZodOptional<z.ZodRecord<z.ZodString, z.ZodString>>;
     }, z.core.$loose>, {}>>>;
-    pinnedReferences: import("@dsh-workbench/runtime").NoteOperation<z.ZodNullable<z.ZodObject<{}, z.core.$strip>>, z.ZodJSONSchema, import("@dsh-workbench/runtime").NoteQueryContext<import("@dsh-workbench/runtime").NoteModel<z.ZodObject<{
+    pinnedReferences: import("@dsh-workbench/runtime").NoteOperation<z.ZodNullable<z.ZodObject<{}, z.core.$strip>>, z.ZodObject<{
+        items: z.ZodArray<z.ZodObject<{
+            key: z.ZodString;
+            title: z.ZodString;
+            anchor: z.ZodOptional<z.ZodString>;
+            kind: z.ZodString;
+            revision: z.ZodString;
+            freshness: z.ZodString;
+        }, z.core.$strip>>;
+        limit: z.ZodNumber;
+    }, z.core.$strip>, import("@dsh-workbench/runtime").NoteQueryContext<import("@dsh-workbench/runtime").NoteModel<z.ZodObject<{
+        title: z.ZodOptional<z.ZodString>;
+        summary: z.ZodOptional<z.ZodString>;
+        changeSelection: z.ZodOptional<z.ZodNullable<z.ZodString>>;
+    }, z.core.$loose>, z.ZodObject<{
+        projectId: z.ZodOptional<z.ZodString>;
+        presentation: z.ZodOptional<z.ZodString>;
+        notes: z.ZodOptional<z.ZodRecord<z.ZodString, z.ZodString>>;
+    }, z.core.$loose>, {}>>>;
+    overview: import("@dsh-workbench/runtime").NoteOperation<z.ZodObject<{}, z.core.$strip>, z.ZodObject<{
+        summary: z.ZodString;
+        items: z.ZodArray<z.ZodObject<{
+            id: z.ZodString;
+            title: z.ZodString;
+            status: z.ZodString;
+        }, z.core.$strip>>;
+    }, z.core.$strip>, import("@dsh-workbench/runtime").NoteQueryContext<import("@dsh-workbench/runtime").NoteModel<z.ZodObject<{
         title: z.ZodOptional<z.ZodString>;
         summary: z.ZodOptional<z.ZodString>;
         changeSelection: z.ZodOptional<z.ZodNullable<z.ZodString>>;
@@ -353,6 +438,35 @@ export declare const recordFeature: import("@dsh-workbench/runtime").NoteOperati
             branches: z.ZodArray<z.ZodString>;
         }, z.core.$strict>>>;
     }, z.core.$strict>;
+}, z.core.$strip>, z.ZodObject<{
+    id: z.ZodString;
+    revision: z.ZodNullable<z.ZodString>;
+    record: z.ZodNullable<z.ZodObject<{
+        id: z.ZodString;
+        title: z.ZodString;
+        summary: z.ZodString;
+        next: z.ZodString;
+        body: z.ZodString;
+        links: z.ZodArray<z.ZodObject<{
+            repo: z.ZodString;
+            branches: z.ZodArray<z.ZodString>;
+        }, z.core.$strip>>;
+    }, z.core.$loose>>;
+    registered: z.ZodOptional<z.ZodBoolean>;
+    changed: z.ZodOptional<z.ZodBoolean>;
+}, z.core.$loose>, import("@dsh-workbench/runtime").NoteActionContext<import("@dsh-workbench/runtime").NoteModel<z.ZodObject<{
+    title: z.ZodOptional<z.ZodString>;
+    summary: z.ZodOptional<z.ZodString>;
+    changeSelection: z.ZodOptional<z.ZodNullable<z.ZodString>>;
+}, z.core.$loose>, z.ZodObject<{
+    projectId: z.ZodOptional<z.ZodString>;
+    presentation: z.ZodOptional<z.ZodString>;
+    notes: z.ZodOptional<z.ZodRecord<z.ZodString, z.ZodString>>;
+}, z.core.$loose>, {}>>>;
+export declare const createFeature: import("@dsh-workbench/runtime").NoteOperation<z.ZodObject<{
+    title: z.ZodString;
+    summary: z.ZodString;
+    projectId: z.ZodString;
 }, z.core.$strip>, z.ZodObject<{
     id: z.ZodString;
     revision: z.ZodNullable<z.ZodString>;

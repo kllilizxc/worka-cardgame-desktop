@@ -10,9 +10,9 @@
 - 输入、未确认写入、上传与未存档游戏必须先保护再回收。不得为减少实例数量丢弃状态或重复执行动作。
 - 原 HTML 冷启动仍需要一个有界、只读临时 renderer；“稳态首页没有 iframe”不表示“从未创建临时 iframe”。静态 DOM 图像由宿主以 `<img>` 显示，不把便笺 HTML/CSS/脚本注入宿主。
 
-## 本次源码发布的预编译边界
+## 源码与预编译的交付顺序
 
-本次 C1/C2 源码 feature 保留远端 main `1b5d2694ca80c187626ab9dc4e55046c0b44ded7` 的原 `worka-prebuilt` 目录，不上传即将被新 SDK 替换的中间产物。便笺源码与这些旧预编译目录尚未同步，安装、导入及激活验收待 C3 完整重建并校验后完成；不能把源码 fixture 的通过当成此中间提交的可运行桌面包验收。
+C1/C2 源码 feature `efdfc28c428767242e1148b1d74486ef0be97642` 保留远端 main `1b5d2694ca80c187626ab9dc4e55046c0b44ded7` 的原 `worka-prebuilt`，该中间提交的源码与旧产物尚未同步。C3 在 Worka `cd41e53198ac6f1655c5851b6629c6bd7433ad9b` 完整构建成功后，用其编译后的 SDK 重新生成全部 12 份便笺，整体替换旧编译目录，核验源码、产物、发布清单和运行目标，并直接加载新导出动作验证初始状态。当前提交已完成这些发布制品校验；真实用户项目的导入、激活及跨平台操作仍需下述 C4 验收。
 
 ## Features
 
@@ -20,7 +20,7 @@
 | --- | --- | --- |
 | C1 | 本轮验收通过 | `f189588` 恢复 12 张原 compact HTML，小卡只读，详情按需挂载；48 组视觉对照总计 10,158,800 像素、0 差异。原版对照为 `1b5d2694ca80c187626ab9dc4e55046c0b44ded7`。 |
 | C2 | 本轮已完成 | 视觉回归共享同一套 React/ReactDOM，服务仅绑定 loopback，浏览器阻断测试源之外请求；当前 Worka 源码 SDK 的 4 个生命周期文件：40 pass、0 fail、269 assertions。 |
-| C3 | 待当前宿主构建完成 | 按当前 Worka SDK 重新构建、校验并发布 12 份 `worka-prebuilt`。源码 fixture 通过不代表仓库内旧预编译产物已更新。 |
+| C3 | 本轮已完成 | 当前 Worka SDK 严格类型检查 12/12；整体构建并验证 12 份 `worka-prebuilt`；新导出动作的种子回归 12 pass、65 assertions；最终 SDK 生命周期回归再次 40 pass、269 assertions。 |
 | C4 | 待平台验收 | macOS/iOS 真机、真实项目目录与实际未存档游戏的开合恢复；本轮只使用 Linux Chromium 和隔离业务样例。 |
 
 ## 本轮验证
@@ -31,7 +31,8 @@
 - [x] 试玩 compact 只查询当前列表，不打开 archive、outbox、详情或游戏；查询失败和 pending 有正确呈现。
 - [x] 内容库选择与过滤保持查看者偏好；展开编辑器被替换后可恢复宿主已接管的草稿；收起释放隐藏查询订阅。
 - [x] 天气搜索按需打开，已接管的城市选择命令在收起后继续完成。
-- [ ] 当前 SDK 的 12 份预编译制品已重新生成并通过发布校验。
+- [x] 当前 SDK 的 12 份预编译制品已重新生成并通过发布校验；全部契约文档状态为 ready，旧编译目录整体替换。
+- [x] 直接加载 12 份新导出动作，校验桌面初始状态、配置和内容库数据版本：12 pass、65 assertions。
 - [ ] 真实用户项目及跨平台操作验收。
 
 ### 可重复执行的最小命令
@@ -59,13 +60,22 @@ bun tests/compact-html-visual/run.ts
 
 对照使用相同业务数据、主题、字体、尺寸和浏览器。它证明原 HTML 外观，不是宿主纹理 rasterizer 的逐像素证明，也不是性能采样。宿主静态 DOM 图像、原生纹理、取消、身份隔离和资源预算由 Worka 的对应测试覆盖。
 
-构建当前宿主后，再按 [README](README.md#修改和重新发布) 运行 `check:notes` / `build:notes`。不手工更新生成文件的 hash，不把源码测试替代为预编译包验收。本轮未运行全量测试，未访问个人项目或调用模型。
+本轮 C3 使用 Node.js 24.19.0、Bun 1.4.3，在上述 Worka commit 完成 `bun run pack` 后执行：
+
+```sh
+(cd backend && WORKA_SOURCE_ROOT=/absolute/path/to/worka bun run check:notes)
+(cd backend && WORKA_SOURCE_ROOT=/absolute/path/to/worka bun run build:notes)
+WORKA_SOURCE_ROOT=/absolute/path/to/worka bun test tests/desktop-seeds.test.ts
+```
+
+最后重跑的 4 个生命周期文件仍为 40 pass、269 assertions。构建步骤和共享源码顺序见 [README](README.md#修改和重新发布)。不手工更新生成文件的 hash，不把源码测试替代为预编译包验收。本轮未运行全量测试，未访问个人项目或调用模型。
 
 ## 推送记录
 
 | Feature | 提交说明 | 状态 |
 | --- | --- | --- |
-| C1 原 HTML 恢复 | 继承 `f189588` 原 HTML 源码；本次保留 main 预编译，待 C3 更新 | 本轮与 C2 一起发布到 `codex/home-texture-plan-20261022` |
-| C2 当前 SDK 回归 | Fix compact visual fixture dependency ownership and record current lifecycle verification | 本 feature 实现与验收完成；本地提交由主流程（root）原样推送，远端结果以分支历史为准 |
+| C1 原 HTML 恢复 | 继承 `f189588` 原 HTML 源码；源码 feature 暂时保留 main 预编译 | 已随 C2 推送为 `efdfc28c428767242e1148b1d74486ef0be97642`，分支 `codex/home-texture-plan-20261022` |
+| C2 当前 SDK 回归 | Fix compact visual fixture dependency ownership and record current lifecycle verification | 已随 C1 推送为 `efdfc28c428767242e1148b1d74486ef0be97642` |
+| C3 最终 SDK 预编译 | Rebuild all twelve notes with the protected frontend SDK | 本 feature 的代码、产物与验收记录一同提交；由主流程（root）推送，远端结果以分支历史为准 |
 
 每条记录随该功能代码一同提交；完整 SHA 与推送状态以远端分支为准。

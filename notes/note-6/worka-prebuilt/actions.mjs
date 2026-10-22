@@ -102,7 +102,7 @@ async function receiveDeliveryFailure(input, ctx) {
   return { ok: true, connectionId, deliveryId, fingerprint, notificationKey: notification.key };
 }
 
-// node_modules/zod/v4/core/util.js
+// ../../../worka/node_modules/.bun/zod@4.6.1/node_modules/zod/v4/core/util.js
 function getEnumValues(entries) {
   const numericValues = Object.values(entries).filter((v) => typeof v === "number");
   const values = Object.entries(entries).filter(([k, _]) => numericValues.indexOf(+k) === -1).map(([_, v]) => v);
@@ -670,7 +670,7 @@ function constantCatch(value) {
   return fn;
 }
 
-// node_modules/zod/v4/core/core.js
+// ../../../worka/node_modules/.bun/zod@4.6.1/node_modules/zod/v4/core/core.js
 var _a;
 var _zodDesc = { value: undefined, enumerable: false };
 var _E = "captureStackTrace" in Error ? Error : null;
@@ -789,7 +789,7 @@ function config(newConfig) {
     Object.assign(globalConfig, newConfig);
   return globalConfig;
 }
-// node_modules/zod/v4/core/errors.js
+// ../../../worka/node_modules/.bun/zod@4.6.1/node_modules/zod/v4/core/errors.js
 function _getMessage() {
   const internals = this._zod;
   internals.message ?? (internals.message = JSON.stringify(internals.def, jsonStringifyReplacer, 2));
@@ -904,7 +904,7 @@ function formatError(error, mapper = (issue) => issue.message) {
   return fieldErrors;
 }
 
-// node_modules/zod/v4/core/parse.js
+// ../../../worka/node_modules/.bun/zod@4.6.1/node_modules/zod/v4/core/parse.js
 function finalizeParams(callee, params) {
   return { callee: params?.callee ?? callee, Err: params?.Err };
 }
@@ -1051,7 +1051,7 @@ var _safeEncodeAsync = (_Err) => async (schema, value, _ctx) => {
 var _safeDecodeAsync = (_Err) => async (schema, value, _ctx) => {
   return _safeParseAsync(_Err)(schema, value, _ctx);
 };
-// node_modules/zod/v4/core/regexes.js
+// ../../../worka/node_modules/.bun/zod@4.6.1/node_modules/zod/v4/core/regexes.js
 var cuid = /^[cC][0-9a-z]{6,}$/;
 var cuid2 = /^[0-9a-z]+$/;
 var ulid = /^[0-7][0-9A-HJKMNP-TV-Za-hjkmnp-tv-z]{25}$/;
@@ -1110,7 +1110,7 @@ var _null = /^null$/i;
 var lowercase = /^[^A-Z]*$/;
 var uppercase = /^[^a-z]*$/;
 
-// node_modules/zod/v4/core/checks.js
+// ../../../worka/node_modules/.bun/zod@4.6.1/node_modules/zod/v4/core/checks.js
 var $ZodCheck = /* @__PURE__ */ $constructor("$ZodCheck", (inst, def) => {
   var _a;
   inst._zod ?? (inst._zod = {});
@@ -1426,7 +1426,7 @@ var $ZodCheckOverwrite = /* @__PURE__ */ $constructor("$ZodCheckOverwrite", (ins
   };
 });
 
-// node_modules/zod/v4/core/doc.js
+// ../../../worka/node_modules/.bun/zod@4.6.1/node_modules/zod/v4/core/doc.js
 class Doc {
   constructor(args = [], closed = {}) {
     this.content = [];
@@ -1468,14 +1468,14 @@ ${content.join(`
   }
 }
 
-// node_modules/zod/v4/core/versions.js
+// ../../../worka/node_modules/.bun/zod@4.6.1/node_modules/zod/v4/core/versions.js
 var version = {
   major: 4,
   minor: 6,
   patch: 1
 };
 
-// node_modules/zod/v4/core/schemas.js
+// ../../../worka/node_modules/.bun/zod@4.6.1/node_modules/zod/v4/core/schemas.js
 var $ZodType = /* @__PURE__ */ $constructor("$ZodType", (inst, def) => {
   var _a;
   inst ?? (inst = {});
@@ -3156,7 +3156,7 @@ var $ZodProperties = /* @__PURE__ */ $constructor("$ZodProperties", (inst, def) 
     yield this;
   }
 });
-// node_modules/zod/v4/core/memoizer.js
+// ../../../worka/node_modules/.bun/zod@4.6.1/node_modules/zod/v4/core/memoizer.js
 class $ZodCyclicError extends Error {
   constructor() {
     super(`Cannot parse a reference cycle that closes through a transform`);
@@ -3428,7 +3428,7 @@ function isBackEdge(ctx, value) {
   const backEdges = ctx[STATE]?.backEdges;
   return backEdges !== undefined && isRef(value) && backEdges.has(value);
 }
-// node_modules/zod/v4/locales/en.js
+// ../../../worka/node_modules/.bun/zod@4.6.1/node_modules/zod/v4/locales/en.js
 var error = () => {
   const Sizable = {
     string: { unit: "characters", verb: "to have" },
@@ -3549,7 +3549,7 @@ function en_default() {
     localeError: error()
   };
 }
-// node_modules/zod/v4/core/registries.js
+// ../../../worka/node_modules/.bun/zod@4.6.1/node_modules/zod/v4/core/registries.js
 var _a2;
 class $ZodRegistry {
   constructor() {
@@ -3596,7 +3596,7 @@ function registry() {
 }
 (_a2 = globalThis).__zod_globalRegistry ?? (_a2.__zod_globalRegistry = registry());
 var globalRegistry = globalThis.__zod_globalRegistry;
-// node_modules/zod/v4/core/api.js
+// ../../../worka/node_modules/.bun/zod@4.6.1/node_modules/zod/v4/core/api.js
 function _string(Class, params) {
   return new Class({
     type: "string",
@@ -4052,7 +4052,7 @@ function _check(fn, params) {
   ch._zod.check = fn;
   return ch;
 }
-// node_modules/zod/v4/core/to-json-schema.js
+// ../../../worka/node_modules/.bun/zod@4.6.1/node_modules/zod/v4/core/to-json-schema.js
 function assignProps(target, ...sources) {
   for (const source of sources) {
     for (const key of Reflect.ownKeys(source)) {
@@ -4575,7 +4575,7 @@ var createStandardJSONSchemaMethod = (schema, io, processors = {}) => (params) =
   extractDefs(ctx, schema);
   return finalize(ctx, schema);
 };
-// node_modules/zod/v4/core/json-schema-processors.js
+// ../../../worka/node_modules/.bun/zod@4.6.1/node_modules/zod/v4/core/json-schema-processors.js
 var narrowMin = (agg, key, value) => {
   if (agg[key] === undefined || value > agg[key])
     agg[key] = value;
@@ -5346,7 +5346,7 @@ function toJSONSchema(input, params) {
   extractDefs(ctx, input);
   return finalize(ctx, input);
 }
-// node_modules/zod/v4/classic/errors.js
+// ../../../worka/node_modules/.bun/zod@4.6.1/node_modules/zod/v4/classic/errors.js
 var _installedErrorProtos = /* @__PURE__ */ new WeakSet([Object.prototype, Error.prototype]);
 function _lazyMethod(proto, key, make) {
   Object.defineProperty(proto, key, {
@@ -5391,7 +5391,7 @@ var ZodRealError = /* @__PURE__ */ $constructor("ZodError", initializer2, undefi
   Parent: Error
 });
 
-// node_modules/zod/v4/classic/parse.js
+// ../../../worka/node_modules/.bun/zod@4.6.1/node_modules/zod/v4/classic/parse.js
 var parse2 = /* @__PURE__ */ _parse(ZodRealError);
 var parseAsync = /* @__PURE__ */ _parseAsync(ZodRealError);
 var safeParse = /* @__PURE__ */ _safeParse(ZodRealError);
@@ -5405,7 +5405,7 @@ var safeDecode = /* @__PURE__ */ _safeDecode(ZodRealError);
 var safeEncodeAsync = /* @__PURE__ */ _safeEncodeAsync(ZodRealError);
 var safeDecodeAsync = /* @__PURE__ */ _safeDecodeAsync(ZodRealError);
 
-// node_modules/zod/v4/classic/schemas.js
+// ../../../worka/node_modules/.bun/zod@4.6.1/node_modules/zod/v4/classic/schemas.js
 function _ensureDefaultLocale() {
   if (!globalConfig.localeError)
     config(en_default());
@@ -6347,66 +6347,141 @@ function json(params) {
   });
   return jsonSchema;
 }
-// node_modules/@dsh-workbench/runtime/dist/chunk-r05fgn8j.mjs
-function r(t) {
-  return Object.freeze({ ...t });
-}
-function i(t) {
-  return Object.freeze({ ...t });
-}
-async function s(t, e, n) {
-  let x = await e.input.parseAsync(n), y = await t.request(e.extension, e.method, x);
-  try {
-    return await w(e.output, y);
-  } catch (l) {
-    throw Error(`Extension ${e.extension}.${e.method} returned invalid output after invocation; inspect effects before retrying`, { cause: l });
-  }
-}
-async function a(t, e, n) {
-  let x = await e.input.parseAsync(n), y = await t.read({ name: e.name, input: json().parse(x) });
-  if (y.data === undefined) {
-    let { data: l, ...g } = y;
-    return g;
-  }
-  return { ...y, data: await w(e.output, y.data) };
-}
-async function w(t, e) {
-  return t.parseAsync(e);
-}
-var R = (t = {}) => Object.fromEntries(Object.entries(t).map(([e, n]) => [e, literal(n)]));
-function _(t, e, n) {
-  if (typeof n?.scope !== "function")
-    throw Error("Mounting a provider needs a scope function");
-  let x = async (p) => e.scope.parseAsync(await n.scope(p)), y = (p, u) => {
-    for (let f of u ?? [])
-      if (!Object.hasOwn(p, f))
-        throw Error(`Provider ${e.extension} has no operation "${f}"`);
-    return Object.entries(p).filter(([f]) => !u || u.includes(f));
-  }, l = {}, g = {};
-  for (let [p, u] of y(e.queries, n.expose?.queries)) {
-    let f = i({ name: u.resource ?? `extension.${e.extension}.${p}`, input: u.input.extend(e.scope.shape).extend(R(u.fixed)), output: u.output });
-    l[p] = t.query({ description: u.description ?? p, visibility: n.visibility ?? "public", input: u.input, output: u.output }, async (P, o) => {
-      let d = await a(P.resources, f, { ...o, ...u.fixed, ...await x(P) });
-      if (d.data !== undefined)
-        return d.data;
-      throw Object.assign(Error(d.error || `${e.extension} returned no data for ${p}`), d.errorCode ? { code: d.errorCode } : {});
-    });
-  }
-  for (let [p, u] of y(e.actions, n.expose?.actions)) {
-    let f = r({ extension: e.extension, method: u.method ?? p, input: u.input.extend(e.scope.shape).extend(R(u.fixed)), output: u.output });
-    g[p] = t.action({ description: u.description ?? p, visibility: n.visibility ?? "public", input: u.input, output: u.output }, async (P, o) => s(P.host.extensions, f, { ...o, ...u.fixed, ...await x(P) }));
-  }
-  return Object.freeze({ queries: Object.freeze(l), actions: Object.freeze(g) });
-}
+// game-change-model.ts
+var changeSchema = object({ id: string2(), projectId: string2(), productionId: string2(), featureId: string2().optional(), todoId: string2().optional(), title: string2(), revision: number2(), requirementRevision: number2(), round: number2(), updatedAt: string2(), detail: string2().optional(), stage: _enum(["draft", "running", "cancelled", "paused", "interrupted", "needs-input", "failed", "stale", "generated", "checking", "review", "adopted", "undone"]), candidates: array(object({ id: string2(), kind: string2(), targetId: string2(), commit: string2(), status: _enum(["candidate", "adopted", "undone"]), current: boolean2(), previewVerified: boolean2() })) });
+var changePageSchema = object({ items: array(changeSchema), total: number2(), nextCursor: string2().optional() });
+var diffSchema = object({ candidateId: string2(), commit: string2(), baseCurrent: boolean2(), comparison: string2(), files: array(object({ path: string2(), changed: boolean2(), binary: boolean2(), truncated: boolean2(), beforeBytes: number2(), afterBytes: number2(), before: string2().nullable().optional(), after: string2().nullable().optional() })) });
+var referencesSchema = object({ items: array(object({ key: string2(), title: string2(), anchor: string2().optional(), kind: string2(), revision: string2(), freshness: string2() })), limit: number2() });
+
+// ../.sdk/node_modules/@dsh-workbench/runtime/dist/chunk-8apkbwa0.mjs
 function m(t) {
   if (typeof t !== "object" || t === null)
     return false;
   let e = t;
   return e.code === "command-outcome" && typeof e.message === "string" && typeof e.executionId === "string" && typeof e.detailExpired === "boolean" && (e.status === "failed" || e.status === "ambiguous" || e.status === "cancelled" || e.status === "completed");
 }
+function i(t) {
+  return Object.freeze({ ...t });
+}
+function s(t) {
+  return Object.freeze({ ...t });
+}
+async function a(t, e, n) {
+  let b = await e.input.parseAsync(n), x = await t.request(e.extension, e.method, b);
+  try {
+    return await O(e.output, x);
+  } catch (f) {
+    throw Error(`Extension ${e.extension}.${e.method} returned invalid output after invocation; inspect effects before retrying`, { cause: f });
+  }
+}
+async function c(t, e, n) {
+  let b = await e.input.parseAsync(n), x = await t.read({ name: e.name, input: json().parse(b) });
+  if (x.data === undefined) {
+    let { data: f, ...P } = x;
+    return P;
+  }
+  return { ...x, data: await O(e.output, x.data) };
+}
+async function O(t, e) {
+  return t.parseAsync(e);
+}
+var R = (t = {}) => Object.fromEntries(Object.entries(t).map(([e, n]) => [e, literal(n)]));
+function H(t, e, n) {
+  if (typeof n?.scope !== "function")
+    throw Error("Mounting a provider needs a scope function");
+  let b = async (p) => e.scope.parseAsync(await n.scope(p)), x = (p, u) => {
+    for (let g of u ?? [])
+      if (!Object.hasOwn(p, g))
+        throw Error(`Provider ${e.extension} has no operation "${g}"`);
+    return Object.entries(p).filter(([g]) => !u || u.includes(g));
+  }, f = {}, P = {};
+  for (let [p, u] of x(e.queries, n.expose?.queries)) {
+    let g = s({ name: u.resource ?? `extension.${e.extension}.${p}`, input: u.input.extend(e.scope.shape).extend(R(u.fixed)), output: u.output });
+    f[p] = t.query({ description: u.description ?? p, visibility: n.visibility ?? "public", input: u.input, output: u.output }, async (w, o) => {
+      let d = await c(w.resources, g, { ...o, ...u.fixed, ...await b(w) });
+      if (d.data !== undefined)
+        return d.data;
+      throw Object.assign(Error(d.error || `${e.extension} returned no data for ${p}`), d.errorCode ? { code: d.errorCode } : {});
+    });
+  }
+  for (let [p, u] of x(e.actions, n.expose?.actions)) {
+    let g = i({ extension: e.extension, method: u.method ?? p, input: u.input.extend(e.scope.shape).extend(R(u.fixed)), output: u.output });
+    P[p] = t.action({ description: u.description ?? p, visibility: n.visibility ?? "public", input: u.input, output: u.output }, async (w, o) => a(w.host.extensions, g, { ...o, ...u.fixed, ...await b(w) }));
+  }
+  return Object.freeze({ queries: Object.freeze(f), actions: Object.freeze(P) });
+}
 
-// node_modules/@dsh-workbench/runtime/dist/chunk-661w1kst.mjs
-function x(r) {
+// ../.sdk/node_modules/@dsh-workbench/runtime/dist/chunk-5vmptkmt.mjs
+var ze = Symbol.for("worka.note-capability");
+function Ce(r, i, s, a = false) {
+  let c = async (l, T) => {
+    let j = await s(l, T), q = await m.output.safeParseAsync(j);
+    if (!q.success)
+      throw Error(`Capability output is invalid after execution; inspect effects before retrying: ${q.error.message}`);
+    return q.data;
+  }, m = Object.freeze({ ...i, kind: r, execute: c }), A = a ? async (l, T) => c(await m.input.parseAsync(T), l) : async (l, T) => c(await m.input.parseAsync(l), T);
+  return Object.defineProperty(A, ze, { value: m }), A;
+}
+function Ue(r) {
+  let i = Object.freeze({ ...r, kind: "event", output: r.payload }), s = { name: r.name, publish(a, c, m) {
+    return a.events.publish(i.name, c, m);
+  } };
+  return Object.defineProperty(s, ze, { value: i }), Object.freeze(s);
+}
+var ct = /^[A-Za-z][A-Za-z\d_-]*$/;
+var G = (() => strictObject({ cursor: string2().max(32768).optional(), limit: number2().int().min(1).max(100).optional(), maxBytes: number2().int().min(256).max(1048576).optional() }))();
+var Y = (() => strictObject({ key: string2().min(1).max(512), field: string2().min(1).max(2048), revision: string2().min(1) }))();
+var X = (() => strictObject({ key: string2().min(1).max(512), revision: string2().optional() }))();
+var Qe = (() => strictObject({ kind: literal("collection-field"), collection: string2(), key: string2(), field: string2(), revision: string2() }))();
+function ut(r) {
+  while (r instanceof ZodOptional || r instanceof ZodDefault || r instanceof ZodNullable)
+    r = r.unwrap();
+  return r;
+}
+function Re(r, i) {
+  if (r instanceof ZodOptional)
+    return Re(r.unwrap(), i).optional();
+  if (r instanceof ZodDefault)
+    return Re(r.unwrap(), i).optional();
+  if (r instanceof ZodNullable)
+    return i.length ? Re(r.unwrap(), i).nullable() : Qe;
+  if (!i.length)
+    return Qe;
+  let [s, ...a] = i;
+  if (r instanceof ZodRecord && s === "*")
+    return record(r.keyType, Re(r.valueType, a));
+  if (!(r instanceof ZodObject) || !s || !Object.hasOwn(r.shape, s))
+    throw Error(`Lazy field path does not match the state schema: ${i.join(".")}`);
+  return r.extend({ [s]: Re(r.shape[s], a) });
+}
+function p(r, i = {}) {
+  if (Object.keys(i).length > 32)
+    throw Error("A note may declare at most 32 collections");
+  let s = new Set;
+  return Object.entries(i).map(([a, c]) => {
+    if (!ct.test(a) || !c || typeof c !== "object" || Array.isArray(c) || Object.keys(c).some((q) => !["field", "key", "lazy", "visibility"].includes(q)) || c.visibility !== undefined && !["public", "private"].includes(c.visibility) || c.lazy !== undefined && !Array.isArray(c.lazy))
+      throw Error("Invalid collection declaration");
+    let m = c.field ?? a;
+    if (s.has(m))
+      throw Error(`Collection state field is declared twice: ${m}`);
+    if (s.add(m), !(r instanceof ZodObject) || !Object.hasOwn(r.shape, m))
+      throw Error(`Collection ${a} needs a top-level state array: ${m}`);
+    let A = ut(r.shape[m]);
+    if (!(A instanceof ZodArray) || !(A.element instanceof ZodObject))
+      throw Error(`Collection ${a} must contain objects`);
+    let l = A.element, T = [...c.lazy ?? []];
+    if (!Object.hasOwn(l.shape, c.key) || !(l.shape[c.key] instanceof ZodString))
+      throw Error(`Collection ${a} requires a string key field`);
+    if (T.length > 32 || new Set(T).size !== T.length || T.some((q) => typeof q !== "string" || q === c.key || !q || q.split(".").some((z) => !z) || T.some((z) => z !== q && q.startsWith(z + "."))))
+      throw Error(`Invalid lazy fields for collection ${a}`);
+    let j = l;
+    for (let q of T)
+      j = Re(j, q.split("."));
+    return { name: a, visibility: c.visibility ?? "private", contract: { field: m, key: c.key, lazy: T }, item: l, summary: j };
+  });
+}
+var We = new WeakMap;
+function w(r) {
   if (!r || typeof r !== "object")
     return false;
   if (r.code === "revision-conflict")
@@ -6424,297 +6499,263 @@ class n extends Error {
 function u(r) {
   return `${r}:config`;
 }
-var ve = Object.freeze({ scopeLength: 256, nameLength: 128 });
-var xe = new Map;
-var Le = { async claim() {}, async read(r, i) {
-  return xe.get(r)?.get(i);
-}, async write(r, i, a) {
-  let s = xe.get(r);
-  if (!s)
-    xe.set(r, s = new Map);
-  s.set(i, a);
+var je = Object.freeze({ scopeLength: 256, nameLength: 128 });
+
+class h extends Error {
+  scope;
+  stepName;
+  code = "step-outcome-unknown";
+  constructor(r, i) {
+    super(`Step "${i}" has an unknown outcome; check the original operation's receipt or ask for a decision before retrying`);
+    this.scope = r;
+    this.stepName = i;
+    this.name = "StepOutcomeUnknownError";
+  }
+}
+var Oe = new Map;
+var dt = { async claim() {
+  return { supportsStarted: true };
+}, async read(r, i) {
+  return Oe.get(r)?.get(i);
+}, async write(r, i, s) {
+  let a = Oe.get(r);
+  if (!a)
+    Oe.set(r, a = new Map);
+  a.set(i, s);
 }, async clear(r) {
-  xe.delete(r);
+  for (let [i, s] of Oe.get(r) ?? [])
+    if (s.started)
+      throw new h(r, i);
+  Oe.delete(r);
 } };
-function $e(r) {
-  if (typeof r !== "string" || !r.trim() || r.length > ve.scopeLength || /[\0\n]/.test(r))
-    throw Error(`A step key must be a nonempty string of at most ${ve.scopeLength} characters`);
+function lt(r) {
+  if (typeof r !== "string" || !r.trim() || r.length > je.scopeLength || /[\0\n]/.test(r))
+    throw Error(`A step key must be a nonempty string of at most ${je.scopeLength} characters`);
   return r;
 }
-function he(r, i, a) {
-  let s = r ?? Le;
-  $e(i);
-  let c = new Set, O;
-  return { step: Object.freeze({ async run(m, b) {
-    if (typeof m !== "string" || !m.trim() || m.length > ve.nameLength)
-      throw Error(`A step name must be a nonempty string of at most ${ve.nameLength} characters`);
-    if (typeof b !== "function")
-      throw Error("ctx.step.run needs a function");
-    if (c.has(m))
-      throw Error(`Step "${m}" already ran in this action; give each step a unique name`);
-    c.add(m), await (O ??= s.claim(i));
-    let T = await s.read(i, m);
-    if (T)
-      return T.empty ? undefined : T.value;
-    let z = await b(), I = z === undefined ? { value: null, empty: true } : { value: z };
+function Ee(r, i, s) {
+  let a = r ?? dt;
+  lt(i);
+  let c = new Set, m, A = () => m ??= a.claim(i).then((j) => {
+    if (j?.supportsStarted !== true)
+      throw Object.assign(Error("This step host cannot preserve unknown outcomes; update the host before running durable steps"), { code: "step-host-unsupported" });
+  }), l = async (j, q) => {
+    let z = q === undefined ? { value: null, empty: true } : { value: q };
     try {
-      a(I.value);
-    } catch (L) {
-      throw Error(`Step "${m}" must return plain JSON (or nothing)`, { cause: L });
+      s(z.value);
+    } catch (be) {
+      throw Error(`Step "${j}" must return plain JSON (or nothing)`, { cause: be });
     }
-    return await s.write(i, m, I), z;
+    return await a.write(i, j, z), q;
+  };
+  return { step: Object.freeze({ async run(j, q, z) {
+    if (typeof j !== "string" || !j.trim() || j.length > je.nameLength || /[\0\n]/.test(j))
+      throw Error(`A step name must be a nonempty string of at most ${je.nameLength} characters`);
+    if (typeof q !== "function")
+      throw Error("ctx.step.run needs a function");
+    if (z?.retry !== undefined && z.retry !== "read-only" && z.retry !== "idempotent")
+      throw Error("Invalid step retry contract");
+    if (c.has(j))
+      throw Error(`Step "${j}" already ran in this action; give each step a unique name`);
+    c.add(j), await A();
+    let be = await a.read(i, j, { supportsStarted: true });
+    if (be && !be.started)
+      return be.empty ? undefined : be.value;
+    if (be?.started) {
+      let ke = await z?.recover?.();
+      if (ke !== undefined) {
+        if (!ke || typeof ke !== "object" || !("value" in ke))
+          throw Error("A step receipt must contain a confirmed value");
+        return l(j, ke.value);
+      }
+      if (!z?.retry)
+        throw new h(i, j);
+    }
+    return await a.write(i, j, { value: null, started: true }), l(j, await q());
   } }), finish: async () => {
-    if (O)
-      await s.clear(i);
+    if (m)
+      await m, await a.clear(i);
   } };
 }
-var Ae = Symbol.for("worka.note-model.v2");
-var ze = Symbol.for("worka.note-background.v2");
-var Se = Symbol.for("worka.note-contexts.v2");
-var ke = globalThis;
-var me = ke[Se] ?? new WeakMap;
-if (!ke[Se])
-  Object.defineProperty(ke, Se, { value: me });
-function v(r) {
-  l(r.state?.schema, r.collections);
-  let i = Object.freeze({ ...r, ...r.collections ? { collections: ye(r.collections) } : {}, ...r.state ? { state: Object.freeze({ ...r.state, initial: ye(r.state.schema.parse(r.state.initial)) }) } : {}, ...r.config ? { config: Object.freeze({ ...r.config, defaults: ye(Ce(r.config.schema).parse(r.config.defaults)) }) } : {} }), a = i.config ? (toJSONSchema(i.config.schema, { io: "input" }).required?.length ?? 0) > 0 : false, s = { [Ae]: i, action: (c, O) => ge("action", { ...c, visibility: c.visibility ?? "private", model: s }, async (E, m) => {
-    let b = me.get(m);
-    if (b && (b.note !== s || b.kind !== "action"))
+var Ge = Symbol.for("worka.note-model.v2");
+var Xe = Symbol.for("worka.note-background.v2");
+var Fe = Symbol.for("worka.note-contexts.v2");
+var Le = globalThis;
+var Te = Le[Fe] ?? new WeakMap;
+if (!Le[Fe])
+  Object.defineProperty(Le, Fe, { value: Te });
+function S(r) {
+  p(r.state?.schema, r.collections);
+  let i = Object.freeze({ ...r, ...r.collections ? { collections: Ne(r.collections) } : {}, ...r.state ? { state: Object.freeze({ ...r.state, initial: Ne(r.state.schema.parse(r.state.initial)) }) } : {}, ...r.config ? { config: Object.freeze({ ...r.config, defaults: Ne(_e(r.config.schema).parse(r.config.defaults)) }) } : {} }), s = i.config ? (toJSONSchema(i.config.schema, { io: "input" }).required?.length ?? 0) > 0 : false, a = { [Ge]: i, action: (c, m) => Ce("action", { ...c, visibility: c.visibility ?? "private", model: a }, async (A, l) => {
+    let T = Te.get(l);
+    if (T && (T.note !== a || T.kind !== "action"))
       throw new n("An action requires its own note’s writable context");
-    if (m = b?.raw ?? m, c.requiresConfig !== false && a && i.config) {
-      if (!i.config.schema.safeParse((await m.store.read(u(m.note.id))).value).success)
+    if (l = T?.raw ?? l, c.requiresConfig !== false && s && i.config) {
+      if (!i.config.schema.safeParse((await l.store.read(u(l.note.id))).value).success)
         throw new n("Complete this note’s configuration before running this action");
     }
-    if (b?.steps)
-      return O(p(s, m, b.steps), E);
-    let T = c.steps ? `key:${c.steps.key(E)}` : `request:${Pe(m)}`, z = he(m.steps, T, t), I = await O(p(s, m, z), E);
-    return await z.finish(), I;
-  }, true), query: (c, O) => ge("query", { ...c, visibility: c.visibility ?? "public", model: s }, (E, m) => O(S(s, m), E), true), event: (c) => Re({ ...c, visibility: c.visibility ?? "private", model: s }), mount: (c, O) => _(s, c, O), background: (c) => {
-    let O = { [ze]: s, ...c.resources ? { resources: ye(c.resources) } : {}, ...c.start ? { start: async (E) => {
-      let m = he(E.steps, `background:start:${Pe(E)}`, t);
-      if (await c.start(p(s, E, m)) !== undefined)
+    if (T?.steps)
+      return m(f(a, l, T.steps), A);
+    let j = c.steps ? `key:${c.steps.key(A)}` : `request:${Be(l)}`, q = Ee(l.steps, j, t), z = await m(f(a, l, q), A);
+    return await q.finish(), z;
+  }, true), query: (c, m) => Ce("query", { ...c, visibility: c.visibility ?? "public", model: a }, (A, l) => m(R2(a, l), A), true), event: (c) => Ue({ ...c, visibility: c.visibility ?? "private", model: a }), mount: (c, m) => H(a, c, m), background: (c) => {
+    let m = { [Xe]: a, ...c.resources ? { resources: Ne(c.resources) } : {}, ...c.start ? { start: async (A) => {
+      let l = Ee(A.steps, `background:start:${Be(A)}`, t);
+      if (await c.start(f(a, A, l)) !== undefined)
         throw Error("Finite start must not return a cleanup closure or value");
-      await m.finish();
-    } } : {}, ...c.state ? { state: async (E, m) => {
+      await l.finish();
+    } } : {}, ...c.state ? { state: async (A, l) => {
       if (!i.state)
         throw Error("A state handler requires a state model");
-      let b = i.state.schema.parse(m.value), T = he(E.steps, `background:state:${m.revision}`, t);
-      if (await c.state(p(s, E, T), ye({ ...m, value: b })) !== undefined)
+      let T = i.state.schema.parse(l.value), j = Ee(A.steps, `background:state:${l.revision}`, t);
+      if (await c.state(f(a, A, j), Ne({ ...l, value: T })) !== undefined)
         throw Error("Finite state handler must not return a cleanup closure or value");
-      await T.finish();
+      await j.finish();
     } } : {} };
-    return Object.freeze(O);
+    return Object.freeze(m);
   } };
-  return Object.freeze(s);
+  return Object.freeze(a);
 }
 function e(r) {
-  return r !== null && typeof r === "object" ? r[Ae] : undefined;
+  return r !== null && typeof r === "object" ? r[Ge] : undefined;
 }
-function De(r) {
+function Ye(r) {
   return Object.freeze({ id: r.id, version: r.version ?? "unknown" });
 }
-function Ce(r) {
+function _e(r) {
   if (!(r instanceof ZodObject))
     throw Error("Config schema must be a Zod object");
   return r.partial();
 }
-function ye(r) {
+function Ne(r) {
   t(r);
-  let i = (s) => {
-    if (s && typeof s === "object" && !Object.isFrozen(s))
-      Object.values(s).forEach(i), Object.freeze(s);
-  }, a = JSON.parse(JSON.stringify(r));
-  return i(a), a;
+  let i = (a) => {
+    if (a && typeof a === "object" && !Object.isFrozen(a))
+      Object.values(a).forEach(i), Object.freeze(a);
+  }, s = JSON.parse(JSON.stringify(r));
+  return i(s), s;
 }
 function t(r) {
-  let i = new Set, a = () => {
+  let i = new Set, s = () => {
     throw Error("Note data must be finite, plain JSON");
-  }, s = (c) => {
+  }, a = (c) => {
     if (c === null || typeof c === "string" || typeof c === "boolean" || typeof c === "number" && Number.isFinite(c))
       return;
     if (!c || typeof c !== "object")
-      return a();
-    let O = Array.isArray(c), E = Object.getPrototypeOf(c);
-    if (E !== (O ? Array.prototype : Object.prototype) && E !== null)
-      return a();
+      return s();
+    let m = Array.isArray(c), A = Object.getPrototypeOf(c);
+    if (A !== (m ? Array.prototype : Object.prototype) && A !== null)
+      return s();
     if (Object.getOwnPropertySymbols(c).length)
-      return a();
+      return s();
     if (i.has(c))
       throw Error("Note data cannot contain cycles");
-    let m = Object.getOwnPropertyDescriptors(c), b = Object.hasOwn(m, "toJSON") ? m.toJSON : E && Object.getOwnPropertyDescriptor(E, "toJSON");
-    if (b && (!Object.hasOwn(b, "value") || typeof b.value === "function"))
-      return a();
-    if (i.add(c), O)
-      for (let T = 0;T < c.length; T++) {
-        let z = String(T), I = Object.hasOwn(m, z) ? m[z] : undefined;
-        if (!I || !Object.hasOwn(I, "value"))
-          return a();
-        s(I.value);
+    let l = Object.getOwnPropertyDescriptors(c), T = Object.hasOwn(l, "toJSON") ? l.toJSON : A && Object.getOwnPropertyDescriptor(A, "toJSON");
+    if (T && (!Object.hasOwn(T, "value") || typeof T.value === "function"))
+      return s();
+    if (i.add(c), m)
+      for (let j = 0;j < c.length; j++) {
+        let q = String(j), z = Object.hasOwn(l, q) ? l[q] : undefined;
+        if (!z || !Object.hasOwn(z, "value"))
+          return s();
+        a(z.value);
       }
-    for (let [T, z] of Object.entries(m)) {
-      if (O) {
-        if (T === "length")
+    for (let [j, q] of Object.entries(l)) {
+      if (m) {
+        if (j === "length")
           continue;
-        if (!/^(0|[1-9]\d*)$/.test(T) || Number(T) >= c.length)
-          return a();
+        if (!/^(0|[1-9]\d*)$/.test(j) || Number(j) >= c.length)
+          return s();
         continue;
       }
-      if (!z.enumerable || !Object.hasOwn(z, "value"))
-        return a();
-      if (z.value !== undefined)
-        s(z.value);
+      if (!q.enumerable || !Object.hasOwn(q, "value"))
+        return s();
+      if (q.value !== undefined)
+        a(q.value);
     }
     i.delete(c);
   };
-  s(r);
+  a(r);
 }
-function Be(r, i, a) {
-  if (!a)
+function pt(r, i, s) {
+  if (!s)
     throw Error("The declared state has no bound storage");
-  let s = async () => {
-    let c = await i.read(a);
-    return ye({ ...c, value: r.parse(c.value) });
+  let a = async () => {
+    let c = await i.read(s);
+    return Ne({ ...c, value: r.parse(c.value) });
   };
-  return { read: s, update: async (c, O) => {
-    for (let E = 1;; E++) {
-      let m = await s();
-      if (O?.expectedRevision !== undefined && m.revision !== O.expectedRevision)
+  return { read: a, update: async (c, m) => {
+    for (let A = 1;; A++) {
+      let l = await a();
+      if (m?.expectedRevision !== undefined && l.revision !== m.expectedRevision)
         throw Object.assign(Error("State revision conflict"), { code: "revision-conflict" });
-      let b = structuredClone(m.value), T = c(b);
-      if (T !== undefined) {
-        if (T && typeof T.then === "function")
-          Promise.resolve(T).catch(() => {
+      let T = structuredClone(l.value), j = c(T);
+      if (j !== undefined) {
+        if (j && typeof j.then === "function")
+          Promise.resolve(j).catch(() => {
             return;
           });
         throw Error("State update callbacks must be synchronous and return nothing");
       }
-      let z = r.parse(b);
-      if (t(z), JSON.stringify(z) === JSON.stringify(m.value))
-        return m;
+      let q = r.parse(T);
+      if (t(q), JSON.stringify(q) === JSON.stringify(l.value))
+        return l;
       try {
-        let I = { baseRevision: m.revision, patch: {}, ops: [{ path: [], value: z }] };
+        let z = { baseRevision: l.revision, patch: {}, ops: [{ path: [], value: q }] };
         if (!i.update)
           throw Error("Read-only note context cannot update state");
-        let L = await i.update(a, I);
-        return ye({ ...L, value: r.parse(L.value) });
-      } catch (I) {
-        if (O?.expectedRevision !== undefined || E >= 8 || !x(I))
-          throw I;
+        let be = await i.update(s, z);
+        return Ne({ ...be, value: r.parse(be.value) });
+      } catch (z) {
+        if (m?.expectedRevision !== undefined || A >= 8 || !w(z))
+          throw z;
       }
     }
   } };
 }
-function Me(r, i, a) {
-  let s = e(r);
-  if (!s)
+function et(r, i, s) {
+  let a = e(r);
+  if (!a)
     throw Error("Missing executable note model");
   let c = {};
-  for (let O of ["state", "config"]) {
-    let E = s[O];
-    if (!E)
+  for (let m of ["state", "config"]) {
+    let A = a[m];
+    if (!A)
       continue;
-    let m = O === "state" ? typeof i.note.stateRef === "string" ? i.note.stateRef : i.note.stateRef?.id : u(i.note.id), b = Be(O === "state" ? E.schema : Ce(E.schema), i.store, m);
-    c[O] = Object.freeze(a ? b : { read: b.read });
+    let l = m === "state" ? typeof i.note.stateRef === "string" ? i.note.stateRef : i.note.stateRef?.id : u(i.note.id), T = pt(m === "state" ? A.schema : _e(A.schema), i.store, l);
+    c[m] = Object.freeze(s ? T : { read: T.read });
   }
   return c;
 }
-function Pe(r) {
+function Be(r) {
   return r.caller?.requestId ?? `execution:${r.caller?.id ?? crypto.randomUUID()}`;
 }
-function p(r, i, a) {
-  let s = me.get(i);
-  if (s) {
-    if (s.note !== r || s.kind !== "action")
+function f(r, i, s) {
+  let a = Te.get(i);
+  if (a) {
+    if (a.note !== r || a.kind !== "action")
       throw new n("An action requires its own note’s writable context");
     return i;
   }
-  let { agent: c, schedules: O, notifications: E, previews: m, extensions: b, quip: T, slack: z, subprocess: I } = i, L = Pe(i), Te = a ?? he(i.steps, `request:${L}`, t), je = Object.freeze({ note: De(i.note), id: () => crypto.randomUUID(), caller: i.caller, idempotencyKey: L, step: Te.step, ...i.replay ? { replay: true } : {}, signal: i.signal, progress: i.progress, db: i.db, files: i.files, notes: i.notes, resources: i.resources, events: i.events, host: Object.freeze({ agent: c, schedules: O, notifications: E, previews: m, extensions: b, quip: T, slack: z, subprocess: I }), ...Me(r, i, true) });
-  return me.set(je, { note: r, raw: i, kind: "action", steps: Te }), je;
+  let { agent: c, schedules: m, notifications: A, previews: l, extensions: T, quip: j, slack: q, subprocess: z } = i, be = Be(i), ke = s ?? Ee(i.steps, `request:${be}`, t), Pe = Object.freeze({ note: Ye(i.note), id: () => crypto.randomUUID(), caller: i.caller, idempotencyKey: be, step: ke.step, ...i.replay ? { replay: true } : {}, signal: i.signal, progress: i.progress, db: i.db, files: i.files, notes: i.notes, resources: i.resources, events: i.events, host: Object.freeze({ agent: c, schedules: m, notifications: A, previews: l, extensions: T, quip: j, slack: q, subprocess: z }), ...et(r, i, true) });
+  return Te.set(Pe, { note: r, raw: i, kind: "action", steps: ke }), Pe;
 }
-function S(r, i) {
-  let a = me.get(i);
-  if (a) {
-    if (a.note !== r)
+function R2(r, i) {
+  let s = Te.get(i);
+  if (s) {
+    if (s.note !== r)
       throw new n("A bound context belongs to another note model");
-    if (a.kind === "query")
+    if (s.kind === "query")
       return i;
-    i = a.raw;
+    i = s.raw;
   }
-  let s = Object.freeze({ note: De(i.note), signal: i.signal, db: Object.freeze({ read: i.db?.read?.bind(i.db), list: i.db?.list?.bind(i.db), stats: i.db?.stats?.bind(i.db) }), files: i.files && Object.freeze({ info: i.files.info.bind(i.files), read: i.files.read.bind(i.files) }), notes: Object.freeze({ lookup: i.notes?.lookup?.bind(i.notes), read: i.notes?.read?.bind(i.notes), query: i.notes?.query?.bind(i.notes) }), resources: Object.freeze({ read: i.resources?.read?.bind(i.resources) }), host: Object.freeze({ previews: i.previews && Object.freeze({ get: i.previews.get?.bind(i.previews), list: i.previews.list?.bind(i.previews) }) }), ...Me(r, i, false) });
-  return me.set(s, { note: r, raw: i, kind: "query" }), s;
+  let a = Object.freeze({ note: Ye(i.note), signal: i.signal, db: Object.freeze({ read: i.db?.read?.bind(i.db), list: i.db?.list?.bind(i.db), stats: i.db?.stats?.bind(i.db) }), files: i.files && Object.freeze({ info: i.files.info.bind(i.files), read: i.files.read.bind(i.files) }), notes: Object.freeze({ lookup: i.notes?.lookup?.bind(i.notes), read: i.notes?.read?.bind(i.notes), query: i.notes?.query?.bind(i.notes) }), resources: Object.freeze({ read: i.resources?.read?.bind(i.resources) }), host: Object.freeze({ previews: i.previews && Object.freeze({ get: i.previews.get?.bind(i.previews), list: i.previews.list?.bind(i.previews) }) }), ...et(r, i, false) });
+  return Te.set(a, { note: r, raw: i, kind: "query" }), a;
 }
-var Je = /^[A-Za-z][A-Za-z\d_-]*$/;
-var H = strictObject({ cursor: string2().max(32768).optional(), limit: number2().int().min(1).max(100).optional(), maxBytes: number2().int().min(256).max(1048576).optional() });
-var Z = strictObject({ key: string2().min(1).max(512), field: string2().min(1).max(2048), revision: string2().min(1) });
-var W = strictObject({ key: string2().min(1).max(512), revision: string2().optional() });
-var Ie = strictObject({ kind: literal("collection-field"), collection: string2(), key: string2(), field: string2(), revision: string2() });
-function Ze(r) {
-  while (r instanceof ZodOptional || r instanceof ZodDefault || r instanceof ZodNullable)
-    r = r.unwrap();
-  return r;
-}
-function be(r, i) {
-  if (r instanceof ZodOptional)
-    return be(r.unwrap(), i).optional();
-  if (r instanceof ZodDefault)
-    return be(r.unwrap(), i).optional();
-  if (r instanceof ZodNullable)
-    return i.length ? be(r.unwrap(), i).nullable() : Ie;
-  if (!i.length)
-    return Ie;
-  let [a, ...s] = i;
-  if (r instanceof ZodRecord && a === "*")
-    return record(r.keyType, be(r.valueType, s));
-  if (!(r instanceof ZodObject) || !a || !Object.hasOwn(r.shape, a))
-    throw Error(`Lazy field path does not match the state schema: ${i.join(".")}`);
-  return r.extend({ [a]: be(r.shape[a], s) });
-}
-function l(r, i = {}) {
-  if (Object.keys(i).length > 32)
-    throw Error("A note may declare at most 32 collections");
-  let a = new Set;
-  return Object.entries(i).map(([s, c]) => {
-    if (!Je.test(s) || !c || typeof c !== "object" || Array.isArray(c) || Object.keys(c).some((z) => !["field", "key", "lazy"].includes(z)) || c.lazy !== undefined && !Array.isArray(c.lazy))
-      throw Error("Invalid collection declaration");
-    let O = c.field ?? s;
-    if (a.has(O))
-      throw Error(`Collection state field is declared twice: ${O}`);
-    if (a.add(O), !(r instanceof ZodObject) || !Object.hasOwn(r.shape, O))
-      throw Error(`Collection ${s} needs a top-level state array: ${O}`);
-    let E = Ze(r.shape[O]);
-    if (!(E instanceof ZodArray) || !(E.element instanceof ZodObject))
-      throw Error(`Collection ${s} must contain objects`);
-    let m = E.element, b = [...c.lazy ?? []];
-    if (!Object.hasOwn(m.shape, c.key) || !(m.shape[c.key] instanceof ZodString))
-      throw Error(`Collection ${s} requires a string key field`);
-    if (b.length > 32 || new Set(b).size !== b.length || b.some((z) => typeof z !== "string" || z === c.key || !z || z.split(".").some((I) => !I) || b.some((I) => I !== z && z.startsWith(I + "."))))
-      throw Error(`Invalid lazy fields for collection ${s}`);
-    let T = m;
-    for (let z of b)
-      T = be(T, z.split("."));
-    return { name: s, contract: { field: O, key: c.key, lazy: b }, item: m, summary: T };
-  });
-}
-var Fe = new WeakMap;
-var Oe = Symbol.for("worka.note-capability");
-function ge(r, i, a, s = false) {
-  let c = async (m, b) => {
-    let T = await a(m, b), z = await O.output.safeParseAsync(T);
-    if (!z.success)
-      throw Error(`Capability output is invalid after execution; inspect effects before retrying: ${z.error.message}`);
-    return z.data;
-  }, O = Object.freeze({ ...i, kind: r, execute: c }), E = s ? async (m, b) => c(await O.input.parseAsync(b), m) : async (m, b) => c(await O.input.parseAsync(m), b);
-  return Object.defineProperty(E, Oe, { value: O }), E;
-}
-function Re(r) {
-  let i = Object.freeze({ ...r, kind: "event", output: r.payload }), a = { name: r.name, publish(s, c, O) {
-    return s.events.publish(i.name, c, O);
-  } };
-  return Object.defineProperty(a, Oe, { value: i }), Object.freeze(a);
-}
-var f = object({ id: string2().regex(/^note-file:[a-f0-9]{64}$/) });
+var tt = /^note-file:[a-f0-9]{64}$/;
+var g = (() => object({ id: string2().regex(tt) }))();
 
-// node_modules/@dsh-workbench/runtime/dist/chunk-jcxsq7je.mjs
+// ../.sdk/node_modules/@dsh-workbench/runtime/dist/chunk-9mm1vhq3.mjs
 var m2 = Symbol.for("worka.preview.project");
 
 // branch-state.js
@@ -7007,7 +7048,7 @@ function projectTracker(data, candidates) {
 }
 
 // model.ts
-var note = v({
+var note = S({
   state: { schema: looseObject({ title: string2().optional(), summary: string2().optional(), changeSelection: string2().nullable().optional() }), initial: {} },
   config: { schema: looseObject({ projectId: string2().optional(), presentation: string2().optional(), notes: record(string2(), string2()).optional() }), defaults: {} },
   update: { dataVersion: "feature-progress@1", compatibleFrom: ["legacy", "feature-progress@1"], checks: [{
@@ -7040,7 +7081,7 @@ var pinChangeReference = note.action({ description: "固定已核对版本的改
   return ctx.host.extensions.request("cardgame-content", "pinReference", { ...ref, projectId: await project(ctx), revision: target.revision });
 });
 var removePinnedReference = note.action({ description: "移除指定固定引用，保留对象。", visibility: "private", input: object({ key: string2() }), output: json() }, async (ctx, input) => ctx.host.extensions.request("cardgame-content", "removePinnedReference", { ...input, projectId: await project(ctx) }));
-var discussChange = note.action({ description: "保留所选改动并准备本便笺原生会话，等待用户输入。", visibility: "private", input: object({ productionId: string2().optional() }), output: json() }, async (ctx, input) => {
+var discussChange = note.action({ description: "保留所选改动并准备本便笺原生会话，等待用户输入。", visibility: "private", input: object({ productionId: string2().optional() }), output: object({ sessionId: string2() }) }, async (ctx, input) => {
   await project(ctx);
   const id = input.productionId?.trim();
   if (id)
@@ -7053,9 +7094,9 @@ var discussChange = note.action({ description: "保留所选改动并准备本�
   return ctx.host.agent.prepare({ noteId: ctx.note.id });
 });
 var cardgameQueries = {
-  changes: note.query({ description: "分页读取真实项目改动。", visibility: "private", input: object({ cursor: string2().optional(), query: string2().optional(), limit: number2().optional(), filter: string2().optional() }).nullable(), output: json() }, async (ctx, input) => read(ctx, "featureChanges", { limit: input?.limit ?? 30, ...input?.cursor ? { cursor: input.cursor } : {}, ...input?.query ? { q: input.query } : {}, ...input?.filter ? { filter: input.filter } : {} })),
-  candidateDiff: note.query({ description: "读取指定候选差异。", visibility: "private", input: object({ productionId: string2(), candidateId: string2() }), output: json() }, async (ctx, input) => read(ctx, "gameCandidateDiff", input)),
-  pinnedReferences: note.query({ description: "读取已核对身份的项目固定引用。", visibility: "private", input: object({}).nullable(), output: json() }, async (ctx) => read(ctx, "pinnedReferences"))
+  changes: note.query({ description: "分页读取真实项目改动。", visibility: "private", input: object({ cursor: string2().optional(), query: string2().optional(), limit: number2().optional(), filter: string2().optional() }).nullable(), output: changePageSchema }, async (ctx, input) => read(ctx, "featureChanges", { limit: input?.limit ?? 30, ...input?.cursor ? { cursor: input.cursor } : {}, ...input?.query ? { q: input.query } : {}, ...input?.filter ? { filter: input.filter } : {} })),
+  candidateDiff: note.query({ description: "读取指定候选差异。", visibility: "private", input: object({ productionId: string2(), candidateId: string2() }), output: diffSchema }, async (ctx, input) => read(ctx, "gameCandidateDiff", input)),
+  pinnedReferences: note.query({ description: "读取已核对身份的项目固定引用。", visibility: "private", input: object({}).nullable(), output: referencesSchema }, async (ctx) => read(ctx, "pinnedReferences"))
 };
 // schemas.ts
 var linkSchema = object({ repo: string2(), branches: array(string2()) });
@@ -7132,7 +7173,9 @@ var viewSchema = object({
     }))
   }))
 });
-var gameCandidateInputSchema = object({ projectId: string2(), productionId: string2(), candidateId: string2(), featureId: string2(), candidateHash: string2(), targetBaseRevision: string2(), validationManifest: string2() });
+var identity = string2().trim().min(1);
+var fingerprint = string2().regex(/^[a-f\d]{64}$/i);
+var gameCandidateInputSchema = object({ projectId: identity, productionId: identity, candidateId: identity, featureId: identity, candidateHash: fingerprint, targetBaseRevision: fingerprint, validationManifest: fingerprint });
 var gameAdoptionSchema = object({ candidate: gameCandidateSchema, production: looseObject({ id: string2(), projectId: string2(), revision: number2() }).optional(), adoptionId: string2().optional(), reused: boolean2().optional() });
 
 // actions.ts
@@ -7142,6 +7185,13 @@ var events = {
   archived: note.event({ visibility: "public", name: "features.archived", description: "用户归档一条稳定 feature ID；关联预览按此事件归档候选。", payload: object({ featureId: string2(), title: string2(), revision: string2() }), objectRef: "/featureId", objectLabel: "/title", revision: "/revision" })
 };
 var queries = {
+  overview: note.query({ description: "读取功能进展小卡的活动数与状态。", visibility: "private", input: object({}), output: object({ summary: string2(), items: array(object({ id: string2(), title: string2(), status: string2() })).max(4) }) }, async (ctx) => {
+    const snapshot = await ctx.resources.read({ name: "extension.official-feature-tracker.summary", input: {} });
+    if (snapshot.error)
+      throw Error(snapshot.error);
+    const value = summarySchema.parse(snapshot.data);
+    return { summary: `${value.activeCount} 项活动功能`, items: value.features.filter((item) => !item.archived).slice(0, 4).map((item) => ({ id: item.id, title: item.title, status: `${item.mergedPrs}/${item.totalPrs} 已合并` })) };
+  }),
   ...cardgameQueries,
   resolveExecutionTarget: note.query({ description: "按实际关联的 feature ID 定位执行任务。", visibility: "private", input: object({ featureId: string2(), repository: string2().optional() }), output: json() }, async (ctx, input) => resolveExecutionTarget(input, ctx)),
   projectChoices: note.query({ description: "读取当前实例中可关联的项目。", visibility: "private", input: object({}).nullable(), output: object({ items: array(object({ id: string2(), name: string2() })) }) }, async (ctx, _input) => {
@@ -7224,6 +7274,10 @@ var setArchiveStatus = note.action({ description: "更新功能的归档标记�
 var recordFeature = note.action({ description: "按当前版本保存功能记录。", visibility: "private", input: object({ id: string2(), baseRevision: string2().nullable(), patch: strictObject({ title: string2().optional(), summary: string2().optional(), next: string2().optional(), body: string2().optional(), links: array(strictObject({ repo: string2(), branches: array(string2()) })).optional() }) }), output: featureReceiptSchema }, async (ctx, input) => {
   return ctx.host.extensions.request("official-feature-tracker", "feature.save", input);
 });
+var createFeature = note.action({ description: "按已选择项目保存新功能需求。", visibility: "private", input: object({ title: string2().trim().min(1), summary: string2().trim().min(1), projectId: string2().min(1) }), output: featureReceiptSchema }, async (ctx, input) => {
+  const id = ctx.idempotencyKey;
+  return ctx.host.extensions.request("official-feature-tracker", "feature.save", { id, baseRevision: null, patch: { title: input.title, summary: input.summary, next: "完成规则核对、制作与试玩验收", body: input.summary, links: [{ repo: input.projectId, branches: [] }] } });
+});
 var confirmGameCandidate = note.action({ description: "核对候选身份后采用游戏改动。", visibility: "private", input: gameCandidateInputSchema, output: gameAdoptionSchema }, async (ctx, input) => {
   return ctx.host.extensions.request("cardgame-content", "confirmGameCandidate", input);
 });
@@ -7244,6 +7298,7 @@ var setViewState = note.action({ description: "保存本便笺的界面选择，
 export {
   background,
   confirmGameCandidate,
+  createFeature,
   discussChange,
   events,
   note,
