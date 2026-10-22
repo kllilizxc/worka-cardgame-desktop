@@ -1,12 +1,13 @@
 import {NoteIcon,composeQueries,QueryState} from '@dsh-workbench/react';
-import {useNote} from '@dsh-workbench/react';
+import {useNote,useMutation,useViewState} from '@dsh-workbench/react';
+import {MutationNotice} from './mutation-notice';
 import {Button} from '@heroui/react';
 import {previewRows as hostRows,rowState} from './projection';
 import type {SurfaceDisplay} from './model';
 type PreviewTask={id:string;label:string;surfaces:string[];status:'pending'|'running'|'completed'|'failed'|'unknown'|'skipped';error?:string};
 import type {PreviewProgress} from '@dsh-workbench/runtime';
 import {useEffect,useRef,useState} from 'react';
-import {useBackgroundHold} from '@dsh-workbench/react';
+
 
 import type {CandidateDisplay,DisplayData} from './model';
 
@@ -206,25 +207,23 @@ export function usePreviewModel(){
 
 
   const stage=useRef<HTMLDivElement>(null);
-  const pendingKeys=useRef(new Map<string,symbol>());
-  const [operations,setOperations]=useState<Record<string,PendingOperation>>({});
-  useEffect(()=>{
-    // A click is settled once the host has reported a newer status for that candidate.
-    setOperations(value=>{
-      const observed=Object.keys(value).filter(key=>Object.values(data.candidates?.find(c=>c.key===key)?.status??{}).some(s=>s.updatedAt>=value[key].startedAt));
-      if(!observed.length)return value;
-      const next={...value};for(const key of observed)delete next[key];return next;
-    });
-  },[data.candidates,operations]);
+  const mutations={
+    start:useMutation(actions.start,{query:root}),stop:useMutation(actions.stop,{query:root}),
+    verify:useMutation(actions.verify,{query:root}),check:useMutation(actions.check,{query:root}),
+    attach:useMutation(actions.attach,{query:root}),archive:useMutation(actions.archive,{query:root}),
+    restore:useMutation(actions.restore,{query:root}),forget:useMutation(actions.forget,{query:root}),
+    repair:useMutation(actions.requestRepair,{query:root}),
+  };
+  const operations:Record<string,PendingOperation>={};
   const [collapsed,setCollapsed]=useState<string[]>([]);
   const [menu,setMenu]=useState(false);
   const [showAddress,setShowAddress]=useState(false);
-  const [repairing,setRepairing]=useState(false);
+  const repairing=mutations.repair.status==='pending'||mutations.repair.status==='unknown';
   const [urls,setUrls]=useState<Record<string,string>>({});
   const [draft,setDraft]=useState('');
   const [frameReady,setFrameReady]=useState<Record<string,string>>({});
   const [fullscreen,setFullscreen]=useState(false);
-  const [device,setDevice]=useState<DeviceKey>('desktop');
+  const [device,setDevice]=useViewState('preview:device','desktop' as DeviceKey);
   useEffect(()=>{const change=()=>setFullscreen(document.fullscreenElement===stage.current);document.addEventListener('fullscreenchange',change);return()=>document.removeEventListener('fullscreenchange',change);},[]);
   const [error,setError]=useState('');
   const [activeKey,updateActiveKey]=useState<string|undefined>(undefined);
@@ -274,26 +273,12 @@ export function usePreviewModel(){
   useEffect(()=>{const previous=addressSource.current;const key=current?.spec.key;addressSource.current={key,url:currentUrl};setDraft(value=>key!==previous.key||value===previous.url?currentUrl:value);},[current?.spec.key,currentUrl]);
   const groups=[...new Set(rows.map(row=>row.group))].map(key=>({key,rows:rows.filter(row=>row.group===key)}));
   const availableFeatures=groups.filter(group=>group.rows.some(row=>canViewPreview(row.status))).length;
-  const operate=async(key:string,status:string,fn:()=>Promise<any>)=>{
-    if((pendingKeys.current.has(key)||operations[key])&&status!=='stopping')return;
-    const token=Symbol();pendingKeys.current.set(key,token);setOperations(value=>({...value,[key]:{status,startedAt:Date.now()}}));setError('');
-    let timer:ReturnType<typeof setTimeout>|undefined;
-    let accepted=false;
-    try{const result=await Promise.race([fn(),new Promise((_,reject)=>{timer=setTimeout(()=>reject(Error('操作未返回，已解除界面等待；可以停止后重试')),status==='stopping'?180000:600000);})]);
-      if(pendingKeys.current.get(key)===token&&result?.accepted)accepted=true;
-    }
-    catch(error){if(pendingKeys.current.get(key)===token)setError(String(error));}
-    finally{if(timer)clearTimeout(timer);if(pendingKeys.current.get(key)===token){pendingKeys.current.delete(key);if(!accepted)setOperations(value=>{const next={...value};delete next[key];return next;});}}
-  };
   const effectiveStatus=current?.status??'';
-
-
-  const requestRepair=async(row:Row)=>{
-    if(repairing)return;
-    setRepairing(true);
-    try{const result=await actions.requestRepair({key:row.owner.key,surface:row.surface??''});if(result&&result.accepted===false)setError(result.reason??'执行台未接收修复请求');else if(result?.session)void workbench.openSession(result.session).catch(e=>setError(String(e)));}
-    catch(e){setError(String(e));}finally{setRepairing(false);}
-  };
+  const requestRepair=(row:Row)=>mutations.repair.mutate({key:row.owner.key,surface:row.surface??''});
+  const mutationNotices=<>{Object.entries(mutations).map(([name,mutation])=><MutationNotice key={name} mutation={mutation}/>)}
+    {mutations.repair.status==='success'&&mutations.repair.data?.accepted===false&&<p role="alert">{mutations.repair.data.reason??'执行台未接收修复请求'}</p>}
+    {mutations.repair.status==='success'&&typeof mutations.repair.data?.session==='string'&&<Button onPress={()=>run(()=>workbench.openSession(mutations.repair.data!.session!))}>查看已创建修复会话</Button>}
+  </>;
   /** An Agent repair starts only from this click; afterwards the same place opens that Agent's session. */
   const repairButton=(row:Row)=>{
     const failure=row.host?.phase==='failed'?row.host.failure:undefined;
@@ -308,17 +293,15 @@ export function usePreviewModel(){
   const frameToken=(row:Row)=>`${urls[row.spec.key]??row.url}:${reload[row.spec.key]??0}`;
 
   const label=(spec:CandidateDisplay)=>spec.title||spec.key;
-  const attach=(key:string)=>{setActiveKey(key);setLoaded([key]);void actions.attach({key}).catch(e=>setError(String(e)));};
+  const attach=(key:string)=>{setActiveKey(key);setLoaded([key]);void mutations.attach.mutate({key});};
   const reloadFrame=(key:string)=>setReload(state=>({...state,[key]:(state[key]??0)+1}));
   /** Not-ready play starts the process and remembers the frame, so it appears once ready. */
   const startAndAttach=(key:string,onlySurface=false)=>{
     const row=rows.find(item=>item.spec.key===key);if(!row)return;
-    void operate(row.owner.key,'starting',async()=>{
-
-      const result=await actions.start({key:row.owner.key,...(onlySurface&&row.surface?{surface:row.surface}:{})});
-      if(result?.accepted){attach(key);if(mode!=='expanded')await workbench.openNote(runtime.note.id,'preview:'+encodeURIComponent(JSON.stringify([row.owner.key,row.surface])));}
-      return result;
-    });
+    if(mutations.start.status==='pending'||mutations.start.status==='unknown')return;
+    setActiveKey(key);setLoaded([key]);
+    void mutations.start.mutate({key:row.owner.key,...(onlySurface&&row.surface?{surface:row.surface}:{})});
+    void mutations.attach.mutate({key});
   };
   const openDelegation=(spec:CandidateDisplay)=>{if(spec.originNoteId&&spec.delegationId)void workbench.openNote(spec.originNoteId,spec.delegationId).catch(e=>setError(String(e)));};
   const draftTodo=()=>{
@@ -327,80 +310,10 @@ export function usePreviewModel(){
     void workbench.openNote(config.notes.todo,'cg:'+encodeURIComponent(JSON.stringify({projectId:config.projectId,kind:'todo',intent:'draft',...(context?{context}:{})}))).catch(e=>setError(String(e)));
   };
   const attachedHere=Boolean(current&&loaded.includes(current.spec.key)&&canViewPreview(current.status));
-  // Ask the interface to keep this surface mounted while a preview is playing:
-  // closing the drawer or opening another note must not reload the page.
-  const backgroundKey=current&&attachedHere?`preview:${current.spec.key}`:'';
-  useBackgroundHold({key:backgroundKey,reason:'候选预览正在播放',until:['preview-stopped','user-release'],maxIdleMs:60*60*1000},mode==='expanded'&&Boolean(backgroundKey));
 
-  return {refresh:resource.refresh!,query:resource,page,nextPage,previousPage,resetPage,archivePage,nextArchive,previousArchive,previewTarget:(row:Row)=>urls[row.spec.key]??row.url,closePreview:()=>setLoaded([]),config,runtime,data,actions,workbench,stage,operations,collapsed,setCollapsed,menu,setMenu,showAddress,setShowAddress,showArchive,setShowArchive,setUrls,draft,setDraft,frameReady,setFrameReady,fullscreen,device,error:error||focusError,setError,setActiveKey,loaded,reload,confirmForget,setConfirmForget,run,archived,rows,current,currentIsCandidate,resolvedUrls,accessKey,currentUrl,accessError,activeDevice,cycleDevice,groups,availableFeatures,operate,effectiveStatus,repairButton,frameToken,label,attach,reloadFrame,startAndAttach,openDelegation,draftTodo,attachedHere,layout,metadata,focus,focusRequestId,mode};
+  return {refresh:resource.refresh!,query:resource,page,nextPage,previousPage,resetPage,archivePage,nextArchive,previousArchive,previewTarget:(row:Row)=>urls[row.spec.key]??row.url,closePreview:()=>setLoaded([]),config,runtime,data,actions,workbench,stage,operations,collapsed,setCollapsed,menu,setMenu,showAddress,setShowAddress,showArchive,setShowArchive,setUrls,draft,setDraft,frameReady,setFrameReady,fullscreen,device,error:error||focusError,setError,setActiveKey,loaded,reload,confirmForget,setConfirmForget,run,archived,rows,current,currentIsCandidate,resolvedUrls,accessKey,currentUrl,accessError,activeDevice,cycleDevice,groups,availableFeatures,mutations,mutationNotices,effectiveStatus,repairButton,frameToken,label,attach,reloadFrame,startAndAttach,openDelegation,draftTodo,attachedHere,layout,metadata,focus,focusRequestId,mode};
 }
 export type PreviewModel = ReturnType<typeof usePreviewModel>;
 
-export function View(){
-  const model=usePreviewModel();
-  const {config,data,metadata,groups,availableFeatures,archived,rows,operations,attach,setActiveKey,startAndAttach,error}=model;
-  // Compact contains summaries only; defineNoteView owns the expanded branch.
-    return <section className="preview-compact" style={{boxSizing:'border-box',width:'100%',minHeight:'100dvh',background:'var(--wb-paper)',borderRadius:16,padding:'14px 16px 12px',fontFamily:FONT,fontSize:13,color:'var(--wb-ink)',minWidth:0,display:'flex',flexDirection:'column',gap:10}}>
-      <style>{`
-        .preview-compact-header{display:flex;align-items:center;justify-content:space-between;gap:10px;padding-bottom:10px;}
-        .preview-compact-brand{display:flex;align-items:center;gap:8px;min-width:0}
-        .preview-compact-logo{width:24px;height:24px;border-radius:6px;background:var(--wb-accent-pale);color:var(--wb-accent);display:grid;place-items:center;flex-shrink:0}
-        .preview-compact-title{font-size:13.5px;font-weight:650;color:var(--wb-ink);line-height:1.2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-        .preview-compact-count{font-size:11px;color:var(--wb-muted);white-space:nowrap;flex-shrink:0}
-        .preview-compact-list{display:flex;flex-direction:column;gap:6px;min-width:0}
-        .preview-compact-row{display:flex;align-items:center;justify-content:space-between;gap:8px;min-width:0;padding:6px 8px;border-radius:8px;background:var(--wb-surface);transition:background .18s ease;cursor:pointer}
-        .preview-compact-row:hover{background:var(--wb-surface-deep)}
-        .preview-compact-meta{display:flex;align-items:center;gap:8px;min-width:0;flex:1}
-        .preview-compact-name{font-size:12px;font-weight:500;line-height:1.4;color:var(--wb-ink);min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-        .preview-compact-tail{display:flex;align-items:center;gap:6px;flex-shrink:0}
-        .preview-compact-badge{display:inline-flex;align-items:center;gap:4px;padding:2px 7px;border-radius:999px;font-size:11px;line-height:1.4;white-space:nowrap;font-weight:500}
-        .preview-compact-action{height:24px!important;min-height:24px!important;padding:0 8px!important;border-radius:6px!important;font-size:11.5px!important;font-weight:600!important;background:var(--wb-accent-pale)!important;color:var(--wb-accent)!important;border:none!important;box-shadow:none!important;transition:background .18s ease,color .18s ease!important}
-        .preview-compact-action:hover:not(:disabled){background:var(--wb-accent)!important;color:var(--wb-accent-foreground)!important}
-        .preview-compact-action:disabled{opacity:.5}
-      `}</style>
-      <div className="preview-compact-header">
-        <div className="preview-compact-brand">
-          <span className="preview-compact-logo" aria-hidden="true"><NoteIcon icon={metadata.icon} size={13} /></span>
-          <strong className="preview-compact-title">{config?.projectId ? '试玩' : data.title||metadata.name||'候选预览'}</strong>
-        </div>
-        <span className="preview-compact-count">{model.query.data&&(groups.length?`${groups.length} 个版本组${availableFeatures?` · ${availableFeatures} 可预览`:''}${archived.length?` · 归档 ${archived.length}`:''}`:archived.length?`已归档 ${archived.length} 个版本组`:'尚无试玩版本')}</span>
-      </div>
-      <QueryState query={model.query}>{()=> <>
-      {!rows.length&&<p className="preview-compact-empty" style={{fontSize:12,lineHeight:1.7,color:'var(--wb-muted)',margin:'4px 0 0'}}>执行台委托产出可运行候选后会自动同步到这里。</p>}
-      <div className="preview-compact-list">
-        {[...groups].sort((a,b)=>compactRank(a.rows)-compactRank(b.rows)).slice(0,4).map(group=>{
-          const featureRows=group.rows;
-          const status=featureStatus(featureRows,operations);
-          const available=featureRows.filter(row=>canViewPreview(row.status)).length;
-          const needsStart=featureRows.some(row=>['stopped','failed','waiting'].includes(row.status));
-          const operating=featureRows.some(row=>Boolean(operations[row.owner.key]));
-          const summary=featureRows.every(row=>row.status==='ready')?'可预览':available?'可查看 · 待核验':STATUS[status]??status;
-          const snapshotAt=featureRows[0].owner.options?.snapshotCreatedAt;
-          const snapshotTime=typeof snapshotAt==='string'?new Date(snapshotAt):undefined;
-          const displayName=featureRows[0].owner.options?.formalPreview===true&&snapshotTime&&Number.isFinite(snapshotTime.getTime())
-            ?`正式版 · ${snapshotTime.toLocaleString('zh-CN',{month:'numeric',day:'numeric',hour:'2-digit',minute:'2-digit'})}`:featureTitle(featureRows[0].groupName);
-          const dotColor=TONE[status]??'var(--wb-muted-light)';
-          const badgeBg=TONE_BG[status]??'var(--wb-surface-deep)';
-          return <div className="preview-compact-row" key={group.key} title={displayName} onClick={()=>{const target=featureRows.find(row=>canViewPreview(row.status))??featureRows[0];void model.workbench.openNote(metadata.id,'preview:'+encodeURIComponent(JSON.stringify([target.owner.key,target.surface]))).catch(cause=>model.setError(String(cause)));}}>
-            <div className="preview-compact-meta">
-              <span className="preview-status-dot" style={{width:6,height:6,borderRadius:3,background:dotColor,flexShrink:0}}/>
-              <span className="preview-compact-name">{displayName}</span>
-            </div>
-            <div className="preview-compact-tail">
-              <span className="preview-compact-badge" style={{color:dotColor,background:badgeBg}}>
-                {summary}
-              </span>
-              {needsStart
-                ?<Button variant="tertiary" size="sm" className="preview-compact-action" type="button" aria-label={`启动 ${displayName}`} isDisabled={operating} onPress={event=>{(event as any)?.stopPropagation?.();startAndAttach(featureRows[0].spec.key);}} onClick={e=>e.stopPropagation()}>{operating?'启动中…':'启动'}</Button>
-                :null}
-            </div>
-          </div>;
-        })}
-        {groups.length>4&&<span title="点击卡片展开查看全部版本" style={{fontSize:11,lineHeight:1.35,color:'var(--wb-muted-light)',whiteSpace:'nowrap',paddingTop:2}}>还有 {groups.length-4} 个版本组 · 展开查看全部 ↗</span>}
-      </div>
-      </>}</QueryState>
-      {error&&<p role="alert" style={{fontSize:11.5,color:'var(--wb-danger)',margin:'4px 0 0'}}>{error}</p>}
-    </section>;
-}
 
 export type {CandidateSummary,FeedbackSummary} from './model';

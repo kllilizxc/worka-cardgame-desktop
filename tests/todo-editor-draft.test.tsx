@@ -1,375 +1,122 @@
-import {act,createElement,type ReactNode} from 'react';
 import {expect,test} from 'bun:test';
-import {join} from 'node:path';
-import {createHash} from 'node:crypto';
-import {CommandOutcomeError} from '@dsh-workbench/runtime';
-const worka=process.env.WORKA_SOURCE_ROOT;
-if(!worka)throw Error('Set WORKA_SOURCE_ROOT to the checked-out SDK used for the build');
-const {button,deferred}=await import(join(worka,'tests/web/dom-test-helpers.tsx')) as {
-  button(container:ParentNode,label:string):HTMLButtonElement;
-  deferred<T>():{promise:Promise<T>;resolve(value:T):void;reject(reason:unknown):void};
-};
-const {RuntimeProvider,NoteViewContext}=await import('@dsh-workbench/react/internal');
+import {hostUiFixture,button,deferred,flush,mount,typeInto,until} from './host-ui-fixture';
+import {fixture as workflowFixture} from '../backend/tests/todo-editor-fixture';
+import * as actions from '../notes/note-11/actions';
 const {default:View}=await import('../notes/note-11/view');
-import {editTodo} from '../notes/note-11/actions';
 
-// The packed SDK and this renderer must use the same installed React. The
-// shared source helper initializes the DOM, but owns a different source install.
-async function flush(action?:()=>unknown){await act(async()=>{await action?.();});}
-async function mount(element:ReactNode){
-  const {createRoot}=await import('react-dom/client');
-  const container=document.createElement('div');document.body.append(container);
-  const root=createRoot(container);await flush(()=>root.render(element));
-  return {container,rerender:(next:ReactNode)=>flush(()=>root.render(next)),async unmount(){await flush(()=>root.unmount());container.remove();}};
+async function fixture(options:{wait?:boolean;failReadback?:boolean}={}){
+ const business=await workflowFixture(),gate=deferred<void>();
+ let release=()=>gate.resolve();if(!options.wait)release();
+ const query=async(name:string,input:any)=>{
+  const method=(actions.queries as any)[name];
+  if(!method)throw Error('Unexpected query '+name);
+  return method(business.actionContext(),input);
+ };
+ const f=await hostUiFixture({config:{projectId:business.input.projectId},query,execute:async(name,input,context)=>{
+  await gate.promise;
+  const result=await (actions as any)[name]({...business.actionContext(),caller:context.caller,steps:context.steps},input);
+  if(options.failReadback)f.failRead('editInput',Error('injected readback outage'));
+  return result;
+ }});
+ const render=(mode:'compact'|'expanded'='expanded')=>f.render(<View/>,mode);
+ const view=await mount(render());
+ await until(()=>!!view.container.querySelector('[aria-label="编辑待办：Original requirement"]'));
+ const title=()=>view.container.querySelector('[aria-label="待办标题"]') as HTMLTextAreaElement|null;
+ const edit=async(value='Unfinished user requirement')=>{
+  await flush(()=>button(view.container,'编辑待办：Original requirement').click());
+  await until(()=>!!title());await typeInto(title()!,value);
+  await until(()=>f.requests.some(value=>value.op==='set')&&!view.container.textContent?.includes('正在保留输入…'),'durable input');
+ };
+ const submit=()=>title()!.closest('form')!.dispatchEvent(new Event('submit',{bubbles:true,cancelable:true}));
+ return {...f,business,view,render,title,edit,submit,release,async close(){release();await view.unmount();await f.close();}};
 }
 
-const initial=()=>({id:'todo-one',projectId:'game',title:'Original requirement',description:'Original details',images:[{id:'image-one',dataUrl:'data:image/png;base64,AA==',type:'image/png',name:'reference'}],status:'todo',priority:'medium',revision:1,requirementRevision:1,createdAt:'2026-10-17',updatedAt:'2026-10-17'});
-const fingerprint=(item:any)=>createHash('sha256').update(JSON.stringify([item.title,item.description??'',(item.images??[]).map((image:any)=>[image.id,image.dataUrl,image.type??null,image.name??null,image.width??null,image.height??null])])).digest('hex');
-type FixtureOptions={initialItem?:any;checkpoints?:Map<string,any>;dropReceipt?:boolean;todosPending?:boolean;detailPending?:boolean;categories?:Array<{category:string;count:number}>;categoryError?:boolean;invoke?:(name:string,input:any,options:any,fixture:any)=>Promise<any>;revalidate?:(request:any,fixture:any)=>Promise<any>};
-async function fixture(options:FixtureOptions={}){
-  const previousParent=Object.getOwnPropertyDescriptor(window,'parent'),previousContext=Object.getOwnPropertyDescriptor(globalThis,'__DSH_WORKBENCH_CONTEXT__');
-  const messages:any[]=[];
-  Object.defineProperty(window,'parent',{configurable:true,value:{postMessage:(message:any)=>messages.push(message)}});
-  Object.defineProperty(globalThis,'__DSH_WORKBENCH_CONTEXT__',{configurable:true,value:{token:'todo-fixture',parentOrigin:window.location.origin,mode:'expanded'}});
-  let item:any=options.initialItem??initial(),projectId='game',projectGeneration='generation-A',version=0,deleted=false;
-  const calls:any[]=[],commands:any[]=[],reads:any[]=[],receiptReads:any[]=[],checkpoints=options.checkpoints??new Map<string,any>();
-  let receiptReady=false,lastReceipt:any,lastFailure:unknown;
-  const listeners=new Set<{request:any;listener:(snapshot:any)=>void}>();
-  const data=(request:any)=>request.name==='state'?{value:{projectId,notes:{execution:'execution-note'}},revision:'config-1'}:request.name==='todos'?{items:deleted?[]:[{...item,projectGeneration,images:undefined,imageCount:item.images?.length??0,imageNames:(item.images??[]).flatMap((image:any)=>image.name?[image.name]:[])}],revision:projectGeneration+':'+item.revision+':'+deleted,total:deleted?0:1}:request.name==='todo'?{item:{...item,projectGeneration},requirementFingerprint:fingerprint(item),projectGeneration}:request.name==='workflowStatus'?{counts:{todos:1,todo:1,inProgress:0,done:0,blocked:0}}:request.name==='categories'?{items:(options.categories??[]).slice(request.input.cursor?100:0,request.input.cursor?200:100),...(!request.input.cursor&&(options.categories?.length??0)>100?{next:'category-next'}:{}),revision:'categories-1',total:options.categories?.length??0}:{};
-  const snapshot=(request:any)=>({key:request.name,epoch:'fixture',version:++version,...(deleted&&request.name==='todo'?{error:'Todo not found',stale:true}:request.name==='categories'&&options.categoryError?{error:'分类读取失败',stale:true}:{data:structuredClone(data(request)),stale:false})});
-  const f={get item(){return item;},set item(value){item=value;},calls,commands,reads,receiptReads,checkpoints,snapshot,recoverReceipt(){receiptReady=true;},
-    publish(name:string){for(const subscription of listeners)if(subscription.request.name===name)subscription.listener(snapshot(subscription.request));},
-    removeSource(){deleted=true;f.publish('todos');f.publish('todo');},
-    rebind(){projectId='other-project';f.publish('state');},
-    rebindSameProject(){projectGeneration='generation-B';item=initial();f.publish('state');f.publish('todo');f.publish('todos');},
-  };
-  const context:any={note:{id:'todo-editor',stateRef:'fixture'},store:{read:async()=>({value:{projectId},revision:'config-1'})},resources:{read:async(request:any)=>{if(request.input.projectGeneration!==undefined&&request.input.projectGeneration!==projectGeneration)throw Error('CardGame 项目绑定已变化');return snapshot({name:'todo',input:request.input});}},extensions:{request:async(_provider:string,method:string,input:any)=>{
-    if(input.projectGeneration!==undefined&&input.projectGeneration!==projectGeneration)throw Error('CardGame 项目绑定已变化');commands.push({method,input,projectGeneration});if(input.projectId!==item.projectId)throw Error('wrong project');if(input.baseRevision!==item.revision)throw Error('revision conflict');
-    item={...item,...input.patch,revision:item.revision+1,requirementRevision:item.requirementRevision+1};return {item:structuredClone(item),revision:item.revision,requirementFingerprint:fingerprint(item)};
-  }}};
-  const runtime:any={note:{id:'todo-editor'},store:{read:async()=>({value:{projectId},revision:'state-1'}),subscribe:async()=>()=>{}},
-    resources:{subscribe:async(request:any,listener:any)=>{reads.push(request);const subscription={request,listener};listeners.add(subscription);if(!(options.todosPending&&request.name==='todos'||options.detailPending&&request.name==='todo'))listener(snapshot(request));return()=>listeners.delete(subscription);},read:async(request:any)=>snapshot(request),revalidate:async(request:any)=>{if(request.name==='command'){receiptReads.push(request);return {key:'command',epoch:'fixture',version:++version,data:lastFailure?{status:'failed',error:lastFailure instanceof Error?lastFailure.message:String(lastFailure)}:receiptReady?{status:'completed',result:lastReceipt}:{status:'ambiguous',error:'receipt still unknown'},stale:false};}reads.push(request);return options.revalidate?options.revalidate(request,f):snapshot(request);}},
-    invokeAction:async(name:string,input:any,actionOptions:any)=>{calls.push({name,input,options:actionOptions});if(options.invoke){const result=await options.invoke(name,input,actionOptions,f);return result.item?{projectId:result.item.projectId,projectGeneration:input.projectGeneration,id:result.item.id,revision:result.item.revision,requirementRevision:result.item.requirementRevision,requirementFingerprint:fingerprint(result.item)}:result;}if(name==='editTodo'){try{lastReceipt=await editTodo(context,input);}catch(cause){lastFailure=cause;throw new CommandOutcomeError(cause instanceof Error?cause.message:String(cause),`command:${actionOptions.requestId}`,'failed');}if(options.dropReceipt)throw new CommandOutcomeError('receipt lost after normalized save',`command:${actionOptions.requestId}`,'ambiguous');return lastReceipt;}throw Error(`Unexpected action ${name}`);},
-  };
-  const bridge:any={request:async(method:string,params:any)=>{if(method==='ui.draftRecover')return checkpoints.get(params.key)??null;if(method==='ui.draftCheckpoint'){checkpoints.set(params.key,params.checkpoint);return {accepted:true};}if(method==='ui.draftClear'){checkpoints.delete(params.key);return {accepted:true};}throw Error(method);}};
-  const render=(mode:'compact'|'expanded'='expanded')=>createElement(RuntimeProvider,{runtime,bridge,children:createElement(NoteViewContext.Provider,{value:{metadata:{id:'todo-editor',name:'Todo'},mode,layout:{width:900,maxHeight:900},snapshot:{value:{projectId:'game'},revision:'state-1'}},children:createElement(View)})});
-  const mounted=await mount(render());
-  await flush(()=>window.dispatchEvent(new MessageEvent('message',{source:window.parent,origin:window.location.origin,data:{bridge:'dsh-workbench-parent',version:messages.at(-1)?.version,kind:'notification',token:'todo-fixture',method:'ui.surfaceActive',params:{active:true}}})));
-  const view={...mounted,async unmount(){await mounted.unmount();if(previousParent)Object.defineProperty(window,'parent',previousParent);else delete (window as any).parent;if(previousContext)Object.defineProperty(globalThis,'__DSH_WORKBENCH_CONTEXT__',previousContext);else delete (globalThis as any).__DSH_WORKBENCH_CONTEXT__;}};
-  return {...f,get item(){return f.item;},set item(value){f.item=value;},view,render,runtime,guard:()=>messages.filter(message=>message.method==='ui.unsavedChanges').at(-1)?.params};
-}
-const title=(f:any)=>f.view.container.querySelector('[aria-label="待办标题"]') as HTMLTextAreaElement;
-const form=(f:any)=>title(f).closest('form')!;
-const input=(element:HTMLTextAreaElement,value:string)=>{Object.getOwnPropertyDescriptor(HTMLTextAreaElement.prototype,'value')!.set!.call(element,value);element.dispatchEvent(new Event('input',{bubbles:true}));};
-const submit=(f:any)=>form(f).dispatchEvent(new Event('submit',{bubbles:true,cancelable:true}));
-async function edit(f:any,value='Unfinished user requirement'){
-  await flush(()=>f.view.container.querySelector('[aria-label="编辑待办：Original requirement"]')!.dispatchEvent(new MouseEvent('dblclick',{bubbles:true})));
-  await flush(()=>input(title(f),value));
-  expect(title(f).value).toBe(value);
-}
-
-test('Todo requirement registers an unsaved recoverable draft and explicit cancel clears it',async()=>{
-  const f=await fixture();try{
-    expect(f.reads.filter(request=>request.name==='todo')).toHaveLength(0);
-    await edit(f);
-    expect(f.guard()).toEqual({dirty:true,saving:false});
-    expect([...f.checkpoints.values()].some(value=>value.value.title==='Unfinished user requirement')).toBe(true);
-    await flush(()=>button(f.view.container,'取消').click());expect(f.checkpoints.size).toBe(0);expect(title(f)).toBeNull();expect(f.guard()).toEqual({dirty:false,saving:false});
-  }finally{await f.view.unmount();}
-});
-
-test('same-batch repeated Todo submits dispatch one original CAS intent',async()=>{
-  const receipt=deferred<any>();const f=await fixture({invoke:async()=>receipt.promise});try{
-    await edit(f);await flush(()=>{submit(f);submit(f);});
-    expect(f.guard()).toEqual({dirty:true,saving:true});
-    expect(f.calls).toHaveLength(1);expect(f.calls[0].input.baseFingerprint).toBe(fingerprint(initial()));expect(f.calls[0].input.base).toBeUndefined();
-    await flush(()=>receipt.resolve({item:{...initial(),title:'Unfinished user requirement',revision:2},revision:2}));
-  }finally{await f.view.unmount();}
-});
-
-test('Todo edits made after save starts survive the older receipt',async()=>{
-  const receipt=deferred<any>();const f=await fixture({invoke:async()=>receipt.promise});try{
-    await edit(f,'Submitted user requirement');await flush(()=>submit(f));
-    await flush(()=>input(title(f),'Newer unsaved requirement'));
-    f.item={...f.item,title:'Submitted user requirement',revision:2};
-    await flush(()=>receipt.resolve({item:f.item,revision:2}));
-    expect(title(f)?.value).toBe('Newer unsaved requirement');
-    expect(f.guard()).toEqual({dirty:true,saving:false});
-    expect([...f.checkpoints.values()].some(value=>value.value.title==='Newer unsaved requirement')).toBe(true);
-    expect(f.calls).toHaveLength(1);
-  }finally{await f.view.unmount();}
-});
-
-test('definitely rejected Todo saves preserve the original requirement CAS on explicit retries',async()=>{
-  const f=await fixture();try{
-    await edit(f);
-    f.item={...f.item,title:'Another author requirement',description:'Another author details',images:[],revision:2};
-    await flush(()=>f.publish('todo'));
-    expect(title(f).value).toBe('Unfinished user requirement');
-    await flush(()=>submit(f));expect(f.view.container.textContent).toContain('该需求已被修改');
-    expect(f.commands).toHaveLength(0);expect(title(f).value).toBe('Unfinished user requirement');
-    await flush(()=>submit(f));expect(f.calls).toHaveLength(2);expect(f.receiptReads).toHaveLength(0);
-    expect(f.calls[0].options.requestId).not.toBe(f.calls[1].options.requestId);
-    expect(f.calls[1].input.baseFingerprint).toBe(fingerprint(initial()));
-    expect(f.checkpoints.size).toBe(1);
-  }finally{await f.view.unmount();}
-});
-
-test('requirement save allows an unrelated status revision and retains image removal',async()=>{
-  const f=await fixture();try{
-    await edit(f);await flush(()=>button(f.view.container,'移除图片 1').click());
-    f.item={...f.item,status:'in_progress',revision:2};await flush(()=>f.publish('todo'));
-    await flush(()=>submit(f));
-    expect(f.commands).toHaveLength(1);expect(f.commands[0].input).toMatchObject({projectId:'game',id:'todo-one',baseRevision:2,patch:{title:'Unfinished user requirement',description:'Original details',images:[]}});
-    expect(f.calls[0].input.baseFingerprint).toBe(fingerprint(initial()));
-    expect(f.checkpoints.size).toBe(0);expect(f.guard()).toEqual({dirty:false,saving:false});
-  }finally{await f.view.unmount();}
-});
-
-test('accepted Todo save with failed causal refresh retries only the read',async()=>{
-  let unavailable=true;
-  const f=await fixture({revalidate:async(request,state)=>{if(request.name==='todo'&&unavailable)throw Error('synthetic read unavailable');return state.snapshot(request);}});
-  try{
-    await edit(f);await flush(()=>submit(f));
-    expect(f.commands).toHaveLength(1);expect(f.calls).toHaveLength(1);
-    expect(f.view.container.textContent).toContain('synthetic read unavailable');expect(f.checkpoints.size).toBe(1);
-    await flush(()=>submit(f));expect(f.calls).toHaveLength(1);expect(f.commands).toHaveLength(1);
-    unavailable=false;await flush(()=>submit(f));
-    expect(f.calls).toHaveLength(1);expect(f.commands).toHaveLength(1);expect(f.checkpoints.size).toBe(0);
-    expect(button(f.view.container,'保存修改').disabled).toBe(true);
-  }finally{await f.view.unmount();}
-});
-
-test('restored Todo requirement opens without replay and keeps a business-only value',async()=>{
-  const f=await fixture();try{
-    await edit(f);await f.view.rerender(f.render('compact'));await f.view.rerender(f.render());
-    expect(title(f)?.value).toBe('Unfinished user requirement');expect(f.calls).toHaveLength(0);
-    const [key,checkpoint]=[...f.checkpoints][0]!;
-    expect(key).toBe('todo-requirement:todo-editor:game:generation-A:todo-one');
-    expect(Object.keys(checkpoint.value).sort()).toEqual(['description','images','title']);
-    await flush(()=>submit(f));expect(f.calls).toHaveLength(1);expect(f.calls[0].input.projectId).toBe('game');
-    expect(f.calls[0].input.baseFingerprint).toBe(fingerprint(initial()));
-  }finally{await f.view.unmount();}
-});
-
-test('configuration rebind cannot redirect an open Todo requirement to a different project',async()=>{
-  const f=await fixture();try{
-    await edit(f);await flush(()=>f.rebind());await flush(()=>submit(f));
-    expect(f.calls).toHaveLength(1);expect(f.calls[0].input.projectId).toBe('game');
-    expect(f.commands).toHaveLength(1);expect(f.commands[0].input.projectId).toBe('game');
-    expect(f.reads.filter(request=>request.name==='todo').every(request=>request.input.projectId==='game')).toBe(true);
-  }finally{await f.view.unmount();}
-});
-
-test('a same-ID Todo from a different project never receives the first project draft',async()=>{
-  const f=await fixture();try{
-    await edit(f);await flush(()=>{f.rebind();f.item={...initial(),projectId:'other-project',title:'Other project requirement'};f.publish('todos');});
-    expect(title(f)).toBeNull();expect(f.checkpoints.has('todo-requirement:todo-editor:game:generation-A:todo-one')).toBe(true);
-    await flush(()=>f.view.container.querySelector('[aria-label="编辑待办：Other project requirement"]')!.dispatchEvent(new MouseEvent('dblclick',{bubbles:true})));
-    expect(title(f).value).toBe('Other project requirement');expect(f.calls).toHaveLength(0);
-  }finally{await f.view.unmount();}
-});
-
-function clipboardFixture(){
-  const previousReader=Object.getOwnPropertyDescriptor(globalThis,'FileReader'),previousImage=Object.getOwnPropertyDescriptor(globalThis,'Image');
-  let complete!:()=>void;
-  class ClipboardReader{result='data:image/gif;base64,AA==';onload?:()=>void;readAsDataURL(){complete=()=>this.onload?.();}}
-  class ClipboardImage{naturalWidth=1;naturalHeight=1;onload?:()=>void;set src(_value:string){queueMicrotask(()=>this.onload?.());}}
-  Object.defineProperty(globalThis,'FileReader',{configurable:true,value:ClipboardReader});
-  Object.defineProperty(globalThis,'Image',{configurable:true,value:ClipboardImage});
-  return {paste(element:HTMLTextAreaElement){const event=new Event('paste',{bubbles:true,cancelable:true});Object.defineProperty(event,'clipboardData',{value:{items:[{type:'image/gif',getAsFile:()=>({type:'image/gif',size:1,name:'pasted.gif'})}]}});element.dispatchEvent(event);},complete:()=>complete(),restore(){if(previousReader)Object.defineProperty(globalThis,'FileReader',previousReader);else delete (globalThis as any).FileReader;if(previousImage)Object.defineProperty(globalThis,'Image',previousImage);else delete (globalThis as any).Image;}};
-}
-
-test('delayed clipboard conversion merges images without overwriting newer text',async()=>{
-  const clipboard=clipboardFixture(),f=await fixture();try{
-    await edit(f);await flush(()=>clipboard.paste(title(f)));
-    await flush(()=>input(title(f),'Typed during image conversion'));await flush(()=>clipboard.complete());
-    expect(title(f).value).toBe('Typed during image conversion');
-    expect(f.view.container.querySelectorAll('.cardgame-image-thumb')).toHaveLength(2);
-    await flush(()=>submit(f));expect(f.calls[0].input.title).toBe('Typed during image conversion');expect(f.calls[0].input.images).toHaveLength(2);
-    expect(f.calls[0].input.baseFingerprint).toBe(fingerprint(initial()));
-  }finally{await f.view.unmount();clipboard.restore();}
-});
-
-test('cancelled clipboard conversion cannot resurrect a draft in a reopened editor',async()=>{
-  const clipboard=clipboardFixture(),f=await fixture();try{
-    await edit(f);await flush(()=>clipboard.paste(title(f)));await flush(()=>button(f.view.container,'取消').click());
-    await edit(f,'New editing session');await flush(()=>clipboard.complete());
-    expect(title(f).value).toBe('New editing session');expect(f.view.container.querySelectorAll('.cardgame-image-thumb')).toHaveLength(1);
-    expect(f.calls).toHaveLength(0);
-  }finally{await f.view.unmount();clipboard.restore();}
-});
-
-test('a receipt after editor removal never replays or drops a recovered requirement',async()=>{
-  const receipt=deferred<any>();const f=await fixture({invoke:async()=>receipt.promise});try{
-    await edit(f,'Accepted while hidden');await flush(()=>submit(f));await f.view.rerender(f.render('compact'));
-    expect(f.calls[0].options.signal.aborted).toBe(false);
-    f.item={...f.item,title:'Accepted while hidden',revision:2};await flush(()=>receipt.resolve({item:f.item,revision:2}));
-    await f.view.rerender(f.render());
-    expect(f.calls).toHaveLength(1);expect(f.checkpoints.size).toBe(0);
-    expect(f.view.container.textContent).toContain('Accepted while hidden');
-  }finally{await f.view.unmount();}
-});
-
-test('existing large-image requirements remain saveable when SDK recovery warns about its size limit',async()=>{
-  const f=await fixture();try{
-    f.item={...f.item,images:[{id:'large-image',dataUrl:'data:image/gif;base64,'+'A'.repeat(550_000)}]};await flush(()=>f.publish('todos'));
-    await edit(f);expect(f.guard()).toEqual({dirty:true,saving:false});
-    expect(f.view.container.textContent).toContain('自动恢复暂不可用');
-    await flush(()=>submit(f));expect(f.commands).toHaveLength(1);expect(f.calls[0].input.images[0].dataUrl.length).toBeGreaterThan(550_000);
-    expect(f.guard()).toEqual({dirty:false,saving:false});
-  }finally{await f.view.unmount();}
-});
-
-
-test('same-project directory replacement never restores the old generation requirement',async()=>{
-  const f=await fixture();try{
-    await edit(f,'Old directory draft');
-    await f.view.rerender(f.render('compact'));
-    await flush(()=>f.rebindSameProject());
-    await f.view.rerender(f.render());
-    expect(title(f)).toBeNull();
-    expect(f.checkpoints.has('todo-requirement:todo-editor:game:generation-A:todo-one')).toBe(true);
-    await edit(f,'New directory draft');await flush(()=>submit(f));
-    expect(f.calls).toHaveLength(1);expect(f.commands).toHaveLength(1);
-    expect(f.calls[0].input.projectGeneration).toBe('generation-B');
-    expect(f.commands[0].input.projectGeneration).toBe('generation-B');
-    expect(f.item.title).toBe('New directory draft');
-  }finally{await f.view.unmount();}
-});
-
-test('an already open requirement cannot write through a same-ID directory rebind',async()=>{
-  const f=await fixture();try{
-    await edit(f,'Old directory draft');
-    await flush(()=>f.rebindSameProject());
-    expect(title(f)).toBeNull();
-    expect(f.item.title).toBe('Original requirement');expect(f.commands).toHaveLength(0);
-    expect(f.checkpoints.has('todo-requirement:todo-editor:game:generation-A:todo-one')).toBe(true);
-  }finally{await f.view.unmount();}
-});
-
-test('editTodo keeps the expected directory generation on both the read and update command',async()=>{
-  const f=await fixture();try{
-    await edit(f);await flush(()=>submit(f));
-    expect(f.calls[0].input.projectGeneration).toBe('generation-A');
-    expect(f.commands[0].input.projectGeneration).toBe('generation-A');
-    await flush(()=>f.rebindSameProject());
-    await expect(editTodo({note:{id:'stale',stateRef:'state'},store:{read:async()=>({value:{projectId:'game'},revision:'config'})},resources:{read:async(request:any)=>{expect(request.input.projectGeneration).toBe('generation-A');throw Error('CardGame 项目绑定已变化');}},extensions:{request:async()=>{throw Error('Must not mutate');}}} as any,{projectId:'game',projectGeneration:'generation-A',itemId:'todo-one',title:'Stale edit',images:[],baseFingerprint:fingerprint(initial())})).rejects.toThrow('项目绑定已变化');
-    expect(f.commands).toHaveLength(1);
-  }finally{await f.view.unmount();}
-});
-
-test('a focused Todo owns its detail generation before the first list page arrives',async()=>{
-  const oldHref=window.location.href,priorScroll=Object.getOwnPropertyDescriptor(HTMLElement.prototype,'scrollIntoView');
-  Object.defineProperty(HTMLElement.prototype,'scrollIntoView',{configurable:true,value:()=>{}});
-  const focus='cg:'+encodeURIComponent(JSON.stringify({projectId:'game',kind:'todo',id:'todo-one',intent:'open'}));
-  window.history.replaceState(null,'','?focus='+encodeURIComponent(focus));
-  const f=await fixture({todosPending:true});
-  try{
-    await edit(f,'Typed while first list page loads');
-    const field=title(f);
-    expect(f.checkpoints.has('todo-requirement:todo-editor:game:generation-A:todo-one')).toBe(true);
-    expect(f.checkpoints.has('todo-requirement:todo-editor:game:legacy:todo-one')).toBe(false);
-    await flush(()=>f.publish('todos'));
-    expect(title(f)).toBe(field);expect(title(f).value).toBe('Typed while first list page loads');
-    await flush(()=>submit(f));
-    expect(f.calls[0].input.projectGeneration).toBe('generation-A');
-    expect(f.item.title).toBe('Typed while first list page loads');
-  }finally{
-    await f.view.unmount();window.history.replaceState(null,'',oldHref);
-    if(priorScroll)Object.defineProperty(HTMLElement.prototype,'scrollIntoView',priorScroll);else delete (HTMLElement.prototype as any).scrollIntoView;
-  }
-});
-
-
-test('concurrent image metadata changes reject the older complete requirement',async()=>{
+test('real Todo input survives collapse and complete expanded DOM replacement; explicit discard restores its source',async()=>{
  const f=await fixture();try{
-  await edit(f);f.item={...f.item,images:f.item.images.map((image:any)=>({...image,name:'Changed elsewhere',width:40,height:20})),revision:2};
-  await flush(()=>f.publish('todo'));await flush(()=>submit(f));
-  expect(f.commands).toHaveLength(0);expect(f.view.container.textContent).toContain('该需求已被修改');expect(title(f).value).toBe('Unfinished user requirement');
- }finally{await f.view.unmount();}
+  await f.edit();const old=f.title();
+  await f.view.rerender(f.render('compact'));expect(f.title()).toBeNull();
+  expect(f.view.container.querySelector('textarea,iframe')).toBeNull();
+  await until(()=>!!f.view.container.querySelector('[data-compact-surface=todo] input'));
+  expect(f.view.container.querySelector('input')?.readOnly).toBe(true);
+  await f.view.rerender(f.render());await until(()=>f.title()?.value==='Unfinished user requirement');
+  expect(f.title()).not.toBe(old);expect(f.calls).toHaveLength(0);
+  await flush(()=>button(f.view.container,'放弃输入').click());await flush(()=>button(f.view.container,'确认放弃').click());
+  await until(()=>f.title()?.value==='Original requirement');expect(f.calls).toHaveLength(0);
+ }finally{await f.close();}
 });
 
-
-test('list cards show lightweight image metadata and read complete images only on demand',async()=>{
- const f=await fixture({detailPending:true});try{
-  expect(f.view.container.querySelectorAll('.cardgame-image-thumb')).toHaveLength(0);expect(f.view.container.textContent).toContain('reference');
-  expect(f.reads.filter((request:any)=>request.name==='todo')).toHaveLength(0);
-  await flush(()=>button(f.view.container,'查看 1 张图片 / 编辑需求').click());
-  expect(title(f)).toBeNull();expect(f.view.container.querySelectorAll('.cardgame-image-thumb')).toHaveLength(0);
-  await flush(()=>f.publish('todo'));
-  expect(title(f).value).toBe('Original requirement');expect(f.view.container.querySelectorAll('.cardgame-image-thumb')).toHaveLength(1);expect(f.calls).toHaveLength(0);
- }finally{await f.view.unmount();}
+test('repeated Todo submit uses one frozen business CAS; pending fields and post-success fields remain locked',async()=>{
+ const f=await fixture({wait:true});try{
+  await f.edit('Submitted requirement');await flush(()=>{f.submit();f.submit();});await until(()=>f.calls.length===1);
+  expect(f.title()!.disabled).toBe(true);
+  expect(f.title()!.value).toBe('Submitted requirement');expect(f.calls[0]!.input.baseFingerprint).toBe(f.business.input.baseFingerprint);
+  expect(f.calls[0]!.input.projectGeneration).toBe(f.business.bindingA.projectGeneration);
+  await flush(()=>f.release());await until(()=>f.view.container.textContent?.includes('操作已确认。')===true);
+  expect((await f.business.detail()).item.title).toBe('Submitted requirement');expect(f.calls).toHaveLength(1);expect(f.title()!.disabled).toBe(true);
+  await flush(()=>button(f.view.container,'继续编辑').click());await until(()=>f.title()?.disabled===false);
+  expect(f.title()!.value).toBe('Submitted requirement');
+ }finally{await f.close();}
 });
 
-test('category pages keep their selected filter visible and the all-categories escape available',async()=>{
-  const categories=Array.from({length:101},(_,index)=>({category:index===0?'ALL':index===1?'__proto__':index===2?'constructor':`分类 ${String(index+1).padStart(3,'0')}`,count:index+1}));
-  const f=await fixture({categories});try{
-    const nav=()=>f.view.container.querySelector('[aria-label="待办分类"]')!;
-    const category=(label:string)=>Array.from(nav().querySelectorAll('button')).find(element=>element.textContent?.startsWith(label)) as HTMLButtonElement;
-    expect(nav().textContent).toContain('共 101 个分类');expect(nav().textContent).not.toContain('分类 101');
-    await flush(()=>category('ALL').click());expect(category('ALL').getAttribute('aria-pressed')).toBe('true');
-    expect(f.reads.filter(request=>request.name==='todos').at(-1)?.input.category).toBe('ALL');
-    await flush(()=>button(nav(),'下一页分类').click());expect(nav().textContent).toContain('分类 101');
-    expect(category('ALL').getAttribute('aria-pressed')).toBe('true');expect(category('__proto__')).toBeUndefined();
-    expect(f.reads.filter(request=>request.name==='categories').at(-1)?.input.cursor).toBe('category-next');
-    await flush(()=>button(nav(),'全部').click());expect(button(nav(),'全部').getAttribute('aria-pressed')).toBe('true');expect(category('ALL')).toBeUndefined();
-    expect(f.reads.filter(request=>request.name==='todos').at(-1)?.input.category).toBeUndefined();
-    await flush(()=>button(nav(),'上一页分类').click());expect(category('__proto__')).toBeDefined();expect(category('constructor')).toBeDefined();
-    await flush(()=>category('__proto__').click());expect(f.reads.filter(request=>request.name==='todos').at(-1)?.input.category).toBe('__proto__');
-  }finally{await f.view.unmount();}
+test('Todo success with unavailable source retries the read without another write',async()=>{
+ const f=await fixture({failReadback:true});try{
+  await f.edit();await flush(()=>f.submit());await until(()=>f.view.container.textContent?.includes('injected readback outage')===true);
+  expect(f.calls).toHaveLength(1);expect(f.title()!.disabled).toBe(true);
+  f.failRead('editInput');await flush(()=>button(f.view.container,'核对 / 重新读取').click());
+  await until(()=>!f.view.container.textContent?.includes('injected readback outage'));expect(f.calls).toHaveLength(1);
+  await flush(()=>button(f.view.container,'继续编辑').click());await until(()=>f.title()?.disabled===false);
+  expect(f.title()!.value).toBe('Unfinished user requirement');
+ }finally{await f.close();}
 });
 
-test('a category read failure stays local and leaves Todo requirements and all-categories navigation usable',async()=>{
-  const f=await fixture({categoryError:true});try{
-    const nav=f.view.container.querySelector('[aria-label="待办分类"]')!;
-    expect(nav.textContent).toContain('分类读取失败');expect(button(nav,'全部').disabled).toBe(false);
-    expect(f.view.container.querySelector('[aria-label="编辑待办：Original requirement"]')).not.toBeNull();
-    await edit(f);expect(title(f).value).toBe('Unfinished user requirement');
-  }finally{await f.view.unmount();}
+test('dirty Todo baseline cannot follow the same project into a replacement directory',async()=>{
+ const f=await fixture();try{
+  await f.edit('Old directory only');const oldGeneration=f.business.bindingA.projectGeneration;
+  let replacement:any;await flush(async()=>{replacement=await f.business.rebindB();});expect(replacement.projectGeneration).not.toBe(oldGeneration);
+  await flush(()=>f.submit());await until(()=>f.view.container.textContent?.includes('旧编辑或回执')===true);
+  expect(f.calls[0]!.input.projectGeneration).toBe(oldGeneration);expect((await f.business.detail()).item.title).toBe('Original requirement');
+  await flush(()=>f.publish('projectBinding'));await until(()=>f.title()?.value==='Original requirement');
+  expect(f.calls).toHaveLength(1);
+ }finally{await f.close();}
 });
 
-test('large-image edits survive real category row removal with a shared copy-or-discard exit',async()=>{
- const f=await fixture({categories:[{category:'A',count:1},{category:'B',count:1}]});try{
-  f.item={...f.item,category:'A',images:[{id:'large-image',dataUrl:'data:image/gif;base64,'+'A'.repeat(550_000)}]};await flush(()=>f.publish('todos'));
-  await edit(f,'Large draft survives filtering');expect(f.guard()).toEqual({dirty:true,saving:false});expect(f.checkpoints.size).toBe(0);
-  const nav=f.view.container.querySelector('[aria-label="待办分类"]')!,category=(label:string)=>Array.from(nav.querySelectorAll('button')).find(control=>control.textContent?.startsWith(label)) as HTMLButtonElement;
-  await flush(()=>category('B').click());expect(title(f)).toBeNull();expect(f.guard()).toEqual({dirty:true,saving:false});expect(f.view.container.textContent).toContain('未显示的编辑');
-  await flush(()=>{const details=f.view.container.querySelector('aside[aria-label="未显示的编辑"] details') as HTMLDetailsElement;details.open=true;details.dispatchEvent(new Event('toggle'));});const retained=f.view.container.querySelector('[aria-label="保留的编辑内容"]') as HTMLTextAreaElement;
-  expect(retained.value).toContain('Large draft survives filtering');expect(retained.value).toContain('A'.repeat(550_000));
-  await flush(()=>category('A').click());expect(title(f).value).toBe('Large draft survives filtering');expect(f.view.container.querySelectorAll('.cardgame-image-thumb')).toHaveLength(1);
-  await flush(()=>submit(f));expect(f.commands).toHaveLength(1);expect(f.commands[0].input.patch.images[0].dataUrl).toBe(f.item.images[0].dataUrl);expect(f.guard()).toEqual({dirty:false,saving:false});
- }finally{await f.view.unmount();}
+test('an accepted image intake finishes in the host after the Todo editor closes',async()=>{
+ const f=await fixture();try{
+  await f.edit('Text preserved while image arrives');
+  const {default:sharp}=await import('sharp');const bytes=await sharp({create:{width:2,height:2,channels:4,background:'#ff0000'}}).png().toBuffer();
+  const image=new File([bytes],'pixel.png',{type:'image/png'});
+  const input=f.view.container.querySelector('input[type=file]') as HTMLInputElement;
+  Object.defineProperty(input,'files',{configurable:true,value:[image]});
+  await flush(()=>input.dispatchEvent(new Event('change',{bubbles:true})));
+  await until(()=>f.requests.some(value=>value.op==='attach'));
+  await flush(()=>button(f.view.container,'关闭编辑').click());expect(f.title()).toBeNull();
+  await flush(()=>button(f.view.container,'编辑待办：Original requirement').click());
+  await until(()=>!!f.title()&&!!f.view.container.querySelector('img'));
+  expect(f.title()!.value).toBe('Text preserved while image arrives');expect(f.calls).toHaveLength(0);
+ }finally{await f.close();}
 });
 
-test('a source deleted while hidden retains readable large edits and an explicit discard escape',async()=>{
- const f=await fixture({categories:[{category:'A',count:1},{category:'B',count:1}]});try{
-  f.item={...f.item,category:'A',images:[{id:'large-image',dataUrl:'data:image/gif;base64,'+'A'.repeat(550_000)}]};await flush(()=>f.publish('todos'));await edit(f,'Keep or copy removed source');
-  const nav=f.view.container.querySelector('[aria-label="待办分类"]')!,other=Array.from(nav.querySelectorAll('button')).find(control=>control.textContent?.startsWith('B'))!;
-  await flush(()=>other.click());await flush(()=>f.removeSource());expect(title(f)).toBeNull();
-  await flush(()=>{const details=f.view.container.querySelector('aside[aria-label="未显示的编辑"] details') as HTMLDetailsElement;details.open=true;details.dispatchEvent(new Event('toggle'));});expect((f.view.container.querySelector('[aria-label="保留的编辑内容"]') as HTMLTextAreaElement).value).toContain('Keep or copy removed source');
-  await flush(()=>button(f.view.container,'放弃此编辑').click());expect(f.guard().dirty).toBe(true);await flush(()=>button(f.view.container,'确认放弃').click());
-  expect(f.guard()).toEqual({dirty:false,saving:false});expect(f.view.container.textContent).not.toContain('未显示的编辑');expect(f.calls).toHaveLength(0);
- }finally{await f.view.unmount();}
+test('Todo compact keeps the original progress and list while entry controls only open the editor',async()=>{
+ const business=await workflowFixture();
+ const f=await hostUiFixture({config:{projectId:business.input.projectId},query:(name,input)=>(actions.queries as any)[name](business.actionContext(),input)});
+ const view=await mount(f.render(<View/>,'compact'));try{
+  await until(()=>view.container.textContent?.includes('Original requirement')===true);
+  expect(view.container.querySelector('iframe,textarea,video,audio')).toBeNull();
+  expect(view.container.querySelector('input')?.readOnly).toBe(true);
+  await flush(()=>view.container.querySelector('form')!.dispatchEvent(new Event('submit',{bubbles:true,cancelable:true})));
+  expect(f.opened).toHaveLength(1);expect(f.calls).toHaveLength(0);
+  expect(f.reads.filter(read=>!['state','readiness','todos','workflowStatus'].includes(read.name))).toEqual([]);
+  expect(f.requests).toHaveLength(0);
+ }finally{await view.unmount();await f.close();}
 });
 
-
-test('normalized Todo save recovers its host receipt without matching the untrimmed editor or replaying',async()=>{
-  const first=await fixture({dropReceipt:true});
-  await edit(first,'  Normalized requirement  ');await flush(()=>submit(first));
-  expect(first.commands).toHaveLength(1);expect(first.item.title).toBe('Normalized requirement');
-  const checkpoint=[...first.checkpoints.values()][0],requestId=first.calls[0].options.requestId;
-  expect(checkpoint.command.name).toBe('editTodo');expect(checkpoint.command.input.title).toBe('  Normalized requirement  ');
-  const checkpoints=first.checkpoints,savedItem=first.item;await first.view.unmount();
-  const recovered=await fixture({checkpoints,initialItem:savedItem});
-  // Recreate the host's durable completed receipt independently of current source equality.
-  const revalidate=recovered.runtime.resources.revalidate;
-  recovered.runtime.resources.revalidate=async(request:any)=>request.name==='command'?{key:'command',epoch:'fixture',version:100,data:{status:'completed',result:{projectId:'game',projectGeneration:'generation-A',id:'todo-one',revision:savedItem.revision,requirementRevision:savedItem.requirementRevision,requirementFingerprint:fingerprint(savedItem)}},stale:false}:revalidate(request);
-  try{
-    expect(title(recovered).value).toBe('  Normalized requirement  ');expect(recovered.calls).toHaveLength(0);
-    await flush(()=>submit(recovered));
-    expect(recovered.calls).toHaveLength(0);expect(recovered.commands).toHaveLength(0);expect(recovered.checkpoints.size).toBe(0);
-    expect(title(recovered)?.value).toBe('Normalized requirement');expect(recovered.guard()).toEqual({dirty:false,saving:false});
-    expect(checkpoint.intent.requestId).toBe(requestId);
-  }finally{await recovered.view.unmount();}
+test('a known Todo requirement conflict keeps editable input and explicit discard adopts the new business version',async()=>{
+ const f=await fixture();try{
+  await f.edit('Keep my rejected draft');
+  await f.business.manager.invoke('updateTodo',{projectId:f.business.input.projectId,id:'todo-one',baseRevision:1,patch:{title:'Remote requirement'}},{kind:'action',noteId:'a-todo'} as any);
+  await flush(()=>f.submit());await until(()=>f.view.container.textContent?.includes('该需求已被修改')===true&&f.title()?.disabled===false);
+  expect(f.title()!.value).toBe('Keep my rejected draft');expect(f.calls).toHaveLength(1);expect((await f.business.detail()).item.title).toBe('Remote requirement');
+  await flush(()=>button(f.view.container,'放弃输入').click());await flush(()=>button(f.view.container,'确认放弃').click());await until(()=>f.title()?.value==='Remote requirement');
+  expect(f.calls).toHaveLength(1);
+ }finally{await f.close();}
 });

@@ -162,6 +162,10 @@ async function renameCandidates(ctx: ActionContext, input: z.infer<typeof rename
 
 /** The host writes every surface status into note state; the view reads it as-is. */
 export const queries = {
+overview:note.query({description:'读取试玩小卡的候选状态，不解析入口、不启动预览。',visibility:'private',input:z.object({}),output:z.object({summary:z.string(),items:z.array(z.object({id:z.string(),title:z.string(),status:z.string()})).max(4)})},async(ctx)=>{
+ const state=(await ctx.state.read()).value;
+ return {summary:`${state.candidates.length} 个候选版本`,items:state.candidates.slice(0,4).map(item=>({id:item.key,title:item.title??item.key,status:Object.values(item.status??{}).some(status=>status.phase==='ready')?'已启动':'待查看'}))};
+}),
  ...cardgameQueries,
   candidate: note.query({visibility:'public',"description":"按稳定候选 key 读取配置、检查和运行结果。","objectRef":"/candidate/key","revision":"/revision",input:z.object({key:z.string()}),output:z.looseObject({candidate:candidateSchema,revision:z.string()}).nullable()}, async (ctx, input) => {
     if(!input?.key?.trim())throw Error('候选 key 不能为空');

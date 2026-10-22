@@ -1,0 +1,7 @@
+import {z} from 'zod';
+export const changeSchema=z.object({id:z.string(),projectId:z.string(),productionId:z.string(),featureId:z.string().optional(),todoId:z.string().optional(),title:z.string(),revision:z.number(),requirementRevision:z.number(),round:z.number(),updatedAt:z.string(),detail:z.string().optional(),stage:z.enum(['draft','running','cancelled','paused','interrupted','needs-input','failed','stale','generated','checking','review','adopted','undone']),candidates:z.array(z.object({id:z.string(),kind:z.string(),targetId:z.string(),commit:z.string(),status:z.enum(['candidate','adopted','undone']),current:z.boolean(),previewVerified:z.boolean()}))});
+export const changePageSchema=z.object({items:z.array(changeSchema),total:z.number(),nextCursor:z.string().optional()});
+export const diffSchema=z.object({candidateId:z.string(),commit:z.string(),baseCurrent:z.boolean(),comparison:z.string(),files:z.array(z.object({path:z.string(),changed:z.boolean(),binary:z.boolean(),truncated:z.boolean(),beforeBytes:z.number(),afterBytes:z.number(),before:z.string().nullable().optional(),after:z.string().nullable().optional()}))});
+export const referencesSchema=z.object({items:z.array(z.object({key:z.string(),title:z.string(),anchor:z.string().optional(),kind:z.string(),revision:z.string(),freshness:z.string()})),limit:z.number()});
+export type GameChange=z.output<typeof changeSchema>;
+export type Diff=z.output<typeof diffSchema>;

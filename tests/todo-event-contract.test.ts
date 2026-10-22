@@ -21,6 +21,7 @@ function harness(options: { projectId?: string; prepared?: unknown } = {}) {
   const commands: Array<{ extension: string; method: string; input: any }> = [];
   const seen = new Map<string, string>();
   const context = {
+    caller: { kind: 'user', requestId: 'fixture-request' },
     note: { id: 'todo-note', version: 'test', stateRef: 'state:todo-note' },
     store: {
       read: async () => ({ value: { projectId: options.projectId ?? 'project-1' }, revision: 'config-1' }),
@@ -130,7 +131,7 @@ describe('portable Todo event contracts', () => {
     const { context, published } = harness();
     const first = await todo.productionRequest(context, { todoId: ' todo-1 ', brief: ' ', title: ' ' });
     const second = await todo.productionRequest(context, { todoId: 'todo-1', brief: ' ', title: ' ' });
-    expect(first).toMatchObject({ requestId: 'todo-production:project-1:todo-1', duplicate: false });
+    expect(first).toMatchObject({ requestId: 'todo-production:project-1:legacy:todo-1', duplicate: false });
     expect(second).toMatchObject({ requestId: first.requestId, eventId: first.eventId, duplicate: true });
     expect(published[0].payload).toMatchObject({ projectId: 'project-1', todoId: 'todo-1', brief: 'Complete full requirement text', title:'Current requirement', businessKey: 'todo:project-1:todo-1' });
     expect(published[1].options).toEqual({ key: first.requestId, exclusive: true });
@@ -196,7 +197,7 @@ describe('portable Todo event contracts', () => {
     const { context, published, commands } = harness({ prepared });
     const result = await todo.delegateTodo(context, { itemId: 'todo-1', goal: 'User goal', scope: ['Only the selected card'] });
     expect(commands).toEqual([{ extension: 'cardgame-content', method: 'delegateTodo',
-      input: { itemId: 'todo-1', goal: 'User goal', scope: ['Only the selected card'], projectId: 'project-1' } }]);
+      input: { itemId: 'todo-1', goal: 'User goal', scope: ['Only the selected card'], projectId: 'project-1', requestId: 'fixture-request' } }]);
     expect(published).toEqual([{
       id: 'event-1', name: delegationName,
       payload: { projectId: 'project-1', projectGeneration: 'generation-1', todoId: 'todo-1', todoObjectId: prepared.payload.todoObjectId,

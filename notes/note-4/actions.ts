@@ -1,13 +1,16 @@
+import {cardFieldsSchema,cardEditorValue,cardDefinition} from './card-draft';
+import {fileRefSchema,OperationRejectedError} from '@dsh-workbench/runtime';
+import {requirementFields} from './requirement-draft';
 import { z, type NoteActionContext, type NoteQueryContext, type JsonValue } from '@dsh-workbench/runtime';
-import { note, stateSchema } from './note-model';
+import { note, stateSchema } from './model';
 import { actionInputs, queryInputs, queryOutputs, productionReceiptSchema, preparedEventSchema, eventReceiptSchema, record, isCardBatch } from './contracts';
-export { note } from './note-model';
+export { note } from './model';
 export type ProductionState = z.infer<typeof stateSchema>;
 type ActionContext = NoteActionContext<typeof note>;
 type ReadContext = Pick<NoteQueryContext<typeof note>, 'resources' | 'notes' | 'note'>;
 
 async function command<S extends z.ZodType>(method: string, input: Record<string, unknown>, ctx: ActionContext, output: S): Promise<z.output<S>> {
-  return output.parse(await ctx.host.extensions.request('cardgame-content', method, input));
+  return output.parse(await ctx.host.extensions.request('cardgame-content', method, {...input,requestId:input.requestId??ctx.idempotencyKey}));
 }
 async function readOp<S extends z.ZodType>(op: string, input: Record<string, unknown>, ctx: ReadContext, output: S): Promise<z.output<S>> {
   const snapshot = await ctx.resources.read({ name: 'extension.cardgame-content.query', input: { ...input, op } as JsonValue });
@@ -72,7 +75,69 @@ async function featureChoices(ctx:ReadContext){
   if(snapshot.error&&snapshot.data===undefined)throw new Error(snapshot.error);
   return {items:(snapshot.data?.features??[]).filter(item=>!item.archived).map(({id,title})=>({id,title}))};
 }
+const requirementInputSchema=z.object({brief:z.string(),targetAsset:z.string(),pinnedRefs:z.string(),batch:z.string()});
+export const createCardRequest=note.action({description:'保存新的卡牌制作目标，不自动运行模型。',visibility:'private',input:z.object({projectId:z.string(),projectGeneration:z.string(),brief:z.string(),featureId:z.string()}),output:productionReceiptSchema},(ctx,input)=>command('createCardBatch',input,ctx,productionReceiptSchema));
+const cardTargetSchema=z.object({productionId:z.string(),cardId:z.string(),projectGeneration:z.string()});
+const fileInfoSchema=fileRefSchema.extend({name:z.string(),mime:z.string(),size:z.number(),sha256:z.string()});
+async function cardForInput(ctx:ReadContext,input:z.output<typeof cardTargetSchema>){
+ const detail=await readOp('cardBatch',input,ctx,queryOutputs.cardBatch);
+ const card=detail.batch.cards.find(card=>card.definition.id===input.cardId);
+ if(!card)throw new OperationRejectedError('卡牌已不存在，请重新选择');
+ return {detail,card};
+}
+export const saveCardEdits=note.action({description:'按原制作单修订保存卡牌字段，保留未编辑的定义。',visibility:'private',input:cardTargetSchema.extend({baseRevision:z.number(),fields:cardFieldsSchema}),output:productionReceiptSchema},async(ctx,input)=>{
+ const {detail,card}=await cardForInput(ctx,input);
+ if(detail.production.revision!==input.baseRevision)throw new OperationRejectedError('制作单已变化，请保留草稿后读取最新内容');
+ return command('saveCardDraft',{...input,definition:cardDefinition(card,input.fields),artBrief:input.fields.artBrief},ctx,productionReceiptSchema);
+});
+export const createCompanion=note.action({description:'按已选择单位与版本创建配套符箓制作单。',visibility:'private',input:z.object({projectId:z.string(),projectGeneration:z.string(),unitId:z.string(),sourceRevision:z.string(),featureId:z.string(),todoId:z.string(),name:z.string(),targetLabel:z.string(),bonus:z.string(),brief:z.string()}),output:productionReceiptSchema},async(ctx,input)=>{
+ const source=await readOp('card',{id:input.unitId,projectGeneration:input.projectGeneration},ctx,queryOutputs.sourceCard);
+ const amount=Number(input.bonus);
+ if(source.revision!==input.sourceRevision)throw new OperationRejectedError('所选单位已经更新，请核对来源版本');
+ if(!input.name.trim()||!input.brief.trim()||!input.featureId||!input.targetLabel||!Number.isInteger(amount)||amount<1||amount>9||!source.json.labels?.includes(input.targetLabel))throw new OperationRejectedError('请核对所属功能、配套单位、目标标签、名称、目标和 1–9 的攻击增益');
+ const id=`TL_${ctx.idempotencyKey.replaceAll('-','').slice(-12).toUpperCase()}`;
+ const rule=`使一个带有「${input.targetLabel}」标签的己方单位本回合攻击 +${amount}。`;
+ return command('createCardBatch',{projectId:input.projectId,projectGeneration:input.projectGeneration,featureId:input.featureId,...(input.todoId?{todoId:input.todoId}:{}),brief:input.brief.trim(),companion:{cardId:input.unitId,revision:source.revision},cards:[{id,name:input.name.trim(),kind:'talisman',rarity:'common',description:rule,labels:[...new Set([...(source.json.labels??[]),'配套符箓'])],limitPerDeck:3,isInstant:true,duration:0,target:'unit',effects:[{timing:'reaction',target:{scope:'singleAlly',requiredLabelsAllOf:[input.targetLabel]},actions:[{type:'modifyAttack',value:amount,duration:'turn'}],text:rule,scriptId:`effect.${id}.cast`}]}]},ctx,productionReceiptSchema);
+});
+export const confirmDeckAndStage=note.action({description:'确认同一牌组草案并建立其试玩候选。',visibility:'private',input:z.object({productionId:z.string(),projectGeneration:z.string(),baseRevision:z.number()}),output:productionReceiptSchema},async(ctx,input)=>{
+ const approved=productionReceiptSchema.parse(await ctx.step.run('confirm',async()=>z.json().parse(await command('confirmDeckDraft',input,ctx,productionReceiptSchema))));
+ return productionReceiptSchema.parse(await ctx.step.run('stage',async()=>z.json().parse(await command('stageDeckCandidate',{...input,baseRevision:approved.production.revision},ctx,productionReceiptSchema))));
+});
+export const attachCardArtwork=note.action({description:'把已由宿主保留的插画文件交给原卡牌制作请求。',visibility:'private',input:cardTargetSchema.extend({baseRevision:z.number(),artRequestId:z.string(),files:z.array(fileInfoSchema).length(1)}),output:productionReceiptSchema},async(ctx,input)=>{
+ const {card}=await cardForInput(ctx,input);
+ if(card.artRequest?.id!==input.artRequestId)throw new OperationRejectedError('插画要求已变化，请核对新的生图请求');
+ const file=input.files[0]!,info=await ctx.files.info(file);
+ if(!['image/png','image/jpeg','image/webp'].includes(info.mime)||info.size>4*1024*1024)throw new OperationRejectedError('插画需要 PNG、JPEG 或 WebP，最大 4 MiB');
+ const bytes=await ctx.files.read(file);
+ return command('attachCardArt',{...input,requestId:input.artRequestId,base64:`data:${info.mime};base64,${Buffer.from(bytes).toString('base64')}`},ctx,productionReceiptSchema);
+});
+const createScopeInput=z.object({projectGeneration:z.string()});
+async function creationScope(ctx:ReadContext,generation:string){const binding=await readOp('projectBinding',{},ctx,queryOutputs.projectBinding);if(!binding.configured||binding.projectGeneration!==generation)throw Error('项目绑定已变化，请重新打开创建表单');return {projectId:binding.projectId,projectGeneration:generation};}
 export const queries={
+preferences:note.query({description:'读取旧版制作界面的搜索和选择，作为当前查看者本地偏好的初值。',visibility:'private',requiresConfig:false,input:z.object({}),output:stateSchema},async(ctx)=>(await ctx.state.read()).value),
+ cardRequestInput:note.query({description:'读取当前项目的新卡牌制作单输入。',visibility:'private',input:createScopeInput,output:z.object({projectId:z.string(),projectGeneration:z.string(),brief:z.string(),featureId:z.string()})},async(ctx,input)=>({...await creationScope(ctx,input.projectGeneration),brief:'',featureId:''})),
+ companionCreateInput:note.query({description:'读取当前项目的新配套符箓输入。',visibility:'private',input:createScopeInput,output:z.object({projectId:z.string(),projectGeneration:z.string(),unitId:z.string(),sourceRevision:z.string(),featureId:z.string(),todoId:z.string(),name:z.string(),targetLabel:z.string(),bonus:z.string(),brief:z.string()})},async(ctx,input)=>({...await creationScope(ctx,input.projectGeneration),unitId:'',sourceRevision:'',featureId:'',todoId:'',name:'',targetLabel:'',bonus:'3',brief:''})),
+ productionCreateInput:note.query({description:'读取当前项目的新资源制作需求。',visibility:'private',input:createScopeInput,output:requirementInputSchema.extend({projectId:z.string(),projectGeneration:z.string()})},async(ctx,input)=>({...await creationScope(ctx,input.projectGeneration),...requirementFields()})),
+ companionInput:note.query({description:'读取制作单来源关联的输入及业务修订。',visibility:'private',input:queryInputs.production,output:z.object({productionId:z.string(),projectGeneration:z.string(),revision:z.number(),todoId:z.string(),unitId:z.string(),sourceRevision:z.string()})},async(ctx,input)=>{const {production}=await readOp('production',{...input,id:input.productionId},ctx,queryOutputs.production);if(!input.projectGeneration)throw Error('项目绑定尚未就绪');return {productionId:input.productionId,projectGeneration:input.projectGeneration,revision:production.revision,todoId:'',unitId:'',sourceRevision:''};}),
+ cardEditInput:note.query({description:'读取卡牌可编辑字段和制作单业务修订。',visibility:'private',input:cardTargetSchema,output:cardFieldsSchema.extend({productionId:z.string(),cardId:z.string(),projectGeneration:z.string(),revision:z.number()})},async(ctx,input)=>{const {detail,card}=await cardForInput(ctx,input);return {...cardEditorValue(card),...input,revision:detail.production.revision};}),
+ artworkInput:note.query({description:'读取插画回填目标及原请求身份。',visibility:'private',input:cardTargetSchema,output:cardTargetSchema.extend({revision:z.number(),artRequestId:z.string(),files:z.array(fileInfoSchema)})},async(ctx,input)=>{const {detail,card}=await cardForInput(ctx,input);if(!card.artRequest)throw Error('请先创建插画请求');return {...input,revision:detail.production.revision,artRequestId:card.artRequest.id,files:[]};}),
+
+ productionEditInput:note.query({description:'读取制作单的需求草稿与业务修订。',visibility:'private',input:queryInputs.production,output:requirementInputSchema.extend({productionId:z.string(),revision:z.number(),projectId:z.string(),projectGeneration:z.string()})},async(ctx,input)=>{
+  const detail=await readOp('production',{...input,id:input.productionId},ctx,queryOutputs.production);
+  if(!input.projectGeneration)throw Error('项目绑定尚未就绪');
+  return {...requirementFields(detail.production),productionId:input.productionId,revision:detail.production.revision,projectId:detail.production.projectId,projectGeneration:input.projectGeneration};
+ }),
+ candidateRejectInput:note.query({description:'读取候选否决目标及业务修订。',visibility:'private',input:queryInputs.production.extend({candidateId:z.string()}),output:z.object({productionId:z.string(),candidateId:z.string(),reason:z.string(),revision:z.number(),projectGeneration:z.string()})},async(ctx,input)=>{
+  const detail=await readOp('production',{...input,id:input.productionId},ctx,queryOutputs.production);
+  if(!input.projectGeneration||!detail.production.candidateRefs?.some(candidate=>(candidate.id??candidate.key??candidate.assetId)===input.candidateId))throw Error('候选已变化，请重新读取');
+  return {productionId:input.productionId,candidateId:input.candidateId,reason:'',revision:detail.production.revision,projectGeneration:input.projectGeneration};
+ }),
+overview:note.query({description:'读取制作小卡的请求概览。',visibility:'private',requiresConfig:false,input:z.object({}),output:z.object({summary:z.string(),items:z.array(z.object({id:z.string(),title:z.string(),status:z.string()})).max(4)})},async(ctx)=>{
+ const binding=await readOp('projectBinding',{},ctx,queryOutputs.projectBinding);
+ if(!binding.configured)return {summary:'展开后连接项目',items:[]};
+ const page=await readOp('productions',{limit:4,projectGeneration:binding.projectGeneration},ctx,queryOutputs.productions);
+ return {summary:`${page.total??page.items.length} 项制作请求`,items:page.items.slice(0,4).map(item=>({id:item.id,title:item.brief,status:item.status}))};
+}),
   productionDispatch:note.query({description:'读取已有轮次的冻结交办快照，用于同请求重试和旧回执核对。',input:actionInputs.bindExecution.omit({receipt:true}).extend({round:z.number()}),output:record},(ctx,input)=>readOp('productionDispatch',input,ctx,record)),
   projectBinding:note.query({description:'读取宿主持久项目绑定状态与代次。',input:queryInputs.projectBinding,output:queryOutputs.projectBinding},(ctx,input)=>readOp('projectBinding',input,ctx,queryOutputs.projectBinding)),
   productionContext:note.query({description:'读取制作单关联的功能、待办与配套来源。',input:queryInputs.productionContext,output:queryOutputs.productionContext},async(ctx,input)=>{

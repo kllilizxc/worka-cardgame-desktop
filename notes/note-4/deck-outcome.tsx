@@ -2,16 +2,21 @@ import type {CardBatchDetail,PipelineCard} from './contracts';
 import {useProductionNote} from './surface';
 import { Button } from '@heroui/react';
 import { useState } from 'react';
-import {useAction} from '@dsh-workbench/react';
+import {useMutation} from '@dsh-workbench/react';
+import {MutationNotice} from './mutation-notice';
 import { CARD_FACE_THEMES, CARD_KIND_LABELS, cardRules } from './card-face';
 
 const STATES: Record<string,string> = { adopted:'已加入正式游戏', 'basis-changed':'简报已变化', incomplete:'方案待补齐', 'needs-review':'待确认草案', candidate:'候选已建立', stale:'候选待更新', ready:'草案已确认' };
 
 /** Readable outcomes, native conversation/annotation editing, one explicit approval. */
 export function DeckOutcome({ value }: { value: CardBatchDetail }) {
-  const { actions, useQuery, host: workbench, metadata } = useProductionNote();
-  const action=useAction(),busy=action.pending,error=action.error?.message;
+  const {actions,useQuery,scopeGeneration}=useProductionNote();
   const { batch, production, deckInspection: inspection }=value;
+  const query=useQuery('cardBatch',{productionId:production.id});
+  const key=JSON.stringify([scopeGeneration,production.id]);
+  const approve=useMutation(actions.confirmDeckAndStage,{key,query});
+  const staging=useMutation(actions.cardWorkflow,{key,query});
+  const busy=[approve.status,staging.status].some(status=>status==='pending'||status==='unknown');
   const plan=batch.deck!, report=inspection!;
   const [theme,setTheme]=useState('jade');
   const ready=batch.cards.filter((card)=>['integrate','done'].includes(value.stages[card.definition.id])).length;
@@ -19,11 +24,9 @@ export function DeckOutcome({ value }: { value: CardBatchDetail }) {
   const current=production.gameCandidates?.find((item)=>item.id===report.candidateId);
   const artCandidate=Boolean(current?.deckArtFingerprints);
   const artAdopted=artCandidate&&current?.status==='adopted';
-  function confirm(){return action.run(async()=>{
-    const approved=await actions.cardWorkflow({operation:'confirmDeckDraft',productionId:production.id,baseRevision:production.revision});
-    await actions.cardWorkflow({operation:'stageDeckCandidate',productionId:production.id,baseRevision:approved.production.revision});
-  });}
-  function stage(){return action.run(()=>actions.cardWorkflow({operation:'stageDeckCandidate',productionId:production.id,baseRevision:production.revision}));}
+  const input={productionId:production.id,projectGeneration:scopeGeneration,baseRevision:production.revision};
+  function confirm(){return approve.mutate(input);}
+  function stage(){return staging.mutate({...input,operation:'stageDeckCandidate'});}
   return <section className="deck-outcome" aria-label="独立牌组成果"><style>{STYLE}</style>
     <header><span>独立牌组 · {STATES[report.status]}</span><h2>{plan.title}</h2><strong>{report.distinctCards} 种 · {report.totalCopies}/{plan.targetSize} 张</strong></header>
     <p className="deck-brief">{production.brief}</p>
@@ -47,7 +50,7 @@ export function DeckOutcome({ value }: { value: CardBatchDetail }) {
     {!report.candidateId&&report.legal&&!report.basisChanged&&<Button isDisabled={busy} onPress={()=>void(report.confirmed?stage():confirm())}>{busy?'正在建立候选…':report.confirmed?'更新整套试玩候选':'确认草案并建立试玩'}</Button>}
     {ready===batch.cards.length&&artworkStarted&&!artCandidate&&<Button isDisabled={busy} onPress={()=>void stage()}>{busy?'正在建立候选…':'建立整套卡面试玩候选'}</Button>}
     {report.status==='adopted'?<p>整套卡牌和副本计划已正式采用。在游戏的「牌组试炼」选择这套牌组即可开局；原牌组仍可选择。</p>:report.candidateId&&<p>整套候选已登记到试玩便笺。实际试玩后，可通过对话或标注提出调整；正式采用仍在功能进展中确认。</p>}
-    {error&&<p role="alert">{error}</p>}
+    <MutationNotice mutation={approve}/><MutationNotice mutation={staging}/>
   </section>;
 }
 function DeckCardArtwork({card,stage,theme}:{card:PipelineCard;stage:string;theme:string}) {

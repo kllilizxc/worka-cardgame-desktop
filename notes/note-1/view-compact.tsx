@@ -1,25 +1,27 @@
-import {useNote,NoteIcon,type NoteMetadata} from '@dsh-workbench/react';
+import {useNote,useViewState,QueryState,NoteIcon,type NoteMetadata} from '@dsh-workbench/react';
 import {Button,ScrollShadow} from '@heroui/react';
-import {useRef,useState} from 'react';
+import {useState} from 'react';
 import {CompactGallery} from './compact-gallery';
 import {StoryCompact} from './story-compact';
 import {BalanceCompact} from './balance-compact';
 import {modeLabel,relativeTime} from './content-format';
-import {encodeContentRef,recentChangeLabel,recentChangesForMode,type CardGameConfig,type LibraryMode,type StatusData,type ContentRef,type RecentChangeItem,type ViewStatePatch} from './content-model';
+import {encodeContentRef,recentChangeLabel,recentChangesForMode,type CardGameConfig,type LibraryMode,type StatusData,type ContentRef,type RecentChangeItem,type LibraryState} from './content-model';
 
+/** The host rasterizes this original HTML; compact renders only read data. */
 export default function CompactSurface() {
+  const {useQuery}=useNote<typeof import('./actions')>();
+  const preferences=useQuery('preferences',{});
+  return <QueryState query={preferences}>{value=><CompactContent initialPreferences={value}/>}</QueryState>;
+}
+function CompactContent({initialPreferences}:{initialPreferences:LibraryState}) {
   const noteApi=useNote<typeof import('./actions')>();
-  const {config,state,metadata}=noteApi;
-  const preferenceWrites=useRef<Promise<unknown>>(Promise.resolve());
-  const updateData=(patch:ViewStatePatch)=>{
-    const pending=preferenceWrites.current.then(()=>noteApi.actions.setViewState({patch}));
-    preferenceWrites.current=pending.catch(()=>undefined);return pending;
-  };
+  const {config,metadata}=noteApi;
+  const [state]=useViewState('library',initialPreferences);
+  const open=async()=>{await noteApi.host.openNote(metadata.id);};
   if(!config.projectId)return <section className="cg-library cg-setup compact"><style>{STYLES}</style><span className="cg-brand-icon"><NoteIcon icon={metadata.icon} size={18}/></span><strong>连接 CardGame 项目</strong><p>展开后选择一次项目目录，连接此桌面的全部游戏便笺。</p></section>;
-  if(config.presentation==='balance')return <BalanceCompact selectedMetric={state.views?.balanceMetricSelection} onSelectMetric={(kind,metric)=>updateData({views:{balanceMetricSelection:{kind,metric}}}).then(()=>{})} openCards={()=>{if(config.notes?.cards)void noteApi.host.openNote(config.notes.cards);}}/>;
+  if(config.presentation==='balance')return <BalanceCompact selectedMetric={state.views?.balanceMetricSelection} onSelectMetric={open} openCards={()=>void open()}/>;
   if(config.presentation==='story')return <StoryCompact selected={state.views?.storySelection} selectedNode={state.views?.storyNodeSelection?.storyId===state.views?.storySelection?state.views?.storyNodeSelection?.nodeId:undefined}
-    onSelect={async id=>{await updateData({views:{storySelection:id}});await noteApi.host.openNote(metadata.id);}}
-    onNodeSelect={async nodeId=>{if(state.views?.storySelection){await updateData({views:{storyNodeSelection:{storyId:state.views.storySelection,nodeId}}});await noteApi.host.openNote(metadata.id);}}}/>;
+    onSelect={open} onNodeSelect={open}/>;
   const libraryMode=config.mode??'knowledge';
   if(libraryMode==='knowledge')return <KnowledgeCompact config={config} metadata={metadata}/>;
   if(libraryMode==='cards'||config.assetScope)return <CompactGallery kind={libraryMode==='cards'?'cards':config.assetScope!} metadata={metadata} open={id=>void noteApi.host.openNote(metadata.id,encodeContentRef({projectId:config.projectId!,kind:libraryMode==='cards'?'card':'asset',id}))}/>;

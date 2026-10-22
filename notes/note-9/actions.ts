@@ -1,11 +1,11 @@
-import {z,requestExtension,readExtension} from '@dsh-workbench/runtime';
+import {z,requestExtension,readExtension,OperationRejectedError} from '@dsh-workbench/runtime';
 import {contentQueries,contentActions,jsonObject,localActions,configureProjectContract,referenceDocumentSchema,featureChoicesSchema,type ContentQueryName,type ContentQueryInput,type ContentQueryOutput} from './contract';
 
 import { realpath, stat, readFile } from 'node:fs/promises';
 import { basename, extname, isAbsolute, relative, resolve, sep } from 'node:path';
 import type { NoteActionContext, NoteQueryContext, JsonValue } from "@dsh-workbench/runtime";
-import {note,viewStateInputSchema} from "./note-model";
-export { note } from "./note-model";
+import {note,stateSchema,viewStateInputSchema} from "./model";
+export { note } from "./model";
 type ActionContext = NoteActionContext<typeof note>;
 type QueryContext = NoteQueryContext<typeof note>;
 import { encodeContentRef } from "./content-model";
@@ -80,19 +80,19 @@ type QueryInput = Record<string, unknown> & { projectId?: string };
 
 /** Keep the existing registered local document sources and compare-and-save contract. */
  async function addResource(input: { path: string; title?: string }, ctx: ActionContext) {
-  if (!input.path?.trim() || !isAbsolute(input.path.trim())) throw Error('请填写本机文件或资料目录的绝对路径。');
+  if (!input.path?.trim() || !isAbsolute(input.path.trim())) throw new OperationRejectedError('请填写本机文件或资料目录的绝对路径。');
   const path = await realpath(input.path.trim());
   const info = await stat(path);
-  if (!info.isFile() && !info.isDirectory()) throw Error('请选择普通文件或资料目录。');
+  if (!info.isFile() && !info.isDirectory()) throw new OperationRejectedError('请选择普通文件或资料目录。');
   const entry = info.isDirectory() ? await realpath(resolve(path, 'index.md')) : path;
   const local = relative(path, entry);
-  if (info.isDirectory() && (local === '..' || local.startsWith(`..${sep}`) || isAbsolute(local))) throw Error('资料入口不在登记目录内。');
-  if (!['.md', '.markdown', '.txt', '.json'].includes(extname(entry).toLowerCase())) throw Error('阅读器支持 Markdown、JSON 和文本。');
-  if ((await stat(entry)).size > 2 * 1024 * 1024) throw Error('文件超过 2 MB，请选择较小的阅读入口。');
+  if (info.isDirectory() && (local === '..' || local.startsWith(`..${sep}`) || isAbsolute(local))) throw new OperationRejectedError('资料入口不在登记目录内。');
+  if (!['.md', '.markdown', '.txt', '.json'].includes(extname(entry).toLowerCase())) throw new OperationRejectedError('阅读器支持 Markdown、JSON 和文本。');
+  if ((await stat(entry)).size > 2 * 1024 * 1024) throw new OperationRejectedError('文件超过 2 MB，请选择较小的阅读入口。');
   await readFile(entry);
   const resource = { path, title: input.title?.trim() || basename(path), ...(info.isDirectory() ? { root: path } : {}) };
   const snapshot = await ctx.config.read();
-  if (snapshot.value.resources?.some(item => item.path === path)) throw Error('这份资料已经登记。');
+  if (snapshot.value.resources?.some(item => item.path === path)) throw new OperationRejectedError('这份资料已经登记。');
   await ctx.config.update(draft => { draft.resources = [...(snapshot.value.resources ?? []), resource]; }, { expectedRevision: snapshot.revision });
   return resource;
 }
@@ -193,33 +193,34 @@ async function requestContent(method:ContentActionName,input:unknown,ctx:ActionC
   const config = await ctx.config.read();
   const projectId = await projectFor(ctx, input);
   const noteId = config.value?.notes?.production;
-  if (!noteId) throw new Error('尚未关联卡牌制作便笺');
-  if (!input.itemIds?.length) throw new Error('请先选中卡牌');
-  if (!input.featureId?.trim()) throw new Error('请先选择所属功能');
-  if (input.draft && input.itemIds.length !== 1) throw new Error('原始数据编辑只能针对一张卡');
+  if (!noteId) throw new OperationRejectedError('尚未关联卡牌制作便笺');
+  if (!input.itemIds?.length) throw new OperationRejectedError('请先选中卡牌');
+  if (!input.featureId?.trim()) throw new OperationRejectedError('请先选择所属功能');
+  if (input.draft && input.itemIds.length !== 1) throw new OperationRejectedError('原始数据编辑只能针对一张卡');
   let draftDefinition:z.output<typeof jsonObject>|undefined;
   let draftPresentation:z.output<typeof jsonObject>|undefined;
   if (input.draft) {
     const source = await readOp('card', { id: input.itemIds[0], ...(input.projectGeneration ? { projectGeneration: input.projectGeneration } : {}) }, ctx);
-    const originalFace = jsonObject.parse(source.json.cardFace??{});
-    const requestedFace = jsonObject.parse(input.draft.cardFace??{});
+    const original = jsonObject.safeParse(source.json.cardFace??{}), requested = jsonObject.safeParse(input.draft.cardFace??{});
+    if(!original.success||!requested.success)throw new OperationRejectedError('卡面数据需要 JSON 对象');
+    const originalFace=original.data,requestedFace=requested.data;
     const { themeId: oldTheme, ...originalStructure } = originalFace ?? {};
     const { themeId: nextTheme, ...requestedStructure } = requestedFace ?? {};
     const stable=(value:unknown):string=>value&&typeof value==='object'?Array.isArray(value)?`[${value.map(stable).join(',')}]`:`{${Object.entries(value).sort(([a],[b])=>a.localeCompare(b)).map(([key,item])=>`${JSON.stringify(key)}:${stable(item)}`).join(',')}}`:JSON.stringify(value)??'null';
-    if (stable(originalStructure) !== stable(requestedStructure)) throw new Error('卡面资源与布局请在制作单中修改');
+    if (stable(originalStructure) !== stable(requestedStructure)) throw new OperationRejectedError('卡面资源与布局请在制作单中修改');
     const { cardFace: _cardFace, ...definition } = input.draft;
     draftDefinition = definition;
     if (typeof nextTheme === 'string' && nextTheme !== oldTheme) draftPresentation = { themeId: nextTheme };
   }
-  const requestId = input.requestId?.trim() || ctx.caller?.requestId;
-  const result = await requestContent('createCardBatch', {cardIds: input.itemIds, featureId: input.featureId, ...(requestId ? { requestId } : {}),
+  const requestId = input.requestId?.trim() || ctx.idempotencyKey;
+  const result=contentActions.createCardBatch.output.parse(await ctx.step.run('create-card-batch',async()=>z.json().parse(await requestContent('createCardBatch', {cardIds: input.itemIds, featureId: input.featureId, ...(requestId ? { requestId } : {}),
     ...(input.projectGeneration ? { projectGeneration: input.projectGeneration } : {}),
-    ...(input.expectedRevision ? { sourceRevisions: { [input.itemIds[0]!]: input.expectedRevision } } : {}), brief: `卡面制作 · ${input.itemIds.join('、')}` },ctx);
+    ...(input.expectedRevision ? { sourceRevisions: { [input.itemIds[0]!]: input.expectedRevision } } : {}), brief:`卡面制作 · ${input.itemIds.join('、')}`},ctx))));
   if (draftDefinition) {
-    await requestContent('saveCardDraft', {productionId: result.production.id,
+    await ctx.step.run('save-card-draft',async()=>z.json().parse(await requestContent('saveCardDraft',{productionId:result.production.id,
       ...(input.projectGeneration ? { projectGeneration: input.projectGeneration } : {}),
       cardId: input.itemIds[0], baseRevision: result.production.revision, definition: draftDefinition,
-      ...(draftPresentation ? { presentation: draftPresentation } : {}) },ctx);
+      ...(draftPresentation?{presentation:draftPresentation}:{})},ctx)));
   }
   return { noteId, itemId: encodeContentRef({ projectId, kind: 'production', id: result.production.id }) };
 }
@@ -228,7 +229,7 @@ async function requestContent(method:ContentActionName,input:unknown,ctx:ActionC
   const card = await readOp('card', { id: input.id }, ctx);
   const definition = card.json;
   const face=jsonObject.parse(definition.cardFace);
-  if (!jsonObject.parse(face.variants)[input.themeId]) throw new Error('这个主题尚未组装，请先进入卡牌工作流');
+  if (!jsonObject.parse(face.variants)[input.themeId]) throw new OperationRejectedError('这个主题尚未组装，请先进入卡牌工作流');
   return requestContent('updateCard', { id: input.id, expectedRevision: input.expectedRevision, patch: { cardFace: { ...face, themeId: input.themeId } } }, ctx);
 }
 
@@ -273,6 +274,29 @@ export {action_createCardWorkflow as createCardWorkflow};
 const action_switchCardTheme=note.action({...{"description":"switchCardTheme","visibility":"public"},...localActions.switchCardTheme},(ctx,input)=>switchCardTheme(input,ctx));
 export {action_switchCardTheme as switchCardTheme};
 export const queries={
+preferences:note.query({description:'读取旧版保存的界面偏好，作为当前查看者本地选择的初值。',visibility:'private',requiresConfig:false,input:z.object({}),output:stateSchema},async(ctx)=>(await ctx.state.read()).value),
+overview: note.query({description:'读取小卡所需的状态与最多四条概览。',visibility:'private',requiresConfig:false,input:z.object({}),output:z.object({summary:z.string(),items:z.array(z.object({id:z.string(),title:z.string(),status:z.string()})).max(4)})},async(ctx)=>{
+  const config=(await ctx.config.read()).value;
+  if(!config.projectId)return {summary:'展开后连接 CardGame 项目',items:[]};
+  if(config.mode==='knowledge'&&config.presentation!=='story')return {summary:`${config.resources?.length??0} 份资料入口`,items:(config.resources??[]).slice(0,4).map(item=>({id:item.path,title:item.title,status:'资料'}))};
+  if(config.presentation==='story'){
+    const page=await readOp('gameCatalog',{kind:'story',limit:4},ctx);
+    return {summary:`${page.total} 个剧情`,items:page.items.slice(0,4).map(item=>({id:item.id,title:item.title??item.id,status:'剧情'}))};
+  }
+  const status=await readOp('status',{},ctx);
+  if(config.presentation==='balance')return {summary:`${status.cards} 张卡牌 · 展开查看数值与对局报告`,items:[]};
+  if(config.mode==='cards'){
+    const page=await readOp('cards',{limit:4},ctx);
+    return {summary:`${status.cards} 张卡牌`,items:page.items.slice(0,4).map(item=>({id:item.id,title:item.name??item.id,status:item.kind??'卡牌'}))};
+  }
+  const page=await readOp('assets',{limit:4},ctx);
+  return {summary:`${page.total} 份${config.assetScope==='audio'?'音频':'资源'}`,items:page.items.slice(0,4).map(item=>({id:item.id,title:item.name??item.title??item.id,status:item.kind??'资源'}))};
+}),
+cardEditInput:note.query({description:'读取可编辑卡牌定义及保存所基于的业务修订。',visibility:'private',input:z.object({id:z.string(),projectId:z.string(),projectGeneration:z.string().optional()}),output:z.object({text:z.string(),featureId:z.string(),itemId:z.string(),projectId:z.string(),projectGeneration:z.string(),revision:z.string()})},async(ctx,input)=>{
+ const card=await readOp('card',input,ctx);
+ if(!card.projectGeneration)throw Error('项目绑定尚未就绪');
+ return {text:JSON.stringify(card.json,null,2),featureId:'',itemId:input.id,projectId:input.projectId,projectGeneration:card.projectGeneration,revision:card.revision};
+}),
 pinnedReferenceTarget:note.query({...{"description":"核对待固定对象、剧情节点、数值指标或报告比较的当前身份。","visibility":"public"},input:contentQueries.pinnedReferenceTarget.input,output:contentQueries.pinnedReferenceTarget.output},(ctx,input)=>readOp('pinnedReferenceTarget',input,ctx)),
 pinnedReferences:note.query({...{"description":"读取本项目共享固定引用并核对当前修订。","visibility":"public"},input:contentQueries.pinnedReferences.input,output:contentQueries.pinnedReferences.output},(ctx,input)=>readOp('pinnedReferences',input,ctx)),
 battleExperiments:note.query({...{"description":"读取固定版本实验状态和历史报告，不自动启动进程。","visibility":"public"},input:contentQueries.battleExperiments.input,output:contentQueries.battleExperiments.output},(ctx,input)=>readOp('battleExperiments',input,ctx)),

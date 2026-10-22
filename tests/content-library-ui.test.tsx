@@ -1,9 +1,8 @@
+import {hostUiFixture, mount, flush, button, until, typeInto} from './host-ui-fixture';
 import {expect, test} from 'bun:test';
 import {useState} from 'react';
-import {join} from 'node:path';
 const worka = process.env.WORKA_SOURCE_ROOT;
 if (worka) {
-  const {mount, flush, button} = await import(join(worka, 'tests/web/dom-test-helpers.tsx'));
   const {ContentCollection} = await import('../notes/note-1/content-collection');
   const {AssetFilterPanel} = await import('../notes/note-1/asset-filter-panel');
   // happy-dom has no layout engine. Geometry supplies only the browser dimensions;
@@ -96,28 +95,37 @@ if (worka) {
     } finally {await view.unmount();}
   });
 
-  const {RuntimeProvider, NoteViewContext} = await import('@dsh-workbench/react/internal');
+  const {NoteViewContext} = await import('@dsh-workbench/react/internal');
+  const {useViewState} = await import('@dsh-workbench/react');
   const {default: View} = await import('../notes/note-1/view');
-  const {setViewState}=await import('../notes/note-1/actions');
   const {encodeContentRef} = await import('../notes/note-1/content-model');
-  function fixture(mode: 'cards' | 'assets' | 'knowledge', initialId?: string, pageSize = 100, configPatch: Record<string,unknown> = {}) {
-    let version = 0, stateRevision=1, saveFailure:Error|undefined, saveGate:Promise<void>|undefined, contentRevision = 1, state: any = {}, displayMode: 'compact' | 'expanded' = 'expanded', focusRequestId = 1, tick = () => {};
+  async function fixture(mode: 'cards' | 'assets' | 'knowledge', initialId?: string, pageSize = 100, configPatch: Record<string,unknown> = {}) {
+    let saveFailure: Error | undefined, contentRevision = 1, state: any = {}, persisted: any = {}, displayMode: 'compact' | 'expanded' = 'expanded', focusRequestId = 1, tick = () => {};
     let focus = initialId ? locator(initialId) : undefined;
-    const subscriptions = new Set<any>(), calls: any[] = [], reads: any[] = [];
+    const subscriptions = new Set<any>(), viewWrites: any[] = [];
     let changes: any[] = [];
-    const cards = Array.from({length: 12}, (_, i) => ({id: `card-${i}`, name: `Card ${i}`, type: 'card', kind: 'unit', rarity: 'common', cost: i, revision: 'r1', json: {id: `card-${i}`, cost: i}}));
+    const cards = Array.from({length: 12}, (_, i) => ({id: `card-${i}`, name: `Card ${i}`, type: 'card', kind: 'unit', rarity: 'common', cost: i, revision: 'r1', projectGeneration: 'generation-one', json: {id: `card-${i}`, cost: i}}));
     const assets = Array.from({length: 12}, (_, i) => ({id: `asset-${i}`, name: `Asset ${i}`, type: 'asset', kind: 'audio', path: `${i}.wav`, mimeType: 'audio/wav', size: 1, durationMs: 2000, revision: 'r1'}));
-    const config = {projectId: 'p', mode, notes: {cards: 'library', knowledge: 'library', assets: 'library'}, resources: [{path: '/guide.md', title: 'Guide'}], ...configPatch};
+    const config = JSON.parse(JSON.stringify({projectId: 'p', mode, notes: {cards: 'library', knowledge: 'library', assets: 'library'}, resources: [{path: '/guide.md', title: 'Guide'}], ...configPatch}));
     function locator(id: string) {return encodeContentRef({projectId: 'p', kind: mode === 'cards' ? 'card' : mode === 'assets' ? 'asset' : 'document', ...(mode === 'knowledge' ? {path: `docs/${id}.md`} : {id})});}
     function page(items: any[], input: any) {const offset = input.cursor ? Number(String(input.cursor).split(':')[1]) : 0; return {items: items.slice(offset, offset + pageSize), revision: String(contentRevision), total: items.length, ...(offset + pageSize < items.length ? {next: `${contentRevision}:${offset + pageSize}`} : {})};}
     function result(name: string, input: any = {}) {
-      if (name === 'state') return {value: config, revision: 'config'};
-      if (name === 'readiness') return {missingCapabilities: [], missingConfig: []};
+      if (name === 'preferences') return {};
+      if (name === 'overview') {
+        if (!config.projectId) return {summary: '尚未连接 CardGame 项目', items: []};
+        if (changes.length) return {summary: `${changes.length} 个最近变更`, items: changes.map(item => ({id: item.id, title: item.id, status: item.change}))};
+        const items = mode === 'cards' ? cards : mode === 'assets' ? assets : [{id: 'guide', name: 'Guide'}];
+        return {summary: `${items.length} 项内容`, items: items.slice(0, 4).map(item => ({id: item.id, title: item.name, status: '可查看'}))};
+      }
       if (name === 'balanceOverview') return {revision:'balance-r1',cardCount:0,groups:[]};
       if (name === 'gameCatalog') return page([],input);
       if (name === 'battleExperiments') return {status:'idle',reports:[]};
       if (name === 'cards') return page(cards.filter(card => !input.query || card.name.includes(input.query)), input);
-      if (name === 'card') return cards.find(card => card.id === input.id);
+      if (name === 'card' || name === 'cardEditInput') {
+        const card = cards.find(card => card.id === input.id);
+        if (!card) throw Error('卡牌已删除');
+        return name === 'card' ? card : {text: JSON.stringify(card.json, null, 2), featureId: '', itemId: card.id, projectId: input.projectId, projectGeneration: card.projectGeneration, revision: card.revision};
+      }
       if (name === 'assets') return page(assets.filter(asset => !input.query || asset.name?.includes(input.query)), input);
       if (name === 'asset') return input.versionId === 'version-8' ? assets[8] : assets.find(asset => asset.id === input.id);
       if (name === 'documentMeta') return {id: input.path, path: input.path, title: input.path, revision: 'r1', size: 100, isScene: false};
@@ -128,67 +136,85 @@ if (worka) {
       if (name === 'referenceDocument') return {path: '/guide.md', content: '# Guide'};
       return {items: []};
     }
-    const snapshot = (request: any) => {const data = result(request.name, request.input); return {key: request.name, epoch: 'fixture', version: ++version, ...(request.name === 'card' && !data ? {error: '卡牌已删除', errorCode: 'NOT_FOUND'} : {data: structuredClone(data)}), stale: false};};
-    const publish = () => {for (const sub of subscriptions) sub.listener(snapshot(sub.request));};
-    // Exercise the actual preference action and CAS contract, not a second UI patch implementation.
-    const raw:any={note:{id:'library',version:'fixture',stateRef:'view-state'},caller:{kind:'user'},db:{},files:{},notes:{},resources:{},events:{},store:{
-      read:async(ref:string)=>({value:structuredClone(ref==='library:config'?config:state),revision:String(stateRevision)}),
-      update:async(_ref:string,request:any)=>{
-        if(saveGate){const gate=saveGate;saveGate=undefined;await gate;}
-        if(saveFailure){const error=saveFailure;saveFailure=undefined;throw error;}
-        if(request.baseRevision!==String(stateRevision))throw Object.assign(Error('State revision conflict'),{code:'revision-conflict'});
-        state=structuredClone(request.ops[0].value);stateRevision++;tick();return {value:structuredClone(state),revision:String(stateRevision)};
-      },
-    }};
-    const runtime: any = {note: {id: 'library', stateRef: 'view-state'}, resources: {subscribe: async (request: any, listener: any) => {reads.push(request); const sub = {request, listener}; subscriptions.add(sub); listener(snapshot(request)); return () => subscriptions.delete(sub);}, revalidate: async (request: any) => snapshot(request)}, resolvePreviewUrl: (url: string) => url,
-      invokeAction: async (name: string, input: any) => {calls.push({name, input}); if(name==='setViewState')return setViewState(raw,input); return {};}, openNote: async (id: string, ref?: string) => {calls.push({openNote: id, ref});}};
-    function Frame() {const [, update] = useState(0); tick = () => update(value => value + 1); return <RuntimeProvider runtime={runtime}><NoteViewContext.Provider value={{metadata: {id: 'library', name: 'Library'}, mode: displayMode, focus, focusRequestId, layout: {width: 900, maxHeight: 700}, snapshot: {value: state, revision: String(stateRevision)}}}><View /></NoteViewContext.Provider></RuntimeProvider>;}
-    return {element: <Frame />, cards, calls, reads, rejectNextSave(message:string){saveFailure=Error(message);}, delayNextSave(){let release!:()=>void;saveGate=new Promise<void>(resolve=>{release=resolve;});return release;}, openRef(ref:Parameters<typeof encodeContentRef>[0]){focus=encodeContentRef(ref);focusRequestId++;tick();}, setChanges(items: any[]) {changes = items; publish();}, openVersion(id: string) {focus = encodeContentRef({projectId: 'p', kind: 'asset', id, context: {changeKind: 'version'}}); focusRequestId++; tick();}, state: () => state, open(id: string) {focus = locator(id); focusRequestId++; tick();}, show(mode: 'compact' | 'expanded') {displayMode = mode; tick();}, subscriptions, update(id: string, patch: any) {Object.assign(cards.find(card => card.id === id)!, patch); contentRevision++; publish();}, delete(id: string) {const index = cards.findIndex(card => card.id === id); cards.splice(index, 1); contentRevision++; publish();}};
+    const f = await hostUiFixture({config, query: result});
+    f.runtime.resolvePreviewUrl = async (url: string) => url;
+    const subscribe = f.runtime.resources.subscribe;
+    f.runtime.resources.subscribe = async (request: any, listener: any) => {
+      const sub = {request}; subscriptions.add(sub);
+      const release = await subscribe(request, listener);
+      return () => {subscriptions.delete(sub); release();};
+    };
+    const request = f.bridge.request;
+    f.bridge.request = async (method: string, input: any) => {
+      if (method === 'ui.viewStateSet') {
+        viewWrites.push(structuredClone(input.values));
+        if (saveFailure) {const error = saveFailure; saveFailure = undefined; throw error;}
+        persisted = structuredClone(input.values);
+      }
+      return request(method, input);
+    };
+    const publish = async () => {
+      const names = new Set<string>([...Array.from(subscriptions, item => item.request.name), 'cardEditInput']);
+      for (const name of names) await f.publish(name);
+    };
+    function Preferences() { [state] = useViewState('library', {}); return null; }
+    function Frame() {const [, update] = useState(0); tick = () => update(value => value + 1); return f.render(<NoteViewContext.Provider value={{metadata: {id: f.runtime.note.id, name: 'Library'}, mode: displayMode, focus, focusRequestId, layout: {width: 900, maxHeight: 700}}}><Preferences /><View /></NoteViewContext.Provider>, displayMode);}
+    return {...f, element: <Frame />, cards, viewWrites, persisted: () => persisted, rejectNextSave(message:string){saveFailure=Error(message);}, openRef(ref:Parameters<typeof encodeContentRef>[0]){focus=encodeContentRef(ref);focusRequestId++;tick();}, async setChanges(items: any[]) {changes = items; await publish();}, openVersion(id: string) {focus = encodeContentRef({projectId: 'p', kind: 'asset', id, context: {changeKind: 'version'}}); focusRequestId++; tick();}, state: () => state, open(id: string) {focus = locator(id); focusRequestId++; tick();}, show(mode: 'compact' | 'expanded') {displayMode = mode; tick();}, subscriptions, async update(id: string, patch: any) {Object.assign(cards.find(card => card.id === id)!, patch); contentRevision++; await publish();}, async delete(id: string) {const index = cards.findIndex(card => card.id === id); cards.splice(index, 1); contentRevision++; await publish();}};
   }
-  async function mountLibrary(element: import('react').ReactNode, mode: 'compact' | 'expanded' = 'expanded') {
-    const view=await mount(element);
+  async function mountLibrary(f: Awaited<ReturnType<typeof fixture>>, mode: 'compact' | 'expanded' = 'expanded') {
+    const view=await mount(f.element);
     // Real module boundaries may suspend beyond the initial React commit.
     await flush(()=>mode==='expanded'?import('../notes/note-1/view-expanded'):import('../notes/note-1/view-compact'));
-    return view;
+    return {...view, async unmount() {await view.unmount(); await f.close();}};
   }
-  test('one card focus saves its path and selection together through the real action',async()=>{
-    const f=fixture('cards'),view=await mountLibrary(f.element);
+  async function retainedInput(f: Awaited<ReturnType<typeof fixture>>, text: string) {
+    await until(() => f.requests.some(request => request.op === 'set' && request.value.text === text), 'draft handed to host');
+    const request = f.requests.find(request => request.op === 'set' && request.value.text === text)!;
+    let snapshot: any;
+    await flush(async () => { ({snapshot} = await f.runtime.mutations.request({op: 'read', id: request.id})); });
+    expect(snapshot.retained).toBe(true);
+    expect(snapshot.dirty).toBe(true);
+    expect(snapshot.value.text).toBe(text);
+  }
+  test('one card focus shares its path and selection through viewer state without a business write',async()=>{
+    const f=await fixture('cards'),view=await mountLibrary(f);
     try{
       await flush(()=>f.openRef({projectId:'p',kind:'card',id:'card-0',path:'data/units.json'}));
-      const saves=f.calls.filter(call=>call.name==='setViewState');
-      expect(saves).toHaveLength(1);
-      expect(saves[0].input).toEqual({patch:{query:'data/units.json',views:{cardsSelection:['card-0']}}});
       expect(f.state()).toMatchObject({query:'data/units.json',views:{cardsSelection:['card-0']}});
+      await until(() => f.persisted().library?.views?.cardsSelection?.[0] === 'card-0', 'viewer preference persistence');
+      expect(f.persisted().library).toMatchObject({query:'data/units.json',views:{cardsSelection:['card-0']}});
+      expect(f.calls).toEqual([]);
       expect(view.container.textContent).toContain('Card 0');
       expect(view.container.querySelector('[role="alert"]')).toBeNull();
     }finally{await view.unmount();}
   });
-  test('newer choices queue behind an in-flight save and finish with the latest local intent',async()=>{
-    const f=fixture('cards'),view=await mountLibrary(f.element);
-    const release=f.delayNextSave();
+  test('rapid display choices coalesce in viewer state with the latest local intent',async()=>{
+    const f=await fixture('cards'),view=await mountLibrary(f);
     try{
       await flush(()=>button(view.container,'表格').click());
       await flush(()=>button(view.container,'网格').click());
-      expect(f.calls.filter(call=>call.name==='setViewState')).toHaveLength(1);
-      await flush(()=>release());
-      expect(f.calls.filter(call=>call.name==='setViewState').map(call=>call.input.patch.views.cards)).toEqual(['table','grid']);
       expect(f.state().views.cards).toBe('grid');
-    }finally{release();await view.unmount();}
+      await until(() => f.persisted().library?.views?.cards === 'grid', 'latest viewer choice');
+      expect(f.viewWrites.at(-1).library.views.cards).toBe('grid');
+      expect(f.calls).toEqual([]);
+    }finally{await view.unmount();}
   });
-  test('a rejected preference save stays visible instead of disappearing into console',async()=>{
-    const f=fixture('cards'),view=await mountLibrary(f.element);
+  test('unavailable optional viewer storage preserves the local choice and a later choice can persist',async()=>{
+    const f=await fixture('cards'),view=await mountLibrary(f);
     try{
       f.rejectNextSave('preference disk unavailable');
       await flush(()=>button(view.container,'表格').click());
-      expect(view.container.querySelector('[role="alert"]')?.textContent).toContain('preference disk unavailable');
-      expect(f.state().views?.cards).toBeUndefined();
+      await until(() => f.viewWrites.length === 1, 'first viewer persistence attempt');
+      expect(f.state().views?.cards).toBe('table');
+      expect(f.persisted().library?.views?.cards).toBeUndefined();
       await flush(()=>button(view.container,'网格').click());
       expect(f.state().views.cards).toBe('grid');
-      expect(view.container.querySelector('[role="alert"]')).toBeNull();
+      await until(() => f.persisted().library?.views?.cards === 'grid', 'later viewer persistence');
+      expect(f.calls).toEqual([]);
     }finally{await view.unmount();}
   });
   test('card compare selection uses GridList and refuses a fourth card without dropping existing choices', async () => {
-    const f = fixture('cards'), view = await mountLibrary(f.element);
+    const f = await fixture('cards'), view = await mountLibrary(f);
     try {
       await flush(() => button(view.container, '比较').click());
       const row = (i: number) => view.container.querySelector<HTMLElement>(`[data-content-id="card-${i}"]`)!;
@@ -204,7 +230,7 @@ if (worka) {
   });
   for (const mode of ['cards', 'assets', 'knowledge'] as const) test(`${mode} reapplies the same external target after internal navigation using focusRequestId`, async () => {
     const first = mode === 'cards' ? 'card-0' : mode === 'assets' ? 'asset-0' : 'A';
-    const f = fixture(mode, first), view = await mountLibrary(f.element);
+    const f = await fixture(mode, first), view = await mountLibrary(f);
     try {
       if (mode === 'knowledge') {
         expect(view.container.querySelector('.reader-path')?.textContent).toContain('docs/A.md');
@@ -226,7 +252,7 @@ if (worka) {
   test('narrow cards return to the collection and reopen an external repeated target', async () => {
     const previous = globalThis.matchMedia;
     globalThis.matchMedia = ((query: string) => ({matches: true, media: query, addEventListener() {}, removeEventListener() {}})) as typeof matchMedia;
-    const f = fixture('cards', 'card-0'), view = await mountLibrary(f.element);
+    const f = await fixture('cards', 'card-0'), view = await mountLibrary(f);
     try {
       expect(view.container.querySelector('.cl-workspace')?.classList.contains('cl-show-detail')).toBe(true);
       await flush(() => button(view.container, '← 返回卡牌库').click());
@@ -243,7 +269,7 @@ if (worka) {
   });
 
   test('native pages preserve three cross-page comparisons, refresh by revision, and allow removing a deleted selection', async () => {
-    const f = fixture('cards', undefined, 3), view = await mountLibrary(f.element);
+    const f = await fixture('cards', undefined, 3), view = await mountLibrary(f);
     const nav = () => view.container.querySelector('[aria-label="卡牌分页"]')!;
     const row = (id: string) => view.container.querySelector<HTMLElement>(`[data-content-id="${id}"]`)!;
     const choose = async (id: string) => flush(() => {row(id).focus(); key(row(id), ' ');});
@@ -267,7 +293,7 @@ if (worka) {
   });
   for (const mode of ['cards', 'assets'] as const) test(`${mode} paging resets on a repeated focus request and filters without stitching old rows`, async () => {
     const first = mode === 'cards' ? 'card-0' : 'asset-0', second = mode === 'cards' ? 'card-3' : 'asset-3';
-    const f = fixture(mode, first, 3), view = await mountLibrary(f.element);
+    const f = await fixture(mode, first, 3), view = await mountLibrary(f);
     const nav = () => view.container.querySelector(`[aria-label="${mode === 'cards' ? '卡牌' : '资源'}分页"]`)!;
     try {
       await flush(() => button(nav(), '下一页').click()); expect(nav().textContent).toContain('第 2 页');
@@ -286,23 +312,28 @@ if (worka) {
     } finally {await view.unmount();}
   });
 
-  test('native display Activities retain an expanded card draft across compact switching', async () => {
-    const f = fixture('cards', 'card-0'), view = await mountLibrary(f.element);
+  test('the host restores a retained card draft after the expanded editor is replaced by the overview', async () => {
+    const f = await fixture('cards', 'card-0'), view = await mountLibrary(f);
     try {
       const editor = view.container.querySelector<HTMLTextAreaElement>('[aria-label="卡牌原始 JSON"]')!;
-      await flush(() => {Object.getOwnPropertyDescriptor(HTMLTextAreaElement.prototype, 'value')!.set!.call(editor, '{"cost":19}'); editor.dispatchEvent(new Event('input', {bubbles: true}));});
+      await until(() => !editor.disabled && editor.value.includes('card-0'), 'source draft ready');
+      await typeInto(editor, '{"cost":19}');
+      await retainedInput(f, '{"cost":19}');
       await flush(() => f.show('compact'));
       await flush(()=>import('../notes/note-1/view-compact'));
-      expect(view.container.querySelector('.cg-card-fan')).not.toBeNull();
+      expect(view.container.querySelector('.cg-gallery-cards')).not.toBeNull();
+      expect(Boolean(view.container.querySelector('[aria-label="卡牌原始 JSON"]'))).toBe(false);
       expect(Array.from(f.subscriptions).filter((item: any) => item.request.name === 'card')).toHaveLength(0);
       await flush(() => f.show('expanded'));
+      await until(() => (view.container.querySelector('[aria-label="卡牌原始 JSON"]') as HTMLTextAreaElement)?.value === '{"cost":19}', 'retained source draft restored');
       expect((view.container.querySelector('[aria-label="卡牌原始 JSON"]') as HTMLTextAreaElement).value).toBe('{"cost":19}');
+      expect(view.container.querySelector('[aria-label="卡牌原始 JSON"]')).not.toBe(editor);
       expect(view.container.textContent).toContain('未保存');
     } finally {await view.unmount();}
   });
 
   test('off-page version links resolve their owning asset directly and keep its bookmark usable', async () => {
-    const f = fixture('assets', undefined, 3), view = await mountLibrary(f.element);
+    const f = await fixture('assets', undefined, 3), view = await mountLibrary(f);
     try {
       await flush(() => f.openVersion('version-8'));
       expect(f.state().views.assetsSelection).toBe('asset-8');
@@ -316,29 +347,32 @@ if (worka) {
       await flush(() => f.setChanges([{kind: 'version', id: 'version-8', change: 'created', at: '2026-10-17T00:00:00Z'}]));
       await flush(() => f.show('compact'));
       await flush(()=>import('../notes/note-1/view-compact'));
-      const entry = view.container.querySelector<HTMLButtonElement>('.cg-compact-row')!;
-      await flush(() => entry.click());
-      const opened = f.calls.find(call => call.openNote)?.ref;
-      expect(decodeURIComponent(opened)).toContain('"changeKind":"version"');
+      expect(view.container.querySelector('.cg-compact')?.textContent).toContain('version-8');
+      expect(view.container.querySelectorAll('input,textarea').length).toBe(0);
+      expect(f.opened).toEqual([]);
+      expect(f.state().bookmarks).toHaveLength(1);
     } finally {await view.unmount();}
   });
 
   test('compact to expanded to compact releases only hidden query subscriptions and restores the authoritative draft target',async()=>{
-    const f=fixture('cards','card-0');f.show('compact');
-    const view=await mountLibrary(f.element,'compact');
+    const f=await fixture('cards','card-0');f.show('compact');
+    const view=await mountLibrary(f,'compact');
     const active=(name:string)=>Array.from(f.subscriptions).filter((item:any)=>item.request.name===name).length;
     try {
-      expect(active('cards')).toBe(1);expect(active('status')).toBe(0);expect(active('card')).toBe(0);
+      expect(active('overview')).toBe(0);expect(active('cards')).toBe(1);expect(active('status')).toBe(0);expect(active('card')).toBe(0);
       await flush(()=>f.show('expanded'));await flush(()=>import('../notes/note-1/view-expanded'));
       // The library indicator and creation entry independently own binding status reads.
       expect(active('status')).toBe(2);expect(active('card')).toBe(1);
       await flush(()=>f.open('card-1'));
       const editor=view.container.querySelector<HTMLTextAreaElement>('[aria-label="卡牌原始 JSON"]')!;
-      await flush(()=>{Object.getOwnPropertyDescriptor(HTMLTextAreaElement.prototype,'value')!.set!.call(editor,'{"cost":19}');editor.dispatchEvent(new Event('input',{bubbles:true}));});
+      await until(() => !editor.disabled && editor.value.includes('card-1'), 'second source draft ready');
+      await typeInto(editor, '{"cost":19}');
+      await retainedInput(f, '{"cost":19}');
       await flush(()=>f.show('compact'));
-      expect(active('cards')).toBe(1);expect(active('status')).toBe(0);expect(active('card')).toBe(0);
-      expect(view.container.querySelector('.cg-card-fan')).not.toBeNull();
+      expect(active('overview')).toBe(0);expect(active('cards')).toBe(1);expect(active('status')).toBe(0);expect(active('card')).toBe(0);
+      expect(view.container.querySelector('.cg-gallery-cards')).not.toBeNull();
       await flush(()=>f.show('expanded'));
+      await until(() => (view.container.querySelector('[aria-label="卡牌原始 JSON"]') as HTMLTextAreaElement)?.value === '{"cost":19}', 'second retained draft restored');
       expect(active('status')).toBe(2);expect(active('card')).toBe(1);
       expect((view.container.querySelector('[aria-label="卡牌原始 JSON"]') as HTMLTextAreaElement).value).toBe('{"cost":19}');
       expect(view.container.textContent).toContain('未保存');
@@ -347,36 +381,41 @@ if (worka) {
     expect(f.subscriptions.size).toBe(0);
   });
   test('missing project keeps the compact setup hint and expanded configuration form without content queries',async()=>{
-    const f=fixture('cards',undefined,3,{projectId:undefined});f.show('compact');
-    const view=await mountLibrary(f.element,'compact');
-    const contentReads=()=>f.reads.filter((item:any)=>item.name!=='state'&&item.name!=='readiness');
+    const f=await fixture('cards',undefined,3,{projectId:undefined});f.show('compact');
+    const view=await mountLibrary(f,'compact');
+    const contentReads=()=>f.reads.filter((item:any)=>!['state','readiness','preferences'].includes(item.name));
     try {
-      expect(view.container.textContent).toContain('展开后选择一次项目目录');expect(contentReads()).toHaveLength(0);
+      expect(view.container.textContent).toContain('连接 CardGame 项目');expect(contentReads()).toEqual([]);
       await flush(()=>f.show('expanded'));await flush(()=>import('../notes/note-1/view-expanded'));
       const root=view.container.querySelector<HTMLInputElement>('input[placeholder="本机项目的绝对路径"]')!;
-      expect(root).not.toBeNull();await input(root,'/project');
+      expect(root).not.toBeNull();await until(() => !root.disabled, 'configuration draft ready');await input(root,'/project');
       await flush(()=>view.container.querySelector('form')!.dispatchEvent(new Event('submit',{bubbles:true,cancelable:true})));
+      await until(() => f.calls.some(call => call.name === 'configureProject'), 'configuration mutation execution');
       expect(f.calls.find((call:any)=>call.name==='configureProject')?.input).toEqual({root:'/project'});
-      expect(contentReads()).toHaveLength(0);
-      await flush(()=>f.show('compact'));expect(view.container.textContent).toContain('展开后选择一次项目目录');
+      expect(contentReads()).toEqual([]);
+      await flush(()=>f.show('compact'));expect(view.container.textContent).toContain('连接 CardGame 项目');
     }finally{await view.unmount();}
     expect(f.subscriptions.size).toBe(0);
   });
-  for (const [mode,configPatch,expected] of [
-    ['knowledge',{},[]],
-    ['cards',{},['cards']],
-    ['assets',{assetScope:'audio'},['assets']],
-    ['cards',{presentation:'story'},['gameCatalog']],
-    ['cards',{presentation:'balance'},['balanceOverview','gameCatalog','gameCatalog','battleExperiments']],
+  for (const [mode,configPatch] of [
+    ['knowledge',{}],
+    ['cards',{}],
+    ['assets',{assetScope:'audio'}],
+    ['cards',{presentation:'story'}],
+    ['cards',{presentation:'balance'}],
   ] as const) test(`compact ${JSON.stringify(configPatch).slice(0,80)} ${mode} subscribes only to its displayed authority`,async()=>{
-    const f=fixture(mode,undefined,3,configPatch);f.show('compact');
-    const view=await mountLibrary(f.element,'compact');
+    const f=await fixture(mode,undefined,3,configPatch);f.show('compact');
+    const view=await mountLibrary(f,'compact');
     try {
       const business=Array.from(f.subscriptions).map((item:any)=>item.request.name).filter((name:string)=>name!=='state'&&name!=='readiness');
-      expect(business.sort()).toEqual([...expected].sort());
+      const expected=configPatch.presentation==='story'?['preferences','gameCatalog']:configPatch.presentation==='balance'?['preferences','balanceOverview','gameCatalog','gameCatalog','battleExperiments']:mode==='knowledge'?['preferences']:mode==='cards'?['preferences','cards']:['preferences','assets'];
+      expect(business.sort()).toEqual(expected.sort());
       expect(view.container.querySelector('[role="grid"]')).toBeNull();
       expect(view.container.querySelector('[aria-label="卡牌原始 JSON"]')).toBeNull();
-      if(configPatch.presentation==='story')expect(f.reads.find((item:any)=>item.name==='gameCatalog')?.input.limit).toBe(3);
+      expect(f.reads.some((item:any)=>item.name==='overview'||item.name==='card'||item.name==='asset')).toBe(false);
+      expect(view.container.querySelectorAll('textarea,iframe').length).toBe(0);
+      expect(view.container.querySelector('.note-overview')).toBeNull();
+      expect(f.calls).toEqual([]);
     }finally{await view.unmount();}
     expect(f.subscriptions.size).toBe(0);
   });

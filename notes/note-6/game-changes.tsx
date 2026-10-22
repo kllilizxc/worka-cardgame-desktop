@@ -1,17 +1,12 @@
 import {useState,type ReactNode} from 'react';
 import { Button, ListBox, Select, ScrollShadow, SearchField } from '@heroui/react';
-import {NoteDialog,NoteIcon} from '@dsh-workbench/react';
+import {useNote,useMutation,useViewState,NoteDialog,NoteIcon} from '@dsh-workbench/react';
 import {ReferenceCollection} from './reference-collection';
-import {useActions,useResource,type WidgetProps} from './surface';
+import type {WidgetProps} from './surface';
+import {MutationNotice} from './mutation-notice';
+import type {GameChange,Diff} from './game-change-model';
+export type {GameChange} from './game-change-model';
 
-export interface GameChange {
-  id: string; projectId: string; productionId: string; featureId?: string; todoId?: string;
-  title: string; revision: number; requirementRevision: number; round: number; updatedAt: string; detail?: string;
-  stage: 'draft' | 'running' | 'cancelled' | 'paused' | 'interrupted' | 'needs-input' | 'failed' | 'stale' | 'generated' | 'checking' | 'review' | 'adopted' | 'undone';
-  candidates: Array<{ id: string; kind: string; targetId: string; commit: string; status: 'candidate' | 'adopted' | 'undone'; current: boolean; previewVerified: boolean }>;
-}
-type Page = { items: GameChange[]; total: number; nextCursor?: string };
-type Diff = { candidateId: string; commit: string; baseCurrent: boolean; comparison: string; files: Array<{ path: string; changed: boolean; binary: boolean; truncated: boolean; beforeBytes: number; afterBytes: number; before?: string | null; after?: string | null }> };
 const labels: Record<GameChange['stage'], string> = {
   draft: '草稿', running: '制作中', 'needs-input': '需要补充', failed: '制作失败', stale: '版本需核对',
   cancelled: '已取消', paused: '已暂停', interrupted: '制作中断',
@@ -22,30 +17,28 @@ type Props = {
   candidateState(change:GameChange,candidateId:string,operation:'confirm'|'undo'):{blocked:boolean;pending:boolean;message:string};
   notices:ReactNode; ready:boolean;
   onEngineering(featureId?: string): void;
-  onDiscuss(change?: GameChange): Promise<void>;
+  onDiscuss(change?:GameChange):void;
   onPreview(candidateId: string, commit: string): Promise<void>;
   onProduction(change: GameChange): Promise<void>;
-  onCandidate(change: GameChange, candidateId: string, operation: 'confirm' | 'undo'): Promise<boolean>;
+  onCandidate(change:GameChange,candidateId:string,operation:'confirm'|'undo'):void;
 };
 
 export function GameChanges({ mode, metadata, candidateState, notices, ready, onEngineering, onDiscuss, onPreview, onProduction, onCandidate }: Props) {
-  const referenceActions = useActions<typeof import('./actions')>();
-  const references = useResource<{ items: Array<{ key: string; title: string; anchor?: string; kind: string; revision: string; freshness: string }>; limit: number }>('pinnedReferences', {}, { enabled: mode === 'expanded' });
-  const [pinning, setPinning] = useState(false), [pinError, setPinError] = useState('');
-  async function referenceAction(work: () => Promise<unknown>) {
-    setPinning(true); setPinError('');
-    try { await work(); await references.revalidate(); } catch (cause) { setPinError(cause instanceof Error ? cause.message : String(cause)); }
-    finally { setPinning(false); }
-  }
-  const [query, setQuery] = useState('');
-  const [filter, setFilter] = useState('all');
+  const {actions:referenceActions,useQuery}=useNote<typeof import('./actions')>();
+  const references=useQuery('pinnedReferences',{}, {enabled:mode==='expanded'});
+  const pin=useMutation(referenceActions.pinChangeReference,{query:references});
+  const remove=useMutation(referenceActions.removePinnedReference,{query:references});
+  const pinning=[pin.status,remove.status].some(status=>status==='pending'||status==='unknown');
+  const pinError=pin.error?.message??remove.error?.message;
+  const [query,setQuery]=useViewState('changes:search','');
+  const [filter,setFilter]=useViewState('changes:filter','all');
   const [cursor, setCursor] = useState<string | undefined>();
   const [previous, setPrevious] = useState<Array<string | undefined>>([]);
   const [notice, setNotice] = useState('');
   const [navigating, setNavigating] = useState(false);
   const [confirmation, setConfirmation] = useState<{ change: GameChange; candidateId: string; operation: 'confirm' | 'undo' }>();
-  const result = useResource<Page>('changes', { query, ...(filter !== 'all' ? { filter } : {}), limit: mode === 'compact' ? 3 : 30, ...(cursor ? { cursor } : {}) });
-  const diff = useResource<Diff>('candidateDiff', { productionId: confirmation?.change.productionId || '', candidateId: confirmation?.candidateId || '' }, { enabled: Boolean(confirmation) });
+  const result = useQuery('changes', { query, ...(filter !== 'all' ? { filter } : {}), limit: mode === 'compact' ? 3 : 30, ...(cursor ? { cursor } : {}) });
+  const diff = useQuery('candidateDiff', { productionId: confirmation?.change.productionId || '', candidateId: confirmation?.candidateId || '' }, { enabled: Boolean(confirmation) });
   const items:GameChange[] = result.data?.items ?? [];
   const selected = confirmation && items.find(item => item.id === confirmation.change.id && item.projectId === confirmation.change.projectId && item.productionId === confirmation.change.productionId && item.featureId === confirmation.change.featureId);
   const selectedCandidate = selected?.candidates.find(item => item.id === confirmation?.candidateId);
@@ -66,8 +59,8 @@ export function GameChanges({ mode, metadata, candidateState, notices, ready, on
     <style>{styles}{compactStyles}</style>
     <header className="gc-heading"><NoteIcon icon={metadata.icon} size={20} /><strong>改动</strong>
       <span>{result.data ? `${result.data.total} 项` : '尚未读取'}</span>
-      <Button size="sm" variant="secondary" isDisabled={navigating} onPress={() => void navigate(() => onDiscuss())}>提出想法</Button>
-      {mode === 'expanded' && <Button size="sm" variant="tertiary" onPress={() => void act(() => result.revalidate())} aria-label="刷新改动">刷新</Button>}
+      <Button size="sm" variant="secondary" isDisabled={navigating} onPress={() => onDiscuss()}>提出想法</Button>
+      {mode === 'expanded' && <Button size="sm" variant="tertiary" onPress={() => void act(() => result.refresh())} aria-label="刷新改动">刷新</Button>}
     </header>
     {mode === 'expanded' && <div className="gc-tools">
       <SearchField aria-label="搜索改动" value={query} onChange={value => { setQuery(value); setCursor(undefined); setPrevious([]); }} fullWidth>
@@ -79,7 +72,7 @@ export function GameChanges({ mode, metadata, candidateState, notices, ready, on
       </Select>
       <Button variant="tertiary" onPress={() => onEngineering()}>工程记录</Button>
     </div>}
-    {notices}
+    {notices}<MutationNotice mutation={pin}/><MutationNotice mutation={remove}/>
     {(result.error || notice) && <p className="gc-error" role="alert">{result.error?.message || notice}</p>}
     {result.stale && result.data && <span className="gc-muted">正在核对最新状态</span>}
     {result.loading && <p role="status">正在读取改动…</p>}
@@ -92,13 +85,13 @@ export function GameChanges({ mode, metadata, candidateState, notices, ready, on
           <div className="gc-candidates">{change.candidates.filter(candidate => candidate.current || candidate.status === 'adopted').map(candidate => <div key={candidate.id} className="gc-candidate">
             <div><strong>{candidate.targetId}</strong><span className="gc-meta">候选 {candidate.commit.slice(0, 8)} · {candidate.status === 'adopted' ? '已加入' : candidate.status === 'undone' ? '已撤销' : candidate.previewVerified ? '试玩检查已通过' : '待试玩检查'}</span></div>
             <CandidateDifference productionId={change.productionId} candidateId={candidate.id} />
-            <Button size="sm" variant="tertiary" isDisabled={pinning || result.stale || !!result.error} onPress={() => void referenceAction(() => referenceActions.pinChangeReference({ productionId: change.productionId, revision: change.revision, candidateId: candidate.id, commit: candidate.commit }))}>固定候选</Button>
+            <Button size="sm" variant="tertiary" isDisabled={pinning || result.stale || !!result.error} onPress={() => void pin.mutate({productionId:change.productionId,revision:change.revision,candidateId:candidate.id,commit:candidate.commit})}>固定候选</Button>
             <Button size="sm" variant="secondary" isDisabled={navigating} onPress={() => void navigate(() => onPreview(candidate.id, candidate.commit))}>试玩这个版本</Button>
             {change.stage === 'review' && candidate.status === 'candidate' && candidate.current && candidate.previewVerified && <Button size="sm" isDisabled={candidateState(change,candidate.id,'confirm').blocked || !ready || result.stale || !!result.error} onPress={() => setConfirmation({ change, candidateId: candidate.id, operation: 'confirm' })}>加入游戏</Button>}
             {candidate.status === 'adopted' && <Button size="sm" variant="secondary" isDisabled={candidateState(change,candidate.id,'undo').blocked || !ready || result.stale || !!result.error} onPress={() => setConfirmation({ change, candidateId: candidate.id, operation: 'undo' })}>撤销采用</Button>}
             {candidateState(change,candidate.id,candidate.status==='adopted'?'undo':'confirm').message && <p className="gc-error" role="alert">{candidateState(change,candidate.id,candidate.status==='adopted'?'undo':'confirm').message}</p>}
           </div>)}</div>
-          <div className="gc-actions"><Button size="sm" variant="tertiary" isDisabled={pinning || result.stale || !!result.error} onPress={() => void referenceAction(() => referenceActions.pinChangeReference({ productionId: change.productionId, revision: change.revision }))}>固定改动</Button><Button size="sm" variant="secondary" isDisabled={navigating} onPress={() => void navigate(() => onDiscuss(change))}>继续讨论</Button><Button size="sm" variant="tertiary" isDisabled={navigating} onPress={() => void navigate(() => onProduction(change))}>查看制作过程</Button>{change.featureId && <Button size="sm" variant="tertiary" onPress={() => onEngineering(change.featureId)}>功能与采用记录</Button>}</div>
+          <div className="gc-actions"><Button size="sm" variant="tertiary" isDisabled={pinning || result.stale || !!result.error} onPress={() => void pin.mutate({productionId:change.productionId,revision:change.revision})}>固定改动</Button><Button size="sm" variant="secondary" isDisabled={navigating} onPress={() => onDiscuss(change)}>继续讨论</Button><Button size="sm" variant="tertiary" isDisabled={navigating} onPress={() => void navigate(() => onProduction(change))}>查看制作过程</Button>{change.featureId && <Button size="sm" variant="tertiary" onPress={() => onEngineering(change.featureId)}>功能与采用记录</Button>}</div>
         </div></details>}
       </article>)}
     </ScrollShadow>
@@ -108,7 +101,7 @@ export function GameChanges({ mode, metadata, candidateState, notices, ready, on
       label: `${item.title}${item.anchor ? ` / ${item.anchor}` : ''}`, warning: item.freshness !== 'current',
       status: `${item.revision.slice(0, 12)} · ${item.freshness === 'current' ? item.kind === 'battleComparison' ? '历史报告一致，不代表当前项目' : '版本一致' : item.freshness === 'stale' ? '版本已变化，需移除后重新固定' : '无法读取或定位'}`,
     }))} limit={references.data?.limit ?? 8} pending={references.loading || references.stale} busy={pinning} error={pinError || references.error?.message}
-      onRemove={key => void referenceAction(() => referenceActions.removePinnedReference({ key }))} onRefresh={() => void referenceAction(() => references.revalidate())}>
+      onRemove={key => void remove.mutate({key})} onRefresh={() => void act(()=>references.refresh())}>
       <span>使用下方“固定改动”或“固定候选”，不会发送消息或采用候选。</span>
     </ReferenceCollection>}
     </footer>
@@ -121,13 +114,7 @@ export function GameChanges({ mode, metadata, candidateState, notices, ready, on
         {diff.data && <DifferenceFiles diff={diff.data} />}
         {!selectionCurrent && <p className="gc-error">记录已变化，请关闭并核对当前候选。</p>}
         {selectedAction?.message && <p className="gc-error" role="alert">{selectedAction.message}</p>}
-        <div className="gc-actions"><Button variant="secondary" isDisabled={selectedAction?.pending} onPress={() => setConfirmation(undefined)}>取消</Button><Button isDisabled={selectedAction?.blocked || !ready || !selectionCurrent || result.stale || !!result.error || confirmation?.operation === 'confirm' && (!diff.data?.baseCurrent || diff.stale || !!diff.error)} onPress={() => void act(async () => {
-          if (!confirmation || !selectionCurrent) return;
-          const settled=await onCandidate(confirmation.change, confirmation.candidateId, confirmation.operation);
-          if(!settled)return;
-          setConfirmation(undefined);
-          try{await result.revalidate();}catch(cause){setNotice(`游戏状态已核对，改动列表待刷新：${cause instanceof Error?cause.message:String(cause)}`);}
-        })}>{selectedAction?.pending ? '正在处理…' : confirmation?.operation === 'undo' ? '确认撤销' : '确认加入'}</Button></div>
+        <div className="gc-actions"><Button variant="secondary" isDisabled={selectedAction?.pending} onPress={() => setConfirmation(undefined)}>取消</Button><Button isDisabled={selectedAction?.blocked || !ready || !selectionCurrent || result.stale || !!result.error || confirmation?.operation === 'confirm' && (!diff.data?.baseCurrent || diff.stale || !!diff.error)} onPress={()=>{if(confirmation&&selectionCurrent)onCandidate(confirmation.change,confirmation.candidateId,confirmation.operation);}}>{selectedAction?.pending ? '正在处理…' : confirmation?.operation === 'undo' ? '确认撤销' : '确认加入'}</Button></div>
       </div>
     </NoteDialog>
   </section>;
@@ -135,7 +122,8 @@ export function GameChanges({ mode, metadata, candidateState, notices, ready, on
 
 function CandidateDifference({ productionId, candidateId }: { productionId: string; candidateId: string }) {
   const [open, setOpen] = useState(false);
-  const result = useResource<Diff>('candidateDiff', { productionId, candidateId }, { enabled: open });
+  const {useQuery}=useNote<typeof import('./actions')>();
+  const result=useQuery('candidateDiff',{productionId,candidateId},{enabled:open});
   return <div className="gc-diff"><Button size="sm" variant="tertiary" onPress={() => setOpen(!open)}>{open ? '收起差异' : '查看差异'}</Button>{open && <>
     {result.loading && <p role="status">正在读取差异…</p>}{result.error && <p role="alert">{result.error.message}</p>}{result.data && <DifferenceFiles diff={result.data} />}
   </>}</div>;
