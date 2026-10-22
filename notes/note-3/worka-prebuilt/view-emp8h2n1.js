@@ -1,1 +1,0 @@
-import"./entry-gcnghnvp.js";import{Le}from"./entry-0h1e83ja.js";import{H}from"./entry-xwk5d5fm.js";var e=Le({compact:()=>(H("d60a0a73"),import("./view-compact-d60a0a73.js")),expanded:()=>(H("p9rxa837"),import("./view-local-expanded-p9rxa837.js"))}),p=e;export{e as View,p as default};

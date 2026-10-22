@@ -6,6 +6,7 @@ import {AssetFilterPanel} from "./asset-filter-panel";
 import { DeckWorkspace } from "./deck-workspace";
 import { PinnedReferences } from './pinned-references';
 import { ImagePreview } from './image-preview';
+import { ViewportMedia } from './viewport-media';
 import { CardsWorkspace } from "./cards-workspace";
 import { CreateCardWorkflow } from "./card-workflow-create";
 import { AudioPreview } from './audio-preview';
@@ -857,10 +858,14 @@ function AssetListRow({ asset }: { asset: AssetItem }) {
 }
 
 function MediaThumbnail({ asset, variant }: { asset: AssetItem; variant: "thumbnail" | "original" | "waveform" }) {
+  if (isAudioAsset(asset) && variant === 'thumbnail') return <span className="cg-audio-thumb">♫</span>;
+  return <ViewportMedia><MediaThumbnailContent asset={asset} variant={variant} /></ViewportMedia>;
+}
+
+function MediaThumbnailContent({ asset, variant }: { asset: AssetItem; variant: "thumbnail" | "original" | "waveform" }) {
   const noteApi = useNote<typeof import("./actions")>();
   const media = noteApi.useQuery("media", ({ id: asset.id, versionId: asset.currentVersionId, path: asset.path, variant }), { enabled: Boolean(asset.id) });
   const url = mediaSource(media.data);
-  if (isAudioAsset(asset) && variant === "thumbnail") return <span className="cg-audio-thumb">♫</span>;
   if (media.error) return <span role="status">预览不可用</span>;
   if (!url) return <span className="cg-media-loading" aria-label="媒体加载中">…</span>;
   return <ImagePreview src={url} alt={asset.name || asset.title || asset.id} loading="lazy" />;

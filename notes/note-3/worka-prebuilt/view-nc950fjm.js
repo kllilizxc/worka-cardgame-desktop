@@ -1,0 +1,1 @@
+import{s as o}from"./entry-s0q12qea.js";import"./entry-j6n50t5s.js";import{oa as e}from"./entry-pe72pkpr.js";var t=o({compact:()=>import("./view-compact-m3fm4zwf.js"),expanded:()=>import("./view-local-expanded-mx46hxbw.js")}),r=t;export{r as default,t as View};

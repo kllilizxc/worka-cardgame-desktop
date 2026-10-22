@@ -22,7 +22,7 @@
     "deck-workspace.tsx": "1b03fa2eebce9aa96e590ce87d5b9a8e3b26dd98b67cc24b776cf0bb51fdb4f5",
     "image-preview.tsx": "270c9f8fe2014326277344bcdb09a7aefa7d87a216226a147fd9aff7f1cb6f13",
     "mermaid.tsx": "342fb9c97baf716946aeb6c2f03b02186b67f7a96570f6f9ac24c784e8932420",
-    "model.ts": "5b0db5871d3a5d02e5f0da159000e8e4388d2e1dea910b078d36c288da43f179",
+    "model.ts": "8ce72750f9e4a725637f0c0f2f2f593e9af78c78ee7f15346c7109fee7c536d6",
     "mutation-notice.tsx": "1fe2e5a06f8c083262fd2315b1f40c75864823d69859d61ae299448c5be31488",
     "pinned-references.tsx": "bba62d54096256d92b4db6cea2dfbe64ac93559a896f8f50f94e5757ad6bdb06",
     "reference-collection.tsx": "daed080baf5a96dfa803a1cb86845054bcf12c0e7d6958aa75614d5fa36cde33",
@@ -32,7 +32,8 @@
     "story-model.ts": "05098a9307d6f732c9f7f08fba07eba466ae4dd186db1e23b1cbcfd49000dc27",
     "story-workspace.tsx": "761e582517ec15681cef1d97d123910352b29abe1ef2c1aa8dfac2a5a4416409",
     "view-compact.tsx": "56209c4a40bac8cebf43e2670b5dee2ef379e46c0c14acc4ac9103c6816a33de",
-    "view-expanded.tsx": "f315f68612ef2024a61795e305397b2d1a299e18cf20fac4c1255cfbca081f76",
-    "view.tsx": "684ce47579ab3763f2df77fdb8eccf327f70fc17d68855aa36bffcc1eb524fe9"
+    "view-expanded.tsx": "081c9d6fc82ec10a9ed209240f08570443fa1dbf370a788432b8984c4f172084",
+    "view.tsx": "684ce47579ab3763f2df77fdb8eccf327f70fc17d68855aa36bffcc1eb524fe9",
+    "viewport-media.tsx": "9def5b858d542c63fb7a7806205cd868e0ca2377543e1fd69deca58f260580ce"
   }
 }

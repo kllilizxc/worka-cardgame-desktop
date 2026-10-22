@@ -29,6 +29,7 @@ declare const action_pinReference: import("@dsh-workbench/runtime").NoteOperatio
     }, z.core.$strip>>;
     limit: z.ZodNumber;
 }, z.core.$strip>, NoteActionContext<import("@dsh-workbench/runtime").NoteModel<z.ZodObject<{
+    title: z.ZodOptional<z.ZodString>;
     query: z.ZodOptional<z.ZodString>;
     bookmarks: z.ZodOptional<z.ZodArray<z.ZodString>>;
     views: z.ZodOptional<z.ZodObject<{
@@ -116,6 +117,7 @@ declare const action_removePinnedReference: import("@dsh-workbench/runtime").Not
 }, z.core.$strict>, z.ZodObject<{
     removed: z.ZodLiteral<true>;
 }, z.core.$strip>, NoteActionContext<import("@dsh-workbench/runtime").NoteModel<z.ZodObject<{
+    title: z.ZodOptional<z.ZodString>;
     query: z.ZodOptional<z.ZodString>;
     bookmarks: z.ZodOptional<z.ZodArray<z.ZodString>>;
     views: z.ZodOptional<z.ZodObject<{
@@ -201,6 +203,7 @@ export { action_removePinnedReference as removePinnedReference };
 declare const action_discussAudio: import("@dsh-workbench/runtime").NoteOperation<z.ZodObject<{}, z.core.$strip>, z.ZodObject<{
     sessionId: z.ZodString;
 }, z.core.$strip>, NoteActionContext<import("@dsh-workbench/runtime").NoteModel<z.ZodObject<{
+    title: z.ZodOptional<z.ZodString>;
     query: z.ZodOptional<z.ZodString>;
     bookmarks: z.ZodOptional<z.ZodArray<z.ZodString>>;
     views: z.ZodOptional<z.ZodObject<{
@@ -288,6 +291,7 @@ declare const action_discussSelection: import("@dsh-workbench/runtime").NoteOper
 }, z.core.$strip>, z.ZodObject<{
     sessionId: z.ZodString;
 }, z.core.$strip>, NoteActionContext<import("@dsh-workbench/runtime").NoteModel<z.ZodObject<{
+    title: z.ZodOptional<z.ZodString>;
     query: z.ZodOptional<z.ZodString>;
     bookmarks: z.ZodOptional<z.ZodArray<z.ZodString>>;
     views: z.ZodOptional<z.ZodObject<{
@@ -380,6 +384,7 @@ declare const action_addResource: import("@dsh-workbench/runtime").NoteOperation
     linkBase: z.ZodOptional<z.ZodString>;
     revision: z.ZodOptional<z.ZodString>;
 }, z.core.$strip>, NoteActionContext<import("@dsh-workbench/runtime").NoteModel<z.ZodObject<{
+    title: z.ZodOptional<z.ZodString>;
     query: z.ZodOptional<z.ZodString>;
     bookmarks: z.ZodOptional<z.ZodArray<z.ZodString>>;
     views: z.ZodOptional<z.ZodObject<{
@@ -474,6 +479,7 @@ declare const action_prepareBattleExperiment: import("@dsh-workbench/runtime").N
     url: z.ZodString;
     snapshotId: z.ZodString;
 }, z.core.$strip>, NoteActionContext<import("@dsh-workbench/runtime").NoteModel<z.ZodObject<{
+    title: z.ZodOptional<z.ZodString>;
     query: z.ZodOptional<z.ZodString>;
     bookmarks: z.ZodOptional<z.ZodArray<z.ZodString>>;
     views: z.ZodOptional<z.ZodObject<{
@@ -559,6 +565,7 @@ export { action_prepareBattleExperiment as prepareBattleExperiment };
 declare const action_stopBattleExperiment: import("@dsh-workbench/runtime").NoteOperation<z.ZodObject<{}, z.core.$strict>, z.ZodObject<{
     stopped: z.ZodLiteral<true>;
 }, z.core.$strip>, NoteActionContext<import("@dsh-workbench/runtime").NoteModel<z.ZodObject<{
+    title: z.ZodOptional<z.ZodString>;
     query: z.ZodOptional<z.ZodString>;
     bookmarks: z.ZodOptional<z.ZodArray<z.ZodString>>;
     views: z.ZodOptional<z.ZodObject<{
@@ -691,6 +698,7 @@ declare const action_analyzeStoryPaths: import("@dsh-workbench/runtime").NoteOpe
     contentMatches: z.ZodOptional<z.ZodBoolean>;
     runtimeFreshness: z.ZodOptional<z.ZodString>;
 }, z.core.$strip>, NoteActionContext<import("@dsh-workbench/runtime").NoteModel<z.ZodObject<{
+    title: z.ZodOptional<z.ZodString>;
     query: z.ZodOptional<z.ZodString>;
     bookmarks: z.ZodOptional<z.ZodArray<z.ZodString>>;
     views: z.ZodOptional<z.ZodObject<{
@@ -806,6 +814,7 @@ declare const action_saveDocument: import("@dsh-workbench/runtime").NoteOperatio
     snippet: z.ZodOptional<z.ZodString>;
     content: z.ZodString;
 }, z.core.$strip>, NoteActionContext<import("@dsh-workbench/runtime").NoteModel<z.ZodObject<{
+    title: z.ZodOptional<z.ZodString>;
     query: z.ZodOptional<z.ZodString>;
     bookmarks: z.ZodOptional<z.ZodArray<z.ZodString>>;
     views: z.ZodOptional<z.ZodObject<{
@@ -934,6 +943,7 @@ declare const action_moveDocument: import("@dsh-workbench/runtime").NoteOperatio
     conflicts: z.ZodArray<z.ZodString>;
     canApply: z.ZodBoolean;
 }, z.core.$strip>, NoteActionContext<import("@dsh-workbench/runtime").NoteModel<z.ZodObject<{
+    title: z.ZodOptional<z.ZodString>;
     query: z.ZodOptional<z.ZodString>;
     bookmarks: z.ZodOptional<z.ZodArray<z.ZodString>>;
     views: z.ZodOptional<z.ZodObject<{
@@ -1038,6 +1048,7 @@ declare const action_updateCard: import("@dsh-workbench/runtime").NoteOperation<
     facePreview: z.ZodOptional<z.ZodString>;
     json: z.ZodRecord<z.ZodString, z.ZodJSONSchema>;
 }, z.core.$strip>, NoteActionContext<import("@dsh-workbench/runtime").NoteModel<z.ZodObject<{
+    title: z.ZodOptional<z.ZodString>;
     query: z.ZodOptional<z.ZodString>;
     bookmarks: z.ZodOptional<z.ZodArray<z.ZodString>>;
     views: z.ZodOptional<z.ZodObject<{
@@ -1174,6 +1185,7 @@ declare const action_updateAsset: import("@dsh-workbench/runtime").NoteOperation
         adopted: z.ZodBoolean;
     }, z.core.$strip>>>;
 }, z.core.$strip>, NoteActionContext<import("@dsh-workbench/runtime").NoteModel<z.ZodObject<{
+    title: z.ZodOptional<z.ZodString>;
     query: z.ZodOptional<z.ZodString>;
     bookmarks: z.ZodOptional<z.ZodArray<z.ZodString>>;
     views: z.ZodOptional<z.ZodObject<{
@@ -1284,6 +1296,7 @@ declare const action_registerCandidates: import("@dsh-workbench/runtime").NoteOp
     assetId: z.ZodOptional<z.ZodString>;
     versionId: z.ZodOptional<z.ZodString>;
 }, z.core.$strip>>, NoteActionContext<import("@dsh-workbench/runtime").NoteModel<z.ZodObject<{
+    title: z.ZodOptional<z.ZodString>;
     query: z.ZodOptional<z.ZodString>;
     bookmarks: z.ZodOptional<z.ZodArray<z.ZodString>>;
     views: z.ZodOptional<z.ZodObject<{
@@ -1422,6 +1435,7 @@ declare const action_adoptVersion: import("@dsh-workbench/runtime").NoteOperatio
         adopted: z.ZodBoolean;
     }, z.core.$strip>>>;
 }, z.core.$strip>, NoteActionContext<import("@dsh-workbench/runtime").NoteModel<z.ZodObject<{
+    title: z.ZodOptional<z.ZodString>;
     query: z.ZodOptional<z.ZodString>;
     bookmarks: z.ZodOptional<z.ZodArray<z.ZodString>>;
     views: z.ZodOptional<z.ZodObject<{
@@ -1524,6 +1538,7 @@ declare const action_compileStory: import("@dsh-workbench/runtime").NoteOperatio
         detail: z.ZodString;
     }, z.core.$strip>>;
 }, z.core.$strip>, NoteActionContext<import("@dsh-workbench/runtime").NoteModel<z.ZodObject<{
+    title: z.ZodOptional<z.ZodString>;
     query: z.ZodOptional<z.ZodString>;
     bookmarks: z.ZodOptional<z.ZodArray<z.ZodString>>;
     views: z.ZodOptional<z.ZodObject<{
@@ -1653,6 +1668,7 @@ declare const action_stageStoryCandidate: import("@dsh-workbench/runtime").NoteO
     }, z.core.$strip>;
     reused: z.ZodOptional<z.ZodBoolean>;
 }, z.core.$strip>, NoteActionContext<import("@dsh-workbench/runtime").NoteModel<z.ZodObject<{
+    title: z.ZodOptional<z.ZodString>;
     query: z.ZodOptional<z.ZodString>;
     bookmarks: z.ZodOptional<z.ZodArray<z.ZodString>>;
     views: z.ZodOptional<z.ZodObject<{
@@ -1759,6 +1775,7 @@ declare const action_stageDocumentsCandidate: import("@dsh-workbench/runtime").N
     }, z.core.$strip>;
     reused: z.ZodOptional<z.ZodBoolean>;
 }, z.core.$strip>, NoteActionContext<import("@dsh-workbench/runtime").NoteModel<z.ZodObject<{
+    title: z.ZodOptional<z.ZodString>;
     query: z.ZodOptional<z.ZodString>;
     bookmarks: z.ZodOptional<z.ZodArray<z.ZodString>>;
     views: z.ZodOptional<z.ZodObject<{
@@ -1849,6 +1866,7 @@ declare const action_rejectAssetVersion: import("@dsh-workbench/runtime").NoteOp
     versionId: z.ZodOptional<z.ZodString>;
     todoId: z.ZodOptional<z.ZodString>;
 }, z.core.$strip>, NoteActionContext<import("@dsh-workbench/runtime").NoteModel<z.ZodObject<{
+    title: z.ZodOptional<z.ZodString>;
     query: z.ZodOptional<z.ZodString>;
     bookmarks: z.ZodOptional<z.ZodArray<z.ZodString>>;
     views: z.ZodOptional<z.ZodObject<{
@@ -1942,6 +1960,7 @@ declare const action_createCardWorkflow: import("@dsh-workbench/runtime").NoteOp
     noteId: z.ZodString;
     itemId: z.ZodString;
 }, z.core.$strip>, NoteActionContext<import("@dsh-workbench/runtime").NoteModel<z.ZodObject<{
+    title: z.ZodOptional<z.ZodString>;
     query: z.ZodOptional<z.ZodString>;
     bookmarks: z.ZodOptional<z.ZodArray<z.ZodString>>;
     views: z.ZodOptional<z.ZodObject<{
@@ -2045,6 +2064,7 @@ declare const action_switchCardTheme: import("@dsh-workbench/runtime").NoteOpera
     facePreview: z.ZodOptional<z.ZodString>;
     json: z.ZodRecord<z.ZodString, z.ZodJSONSchema>;
 }, z.core.$strip>, NoteActionContext<import("@dsh-workbench/runtime").NoteModel<z.ZodObject<{
+    title: z.ZodOptional<z.ZodString>;
     query: z.ZodOptional<z.ZodString>;
     bookmarks: z.ZodOptional<z.ZodArray<z.ZodString>>;
     views: z.ZodOptional<z.ZodObject<{
@@ -2129,6 +2149,7 @@ declare const action_switchCardTheme: import("@dsh-workbench/runtime").NoteOpera
 export { action_switchCardTheme as switchCardTheme };
 export declare const queries: {
     preferences: import("@dsh-workbench/runtime").NoteOperation<z.ZodObject<{}, z.core.$strip>, z.ZodObject<{
+        title: z.ZodOptional<z.ZodString>;
         query: z.ZodOptional<z.ZodString>;
         bookmarks: z.ZodOptional<z.ZodArray<z.ZodString>>;
         views: z.ZodOptional<z.ZodObject<{
@@ -2185,6 +2206,7 @@ export declare const queries: {
             }, z.core.$strip>>>;
         }, z.core.$strip>>;
     }, z.core.$strip>, NoteQueryContext<import("@dsh-workbench/runtime").NoteModel<z.ZodObject<{
+        title: z.ZodOptional<z.ZodString>;
         query: z.ZodOptional<z.ZodString>;
         bookmarks: z.ZodOptional<z.ZodArray<z.ZodString>>;
         views: z.ZodOptional<z.ZodObject<{
@@ -2274,6 +2296,7 @@ export declare const queries: {
             status: z.ZodString;
         }, z.core.$strip>>;
     }, z.core.$strip>, NoteQueryContext<import("@dsh-workbench/runtime").NoteModel<z.ZodObject<{
+        title: z.ZodOptional<z.ZodString>;
         query: z.ZodOptional<z.ZodString>;
         bookmarks: z.ZodOptional<z.ZodArray<z.ZodString>>;
         views: z.ZodOptional<z.ZodObject<{
@@ -2367,6 +2390,7 @@ export declare const queries: {
         projectGeneration: z.ZodString;
         revision: z.ZodString;
     }, z.core.$strip>, NoteQueryContext<import("@dsh-workbench/runtime").NoteModel<z.ZodObject<{
+        title: z.ZodOptional<z.ZodString>;
         query: z.ZodOptional<z.ZodString>;
         bookmarks: z.ZodOptional<z.ZodArray<z.ZodString>>;
         views: z.ZodOptional<z.ZodObject<{
@@ -2473,6 +2497,7 @@ export declare const queries: {
     }, z.core.$strip>, z.ZodObject<{
         projectGeneration: z.ZodOptional<z.ZodString>;
     }, z.core.$strip>>, NoteQueryContext<import("@dsh-workbench/runtime").NoteModel<z.ZodObject<{
+        title: z.ZodOptional<z.ZodString>;
         query: z.ZodOptional<z.ZodString>;
         bookmarks: z.ZodOptional<z.ZodArray<z.ZodString>>;
         views: z.ZodOptional<z.ZodObject<{
@@ -2577,6 +2602,7 @@ export declare const queries: {
     }, z.core.$strip>, z.ZodObject<{
         projectGeneration: z.ZodOptional<z.ZodString>;
     }, z.core.$strip>>, NoteQueryContext<import("@dsh-workbench/runtime").NoteModel<z.ZodObject<{
+        title: z.ZodOptional<z.ZodString>;
         query: z.ZodOptional<z.ZodString>;
         bookmarks: z.ZodOptional<z.ZodArray<z.ZodString>>;
         views: z.ZodOptional<z.ZodObject<{
@@ -2751,6 +2777,7 @@ export declare const queries: {
     }, z.core.$strip>, z.ZodObject<{
         projectGeneration: z.ZodOptional<z.ZodString>;
     }, z.core.$strip>>, NoteQueryContext<import("@dsh-workbench/runtime").NoteModel<z.ZodObject<{
+        title: z.ZodOptional<z.ZodString>;
         query: z.ZodOptional<z.ZodString>;
         bookmarks: z.ZodOptional<z.ZodArray<z.ZodString>>;
         views: z.ZodOptional<z.ZodObject<{
@@ -2845,6 +2872,7 @@ export declare const queries: {
     }, z.core.$strip>, z.ZodObject<{
         projectGeneration: z.ZodOptional<z.ZodString>;
     }, z.core.$strip>>, NoteQueryContext<import("@dsh-workbench/runtime").NoteModel<z.ZodObject<{
+        title: z.ZodOptional<z.ZodString>;
         query: z.ZodOptional<z.ZodString>;
         bookmarks: z.ZodOptional<z.ZodArray<z.ZodString>>;
         views: z.ZodOptional<z.ZodObject<{
@@ -2984,6 +3012,7 @@ export declare const queries: {
     }, z.core.$strip>, z.ZodObject<{
         projectGeneration: z.ZodOptional<z.ZodString>;
     }, z.core.$strip>>, NoteQueryContext<import("@dsh-workbench/runtime").NoteModel<z.ZodObject<{
+        title: z.ZodOptional<z.ZodString>;
         query: z.ZodOptional<z.ZodString>;
         bookmarks: z.ZodOptional<z.ZodArray<z.ZodString>>;
         views: z.ZodOptional<z.ZodObject<{
@@ -3116,6 +3145,7 @@ export declare const queries: {
     }, z.core.$strip>, z.ZodObject<{
         projectGeneration: z.ZodOptional<z.ZodString>;
     }, z.core.$strip>>, NoteQueryContext<import("@dsh-workbench/runtime").NoteModel<z.ZodObject<{
+        title: z.ZodOptional<z.ZodString>;
         query: z.ZodOptional<z.ZodString>;
         bookmarks: z.ZodOptional<z.ZodArray<z.ZodString>>;
         views: z.ZodOptional<z.ZodObject<{
@@ -3224,6 +3254,7 @@ export declare const queries: {
     }, z.core.$strip>, z.ZodObject<{
         projectGeneration: z.ZodOptional<z.ZodString>;
     }, z.core.$strip>>, NoteQueryContext<import("@dsh-workbench/runtime").NoteModel<z.ZodObject<{
+        title: z.ZodOptional<z.ZodString>;
         query: z.ZodOptional<z.ZodString>;
         bookmarks: z.ZodOptional<z.ZodArray<z.ZodString>>;
         views: z.ZodOptional<z.ZodObject<{
@@ -3329,6 +3360,7 @@ export declare const queries: {
     }, z.core.$strip>, z.ZodObject<{
         projectGeneration: z.ZodOptional<z.ZodString>;
     }, z.core.$strip>>, NoteQueryContext<import("@dsh-workbench/runtime").NoteModel<z.ZodObject<{
+        title: z.ZodOptional<z.ZodString>;
         query: z.ZodOptional<z.ZodString>;
         bookmarks: z.ZodOptional<z.ZodArray<z.ZodString>>;
         views: z.ZodOptional<z.ZodObject<{
@@ -3428,6 +3460,7 @@ export declare const queries: {
     }, z.core.$strip>, z.ZodObject<{
         projectGeneration: z.ZodOptional<z.ZodString>;
     }, z.core.$strip>>, NoteQueryContext<import("@dsh-workbench/runtime").NoteModel<z.ZodObject<{
+        title: z.ZodOptional<z.ZodString>;
         query: z.ZodOptional<z.ZodString>;
         bookmarks: z.ZodOptional<z.ZodArray<z.ZodString>>;
         views: z.ZodOptional<z.ZodObject<{
@@ -3532,6 +3565,7 @@ export declare const queries: {
     }, z.core.$strip>, z.ZodObject<{
         projectGeneration: z.ZodOptional<z.ZodString>;
     }, z.core.$strip>>, NoteQueryContext<import("@dsh-workbench/runtime").NoteModel<z.ZodObject<{
+        title: z.ZodOptional<z.ZodString>;
         query: z.ZodOptional<z.ZodString>;
         bookmarks: z.ZodOptional<z.ZodArray<z.ZodString>>;
         views: z.ZodOptional<z.ZodObject<{
@@ -3670,6 +3704,7 @@ export declare const queries: {
     }, z.core.$strip>]>, z.ZodObject<{
         projectGeneration: z.ZodOptional<z.ZodString>;
     }, z.core.$strip>>, NoteQueryContext<import("@dsh-workbench/runtime").NoteModel<z.ZodObject<{
+        title: z.ZodOptional<z.ZodString>;
         query: z.ZodOptional<z.ZodString>;
         bookmarks: z.ZodOptional<z.ZodArray<z.ZodString>>;
         views: z.ZodOptional<z.ZodObject<{
@@ -3757,6 +3792,7 @@ export declare const queries: {
             title: z.ZodString;
         }, z.core.$strip>>;
     }, z.core.$strip>, NoteQueryContext<import("@dsh-workbench/runtime").NoteModel<z.ZodObject<{
+        title: z.ZodOptional<z.ZodString>;
         query: z.ZodOptional<z.ZodString>;
         bookmarks: z.ZodOptional<z.ZodArray<z.ZodString>>;
         views: z.ZodOptional<z.ZodObject<{
@@ -3856,6 +3892,7 @@ export declare const queries: {
     }, z.core.$strip>, z.ZodObject<{
         projectGeneration: z.ZodOptional<z.ZodString>;
     }, z.core.$strip>>, NoteQueryContext<import("@dsh-workbench/runtime").NoteModel<z.ZodObject<{
+        title: z.ZodOptional<z.ZodString>;
         query: z.ZodOptional<z.ZodString>;
         bookmarks: z.ZodOptional<z.ZodArray<z.ZodString>>;
         views: z.ZodOptional<z.ZodObject<{
@@ -3995,6 +4032,7 @@ export declare const queries: {
     }, z.core.$strip>, z.ZodObject<{
         projectGeneration: z.ZodOptional<z.ZodString>;
     }, z.core.$strip>>, NoteQueryContext<import("@dsh-workbench/runtime").NoteModel<z.ZodObject<{
+        title: z.ZodOptional<z.ZodString>;
         query: z.ZodOptional<z.ZodString>;
         bookmarks: z.ZodOptional<z.ZodArray<z.ZodString>>;
         views: z.ZodOptional<z.ZodObject<{
@@ -4118,6 +4156,7 @@ export declare const queries: {
     }, z.core.$strip>, z.ZodObject<{
         projectGeneration: z.ZodOptional<z.ZodString>;
     }, z.core.$strip>>, NoteQueryContext<import("@dsh-workbench/runtime").NoteModel<z.ZodObject<{
+        title: z.ZodOptional<z.ZodString>;
         query: z.ZodOptional<z.ZodString>;
         bookmarks: z.ZodOptional<z.ZodArray<z.ZodString>>;
         views: z.ZodOptional<z.ZodObject<{
@@ -4234,6 +4273,7 @@ export declare const queries: {
     }, z.core.$strip>, z.ZodObject<{
         projectGeneration: z.ZodOptional<z.ZodString>;
     }, z.core.$strip>>, NoteQueryContext<import("@dsh-workbench/runtime").NoteModel<z.ZodObject<{
+        title: z.ZodOptional<z.ZodString>;
         query: z.ZodOptional<z.ZodString>;
         bookmarks: z.ZodOptional<z.ZodArray<z.ZodString>>;
         views: z.ZodOptional<z.ZodObject<{
@@ -4331,6 +4371,7 @@ export declare const queries: {
     }, z.core.$strip>, z.ZodObject<{
         projectGeneration: z.ZodOptional<z.ZodString>;
     }, z.core.$strip>>, NoteQueryContext<import("@dsh-workbench/runtime").NoteModel<z.ZodObject<{
+        title: z.ZodOptional<z.ZodString>;
         query: z.ZodOptional<z.ZodString>;
         bookmarks: z.ZodOptional<z.ZodArray<z.ZodString>>;
         views: z.ZodOptional<z.ZodObject<{
@@ -4422,6 +4463,7 @@ export declare const queries: {
         revision: z.ZodOptional<z.ZodString>;
         format: z.ZodOptional<z.ZodString>;
     }, z.core.$strip>, NoteQueryContext<import("@dsh-workbench/runtime").NoteModel<z.ZodObject<{
+        title: z.ZodOptional<z.ZodString>;
         query: z.ZodOptional<z.ZodString>;
         bookmarks: z.ZodOptional<z.ZodArray<z.ZodString>>;
         views: z.ZodOptional<z.ZodObject<{
@@ -4549,6 +4591,7 @@ export declare const queries: {
     }, z.core.$strip>, z.ZodObject<{
         projectGeneration: z.ZodOptional<z.ZodString>;
     }, z.core.$strip>>, NoteQueryContext<import("@dsh-workbench/runtime").NoteModel<z.ZodObject<{
+        title: z.ZodOptional<z.ZodString>;
         query: z.ZodOptional<z.ZodString>;
         bookmarks: z.ZodOptional<z.ZodArray<z.ZodString>>;
         views: z.ZodOptional<z.ZodObject<{
@@ -4670,6 +4713,7 @@ export declare const queries: {
     }, z.core.$strip>, z.ZodObject<{
         projectGeneration: z.ZodOptional<z.ZodString>;
     }, z.core.$strip>>, NoteQueryContext<import("@dsh-workbench/runtime").NoteModel<z.ZodObject<{
+        title: z.ZodOptional<z.ZodString>;
         query: z.ZodOptional<z.ZodString>;
         bookmarks: z.ZodOptional<z.ZodArray<z.ZodString>>;
         views: z.ZodOptional<z.ZodObject<{
@@ -4800,6 +4844,7 @@ export declare const queries: {
     }, z.core.$strip>, z.ZodObject<{
         projectGeneration: z.ZodOptional<z.ZodString>;
     }, z.core.$strip>>, NoteQueryContext<import("@dsh-workbench/runtime").NoteModel<z.ZodObject<{
+        title: z.ZodOptional<z.ZodString>;
         query: z.ZodOptional<z.ZodString>;
         bookmarks: z.ZodOptional<z.ZodArray<z.ZodString>>;
         views: z.ZodOptional<z.ZodObject<{
@@ -4929,6 +4974,7 @@ export declare const queries: {
     }, z.core.$strip>, z.ZodObject<{
         projectGeneration: z.ZodOptional<z.ZodString>;
     }, z.core.$strip>>, NoteQueryContext<import("@dsh-workbench/runtime").NoteModel<z.ZodObject<{
+        title: z.ZodOptional<z.ZodString>;
         query: z.ZodOptional<z.ZodString>;
         bookmarks: z.ZodOptional<z.ZodArray<z.ZodString>>;
         views: z.ZodOptional<z.ZodObject<{
@@ -5035,6 +5081,7 @@ export declare const queries: {
     }, z.core.$strip>, z.ZodObject<{
         projectGeneration: z.ZodOptional<z.ZodString>;
     }, z.core.$strip>>, NoteQueryContext<import("@dsh-workbench/runtime").NoteModel<z.ZodObject<{
+        title: z.ZodOptional<z.ZodString>;
         query: z.ZodOptional<z.ZodString>;
         bookmarks: z.ZodOptional<z.ZodArray<z.ZodString>>;
         views: z.ZodOptional<z.ZodObject<{
@@ -5197,6 +5244,7 @@ export declare const queries: {
     }, z.core.$strip>, z.ZodObject<{
         projectGeneration: z.ZodOptional<z.ZodString>;
     }, z.core.$strip>>, NoteQueryContext<import("@dsh-workbench/runtime").NoteModel<z.ZodObject<{
+        title: z.ZodOptional<z.ZodString>;
         query: z.ZodOptional<z.ZodString>;
         bookmarks: z.ZodOptional<z.ZodArray<z.ZodString>>;
         views: z.ZodOptional<z.ZodObject<{
@@ -5335,6 +5383,7 @@ export declare const queries: {
     }, z.core.$strip>, z.ZodObject<{
         projectGeneration: z.ZodOptional<z.ZodString>;
     }, z.core.$strip>>, NoteQueryContext<import("@dsh-workbench/runtime").NoteModel<z.ZodObject<{
+        title: z.ZodOptional<z.ZodString>;
         query: z.ZodOptional<z.ZodString>;
         bookmarks: z.ZodOptional<z.ZodArray<z.ZodString>>;
         views: z.ZodOptional<z.ZodObject<{
@@ -5471,6 +5520,7 @@ export declare const queries: {
     }, z.core.$strip>, z.ZodObject<{
         projectGeneration: z.ZodOptional<z.ZodString>;
     }, z.core.$strip>>, NoteQueryContext<import("@dsh-workbench/runtime").NoteModel<z.ZodObject<{
+        title: z.ZodOptional<z.ZodString>;
         query: z.ZodOptional<z.ZodString>;
         bookmarks: z.ZodOptional<z.ZodArray<z.ZodString>>;
         views: z.ZodOptional<z.ZodObject<{
@@ -5586,6 +5636,7 @@ export declare const queries: {
     }, z.core.$strip>, z.ZodObject<{
         projectGeneration: z.ZodOptional<z.ZodString>;
     }, z.core.$strip>>, NoteQueryContext<import("@dsh-workbench/runtime").NoteModel<z.ZodObject<{
+        title: z.ZodOptional<z.ZodString>;
         query: z.ZodOptional<z.ZodString>;
         bookmarks: z.ZodOptional<z.ZodArray<z.ZodString>>;
         views: z.ZodOptional<z.ZodObject<{
@@ -5694,6 +5745,7 @@ export declare const queries: {
     }, z.core.$strip>, z.ZodObject<{
         projectGeneration: z.ZodOptional<z.ZodString>;
     }, z.core.$strip>>, NoteQueryContext<import("@dsh-workbench/runtime").NoteModel<z.ZodObject<{
+        title: z.ZodOptional<z.ZodString>;
         query: z.ZodOptional<z.ZodString>;
         bookmarks: z.ZodOptional<z.ZodArray<z.ZodString>>;
         views: z.ZodOptional<z.ZodObject<{
@@ -5796,6 +5848,7 @@ export declare const queries: {
     }, z.core.$strip>, z.ZodObject<{
         projectGeneration: z.ZodOptional<z.ZodString>;
     }, z.core.$strip>>, NoteQueryContext<import("@dsh-workbench/runtime").NoteModel<z.ZodObject<{
+        title: z.ZodOptional<z.ZodString>;
         query: z.ZodOptional<z.ZodString>;
         bookmarks: z.ZodOptional<z.ZodArray<z.ZodString>>;
         views: z.ZodOptional<z.ZodObject<{
@@ -5917,6 +5970,7 @@ export declare const queries: {
     }, z.core.$strip>, z.ZodObject<{
         projectGeneration: z.ZodOptional<z.ZodString>;
     }, z.core.$strip>>, NoteQueryContext<import("@dsh-workbench/runtime").NoteModel<z.ZodObject<{
+        title: z.ZodOptional<z.ZodString>;
         query: z.ZodOptional<z.ZodString>;
         bookmarks: z.ZodOptional<z.ZodArray<z.ZodString>>;
         views: z.ZodOptional<z.ZodObject<{
@@ -6033,6 +6087,7 @@ export declare const queries: {
     }, z.core.$strip>, z.ZodObject<{
         projectGeneration: z.ZodOptional<z.ZodString>;
     }, z.core.$strip>>, NoteQueryContext<import("@dsh-workbench/runtime").NoteModel<z.ZodObject<{
+        title: z.ZodOptional<z.ZodString>;
         query: z.ZodOptional<z.ZodString>;
         bookmarks: z.ZodOptional<z.ZodArray<z.ZodString>>;
         views: z.ZodOptional<z.ZodObject<{
@@ -6179,6 +6234,7 @@ export declare const setViewState: import("@dsh-workbench/runtime").NoteOperatio
 }, z.core.$strip>, z.ZodObject<{
     revision: z.ZodString;
 }, z.core.$strip>, NoteActionContext<import("@dsh-workbench/runtime").NoteModel<z.ZodObject<{
+    title: z.ZodOptional<z.ZodString>;
     query: z.ZodOptional<z.ZodString>;
     bookmarks: z.ZodOptional<z.ZodArray<z.ZodString>>;
     views: z.ZodOptional<z.ZodObject<{
@@ -6270,6 +6326,7 @@ export declare const configureProject: import("@dsh-workbench/runtime").NoteOper
     projectRoot: z.ZodString;
     notes: z.ZodRecord<z.ZodString, z.ZodString>;
 }, z.core.$strip>, NoteActionContext<import("@dsh-workbench/runtime").NoteModel<z.ZodObject<{
+    title: z.ZodOptional<z.ZodString>;
     query: z.ZodOptional<z.ZodString>;
     bookmarks: z.ZodOptional<z.ZodArray<z.ZodString>>;
     views: z.ZodOptional<z.ZodObject<{

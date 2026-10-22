@@ -2,6 +2,12 @@ import { describe, expect, test } from 'bun:test';
 import { z, type NoteState } from '@dsh-workbench/runtime';
 import { bindActionContext, type ActionContext } from '@dsh-workbench/runtime/internal';
 import * as library from '../notes/note-1/actions';
+import { stateSchema } from '../notes/note-1/model';
+
+test('legacy library titles survive model validation without changing stored preferences', () => {
+  const saved = { title: 'Existing library', views: { knowledgeSelection: { path: 'memory/index.md' } } };
+  expect(stateSchema.parse(saved)).toEqual(saved);
+});
 import * as production from '../notes/note-4/actions';
 
 /**

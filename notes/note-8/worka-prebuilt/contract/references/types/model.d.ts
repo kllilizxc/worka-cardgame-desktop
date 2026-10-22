@@ -26,6 +26,7 @@ export declare const configSchema: z.ZodObject<{
     }, z.core.$loose>>>;
 }, z.core.$loose>;
 export declare const stateSchema: z.ZodObject<{
+    title: z.ZodOptional<z.ZodString>;
     query: z.ZodOptional<z.ZodString>;
     bookmarks: z.ZodOptional<z.ZodArray<z.ZodString>>;
     views: z.ZodOptional<z.ZodObject<{
@@ -190,6 +191,7 @@ export declare const viewStateInputSchema: z.ZodObject<{
     }, z.core.$strip>>;
 }, z.core.$strip>;
 export declare const note: import("@dsh-workbench/runtime").NoteModel<z.ZodObject<{
+    title: z.ZodOptional<z.ZodString>;
     query: z.ZodOptional<z.ZodString>;
     bookmarks: z.ZodOptional<z.ZodArray<z.ZodString>>;
     views: z.ZodOptional<z.ZodObject<{

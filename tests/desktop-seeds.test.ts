@@ -20,7 +20,10 @@ if(worka){
     if(['note-1','note-7','note-8','note-9','note-10','note-12'].includes(entry.key)){
       expect(contract.update?.dataVersion).toBe('cardgame-library@1');
       expect(contract.update?.compatibleFrom).toEqual(['cardgame-library@1']);
-      expect(()=>validateModelData(contract,{title:entry.name},config)).toThrow('Note state does not match');
+      const legacyState={title:entry.name};
+      expect(()=>validateModelData(contract,legacyState,config)).not.toThrow();
+      expect(await definition.state!.schema.parseAsync(legacyState)).toEqual(legacyState);
+      expect(()=>validateModelData(contract,{title:123},config)).toThrow('Note state does not match');
     }
   });
 }

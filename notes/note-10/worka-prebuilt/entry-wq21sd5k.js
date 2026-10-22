@@ -1,0 +1,2 @@
+import{Ca as W,Da as Y,fa as q,ga as I,ha as J,ia as z,ja as K,la as L,ra as O}from"./entry-mee3fvj6.js";var $=class extends Y{static{q(this,"PacketTokenBuilder")}constructor(){super(["packet"])}},b={parser:{TokenBuilder:q(()=>new $,"TokenBuilder"),ValueConverter:q(()=>new W,"ValueConverter")}};function F(Z=K){let w=z(J(Z),L),H=z(I({shared:w}),O,b);return w.ServiceRegistry.register(H),{shared:w,Packet:H}}q(F,"createPacketServices");
+export{b as da,F as ea};
