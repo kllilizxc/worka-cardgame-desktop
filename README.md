@@ -15,7 +15,7 @@
 
 ## 仓库结构
 
-- `desktop.json`：布局、初始角色配置、连线和后台引用
+- [desktop.json](desktop.json)：布局、初始角色配置、连线和后台引用
 - `notes/`：便笺源码及严格校验的 `worka-prebuilt` 产物
 - `relations/`：连线脚本和授权声明
 - `backend/`：CardGame 专用后台源码、构建脚本和回归测试
